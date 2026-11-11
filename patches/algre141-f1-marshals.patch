@@ -1,0 +1,155 @@
+diff --git a/apexf1.html b/apexf1.html
+index addadb7..4f67ed4 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1118,6 +1118,7 @@ const Track = {
+   buildTrackside(g, th){ try{ const PIT_CLEAR_M=9;
+     const W=this.width, S=this.samples, N=S.length; if(N<20) return;
+     const cnt={tyres:0,posts:0,rails:0,huts:0,flags:0,lamps:0,trees:0}; this.trackside=cnt;
++    const mPosts=[]; // owner Nov 10 2026 missing-list item 2: every placed marshal post is recorded (hut spot + frame + side + flag colour) so buildMarshals can stand a man at it
+     const up=new THREE.Vector3(0,1,0), m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pos=new THREE.Vector3();
+     const mk=(geo,mat,max)=>{ const im=new THREE.InstancedMesh(geo,mat,max); im.count=0; im.frustumCulled=false; g.add(im); return im; };
+     const put=(im,x,y,z,rot,sx,sy,sz,col)=>{ if(im.count>=im.instanceMatrix.count) return false; q.setFromAxisAngle(up,rot||0); pos.set(x,y,z); sc.set(sx||1,sy||1,sz||1); m.compose(pos,q,sc); im.setMatrixAt(im.count,m); if(col!==undefined) im.setColorAt(im.count,col); im.count++; return true; };
+@@ -1137,7 +1138,7 @@ const Track = {
+         for(const sd of [-1,1]){ const o=at(W/2+7.2,sd); if(!clear(o.x,o.z,5)) continue; if(put(posts,o.x,p.y,o.z,0,1,4.6,1)) cnt.posts++;
+           for(const hh of [2.3,4.4]) if(put(rails,o.x+p.tx*4,p.y+hh,o.z+p.tz*4,rot-Math.PI/2,8,1,1)) cnt.rails++; } }
+       if(accM>=130){ accM=0; const sd=(k++%2)?1:-1, o=at(W/2+9.5,sd); if(clear(o.x,o.z,7)){ // marshal post: orange hut, pole, flag (yellow / green / blue by turns)
+-          if(put(huts,o.x,p.y,o.z,rot,1,1,1)) cnt.huts++; if(put(lampP,o.x+p.tx*2.2,p.y,o.z+p.tz*2.2,0,1,5.5,1)) cnt.flags++; const fc=[cYel,cGrn,cBlue][k%3];
++          const mRec={x:o.x,y:p.y,z:o.z,tx:p.tx,tz:p.tz,nx:p.nx,nz:p.nz,sd,fci:0}; if(put(huts,o.x,p.y,o.z,rot,1,1,1)){ cnt.huts++; mPosts.push(mRec); } if(put(lampP,o.x+p.tx*2.2,p.y,o.z+p.tz*2.2,0,1,5.5,1)) cnt.flags++; const fc=[cYel,cGrn,cBlue][k%3]; mRec.fci=k%3;
+           if(put(flags,o.x+p.tx*2.2+p.nx*sd*0.55,p.y+5.1,o.z+p.tz*2.2+p.nz*sd*0.55,rot+Math.PI/2,1,1,1,fc)) cnt.flags++; } }
+       if(accL>=55 && !(th.kind==='city'||th.kind==='harbour')){ accL=0; const sd=(k++%2)?1:-1, o=at(W/2+11,sd); if(clear(o.x,o.z,8)){ if(put(lampP,o.x,p.y,o.z,0,1,10,1)) cnt.lamps++; put(lampH,o.x-p.nx*sd*0.8,p.y+10,o.z-p.nz*sd*0.8,rot,1,1,1); } }
+     }
+@@ -1147,7 +1148,50 @@ const Track = {
+       for(let t=0;t<900&&tt.count<260;t++){ const p=S[(Math.random()*N)|0], sd=Math.random()<0.5?1:-1, off=W/2+16+Math.random()*60, x=p.x+p.nx*off*sd, z=p.z+p.nz*off*sd; if(this.distToLoop(x,z)<W/2+14) continue; const s=0.8+Math.random()*0.9;
+         put(tt,x,this.groundBase,z,0,s,s,s); put(tc,x,this.groundBase,z,0,s,s,s,new THREE.Color().setHSL(0.33,0.5,0.16+Math.random()*0.12)); cnt.trees++; } tt.instanceMatrix.needsUpdate=true; tc.instanceMatrix.needsUpdate=true; if(tc.instanceColor) tc.instanceColor.needsUpdate=true; }
+     for(const im of [tyres,posts,rails,huts,flags,lampH,lampP]){ im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; }
++    this.marshalPosts=mPosts; this.buildMarshals(g, mPosts); // the posts get their marshals (missing-list item 2) in the same build pass, so every path that plants posts (built-in, GP kit, owner circuits) gets the men too
+   }catch(e){ console.warn('trackside',e); } },
++  /* owner Nov 10 2026 missing-list item 2: MARSHALS at the marshal posts. The posts have stood empty since
++     buildTrackside first planted them (Nov 4 accessories round: an orange hut, a pole and a flag every ~130 m,
++     nobody home). Each post now gets ONE marshal: the fetched mechanic - the same model, MECH.scale (2.63 m,
++     the pit crews' people-vs-car size) and atlas-repaint machinery as the pit crews - in the MARSHAL kit
++     (MECH_KITS[10], international orange, plain back), skins dealt from the variety cycle so the lap is not
++     one man cloned. He stands beside his hut toward its pole, half a step closer to the track, facing it.
++     Poses cycle by post: a flag marshal (right arm straight up, MECH_POSE.lollipop, a hand flag on a pole at
++     the lollipop anchor, cloth in the post's own flag colour), a lean, an easy stand, a ready crouch. Poses
++     are set once at build - no per-frame tick for ~40 men spread over a whole lap. If the model has not
++     landed the articulated pit figure in orange stands in; the boots are awaited before the world builds
++     in the real flow, so that path never fires there. */
++  buildMarshals(g, posts){ try{
++    if(!posts || !posts.length){ this._marshalFigs=[]; return; }
++    const root=new THREE.Group(); g.add(root);
++    const poleGeo=new THREE.CylinderGeometry(0.02,0.02,1.1,5), poleMat=new THREE.MeshLambertMaterial({color:0x23262b});
++    const clothGeo=new THREE.PlaneGeometry(0.62,0.42);
++    const clothMats=[0xf5d90a,0x1fa84a,0x1d4fa8].map(c=>new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide})); // the posts' own flag colours, in buildTrackside's order: yellow / green / blue
++    const suitFb=new THREE.MeshLambertMaterial({color:0xff6a00});
++    const figs=[];
++    posts.forEach((P,i)=>{
++      let f=mechMan(MECH.scale, 10, MECH_VARSEQ[i%6]);
++      if(!f){ f=pitFigure(suitFb,[-1.15,-1.15]); f.scale.setScalar(2.19); }
++      f.position.set(P.x+P.tx*1.7-P.nx*P.sd*0.7, P.y, P.z+P.tz*1.7-P.nz*P.sd*0.7); // beside the hut toward its pole, half a step closer to the track than the hut stands
++      f.rotation.y=Math.atan2(-P.nx*P.sd,-P.nz*P.sd); // face the track
++      const kind=i%4, rig=f.userData.rig;
++      if(kind===0){ // the flag marshal: arm straight up, his flag in the raised hand
++        if(rig){ rig.reset(); MECH_POSE.lollipop(rig,1);
++          const pole=new THREE.Mesh(poleGeo,poleMat); pole.position.set(-0.25,1.60,0.1);
++          const cloth=new THREE.Mesh(clothGeo,clothMats[P.fci]); cloth.position.set(-0.58,1.93,0.1);
++          f.add(pole,cloth);
++        } else { const pole=new THREE.Mesh(poleGeo,poleMat); pole.scale.setScalar(0.85); pole.position.set(0.3,1.05,0);
++          const cloth=new THREE.Mesh(clothGeo,clothMats[P.fci]); cloth.position.set(0.62,1.28,0); f.add(pole,cloth); }
++      }
++      else if(rig){ rig.reset();
++        if(kind===1) MECH_POSE.lean(rig,0.75);
++        else if(kind===2){ rig.pose('LeftForeArm_012','x',-0.4); rig.pose('RightForeArm_035','x',-0.4); } // standing easy, forearms half-bent
++        else MECH_POSE.crouch(rig,0.45); // the ready crouch
++      }
++      root.add(f); figs.push(f);
++    });
++    this._marshalFigs=figs;
++  }catch(e){ console.warn('marshals',e); } },
+   buildStands(g){ const W=this.width; // track width (lost in a refactor)
+     // grandstands ringing the main straight + a few corners, with animated crowd
+     this.crowd={ list:[], excite:0 };
+@@ -1773,8 +1817,9 @@ const MECH = { ready:false, src:null, scale:2.63/1.863, worldScale:(2.63/1.863)*
+ const MECH_KITS=[ // [main, trim] per TEAMS index - each team's own colours, brightened to read in shade
+   [[232,35,26],[245,245,245]], [[38,96,255],[245,245,245]], [[0,190,80],[245,245,245]],
+   [[158,70,230],[245,245,245]], [[255,116,0],[245,245,245]], [[255,40,140],[245,245,245]],
+-  [[0,190,235],[10,35,70]], [[255,205,0],[18,18,18]], [[225,55,90],[245,245,245]], [[130,195,230],[245,245,245]] ];
+-function mechKitCanvas(img, kit, isTop){
++  [[0,190,235],[10,35,70]], [[255,205,0],[18,18,18]], [[225,55,90],[245,245,245]], [[130,195,230],[245,245,245]],
++  [[255,106,0],[245,245,245]] ]; // index 10 (owner Nov 10 2026 missing-list item 2): the MARSHAL kit - international orange overalls with white trim; not a team, it dresses the men at the marshal posts (Track.buildMarshals)
++function mechKitCanvas(img, kit, isTop, plainBack){
+   const cnv=document.createElement('canvas'); cnv.width=img.width; cnv.height=img.height;
+   const x=cnv.getContext('2d'); x.drawImage(img,0,0);
+   const id=x.getImageData(0,0,cnv.width,cnv.height), d=id.data, M=kit[0], T=kit[1];
+@@ -1794,8 +1839,9 @@ function mechKitCanvas(img, kit, isTop){
+     d[i]=R; d[i+1]=G; d[i+2]=B;
+   }
+   x.putImageData(id,0,0);
+-  if(isTop){ // shirt back (unchanged from the fit): navy name-tape over the old atlas text, then APEX / ARCADE / CREW
+-    x.fillStyle='#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
++  if(isTop){ // shirt back (unchanged from the fit): navy name-tape over the old atlas text, then APEX / ARCADE / CREW. MARSHAL kit (plainBack): the tape patch alone, no lettering - marshals are circuit staff, not pit crew
++    x.fillStyle=plainBack?'#23262b':'#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
++    if(plainBack) return cnv;
+     x.save(); x.translate(670,745); x.scale(1,-1); x.textAlign='center'; x.textBaseline='middle';
+     x.font='900 54px Arial, sans-serif'; x.lineWidth=9; x.strokeStyle='#0c1118';
+     for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.strokeText(t,0,ly);
+@@ -1806,11 +1852,11 @@ function mechKitCanvas(img, kit, isTop){
+   return cnv;
+ }
+ function mechKitMats(idx){
+-  idx=((idx%10)+10)%10;
++  idx=((idx%MECH_KITS.length)+MECH_KITS.length)%MECH_KITS.length; // wraps over every kit incl. the marshal kit at index 10 (was %10 when only the ten team kits existed)
+   if(MECH._kits[idx]) return MECH._kits[idx];
+   if(!MECH.topMat||!MECH.topImg) return null;
+   const mk=(srcMat,img,isTop)=>{ if(!srcMat||!img) return srcMat||null;
+-    const tex=new THREE.CanvasTexture(texCap(mechKitCanvas(img, MECH_KITS[idx], isTop), 512)); // owner Nov 10 2026 'kicks me out': per-team copies kept at 512 so iPhone Safari keeps the page
++    const tex=new THREE.CanvasTexture(texCap(mechKitCanvas(img, MECH_KITS[idx], isTop, idx===10), 512)); // idx 10 = the marshal kit: plain back, no crew lettering // owner Nov 10 2026 'kicks me out': per-team copies kept at 512 so iPhone Safari keeps the page
+     tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
+     const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.5; m.needsUpdate=true; return m; };
+   const km={ top:mk(MECH.topMat,MECH.topImg,true), bot:mk(MECH.botMat,MECH.botImg,false) };
+@@ -1915,7 +1961,7 @@ function mechHwCanvas(img, target){ // target null = keep the black cloth (the p
+   x.putImageData(id,0,0); return cnv;
+ }
+ function mechHwMats(kit, style){
+-  const k10=((kit%10)+10)%10, key=style===0?('k'+k10):('s'+style);
++  const k10=((kit%MECH_KITS.length)+MECH_KITS.length)%MECH_KITS.length, key=style===0?('k'+k10):('s'+style); // kit 10 (marshal) resolves to its own orange for the style-0 beanie, like any team
+   if(MECH._hw[key]) return MECH._hw[key];
+   if(!MECH.hwMat||!MECH.hwImg) return null;
+   const target= style===0? MECH_KITS[k10][0] : style===1? [52,55,63] : null;
+@@ -4298,6 +4344,7 @@ window.__test = {
+   pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), chief:cnt((BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs && Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]) ? Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10].grp : p._chief), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), booths:(Track._pitEnv&&Track._pitEnv.booths)?Track._pitEnv.booths.length:0, drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; },
+   pitWall: () => { const w=Track._pitEnv&&Track._pitEnv.wall; if(!w) return null; const L=Track.length, st=w.stations, nrm=s=>((s%L)+L)%L; let len=0, maxGap=0; for(let i=0;i<st.length-1;i++){ const gg=nrm(st[i+1][0]-st[i][0]); len+=gg; if(gg>maxGap) maxGap=gg; } const box0=nrm(Track.cfg.pitIn*L+30); let minClear=1e9; for(let i=0;i<st.length;i++){ const tgt=Track.pitDAt(st[i][0])-(Track.gp?0:3.5); const cl=Math.abs(tgt)-1.52-(Math.abs(st[i][1])+w.t/2); if(cl<minClear) minClear=cl; } return { h:w.h, t:w.t, len:+len.toFixed(1), stations:st.length, maxGap:+maxGap.toFixed(2), coverBefore:+nrm(box0-st[0][0]).toFixed(1), coverAfter:+nrm(st[st.length-1][0]-nrm(box0+170)).toFixed(1), minLaneClear:+minClear.toFixed(3), dCentre:st[0][1], W:Track.width }; }, // owner Nov 9 2026 missing-list item 1: the continuous pit wall, measured at the road edge
+   garageDoors: () => { const gd=Track._pitEnv&&Track._pitEnv.garages; if(!gd) return null; const L=Track.length, nrm=s=>((s%L)+L)%L; const box0=nrm(Track.cfg.pitIn*L+30), step=170/9; let maxOff=0; for(let i=0;i<gd.doors.length;i++){ const off=Math.abs(((gd.doors[i].s-nrm(box0+i*step)+L*1.5)%L)-L/2); if(off>maxOff) maxOff=off; } let inScene=false, n=gd.mesh; while(n){ if(n===scene){ inScene=true; break; } n=n.parent; } const st0=gd.stations&&gd.stations[0]; return { doors:gd.doors.length, maxOff:+maxOff.toFixed(3), faceOff:st0?+(st0[1]-Track.pitDAt(st0[0])).toFixed(2):gd.faceOff, h:gd.h, hasMap:!!(gd.mesh.material&&gd.mesh.material.map), inScene }; }, // owner Nov 10 2026 missing-list item 3: the garage doors on the pit building face, one per box, measured against the box centres
++  marshals: () => { const ps=Track.marshalPosts||[], fs=Track._marshalFigs||[]; if(!ps.length||!fs.length) return null; const v=new THREE.Vector3(); let worst=0, covered=0; for(const P of ps){ let best=1e9; for(const f of fs){ f.getWorldPosition(v); const d=Math.hypot(v.x-P.x, v.z-P.z); if(d<best) best=d; } if(best<=3) covered++; if(best>worst) worst=best; } let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { posts:ps.length, marshals:fs.length, covered, worstOff:+worst.toFixed(2), stand:fs.length?+(fs[0].scale.x*MECH.height).toFixed(2):0, posts0:ps.slice(0,6).map(P=>[+P.x.toFixed(1),+P.y.toFixed(1),+P.z.toFixed(1)]), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; }, // owner Nov 10 2026 missing-list item 2: a marshal at every marshal post, measured against the post record buildTrackside keeps
+   chiefPos: () => { const p=Race.player; if(!p) return null; let fig=null, drop=null, seatTop=null, vis=true; // BOOTH FIT ROUND: the player's chief is the booth chief when booths are live
+     if(BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs){ const bc=Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]; if(bc&&bc.fig){ fig=bc.fig; drop=BOOTH.chiefDrop; seatTop=BOOTH.seatTop; } }
+     if(!fig){ if(!p._chief) return null; p._chief.traverse(o=>{ if(o.userData&&o.userData.isFig) fig=o; }); if(!fig) return null; const ch2=p._chief.userData.chief; drop=ch2?ch2.drop:null; seatTop=ch2?ch2.seatTop:null; vis=p._chief.visible; }
+diff --git a/tools/game-check/fixes/apexf1.mjs b/tools/game-check/fixes/apexf1.mjs
+index e722f43..66cbaa8 100644
+--- a/tools/game-check/fixes/apexf1.mjs
++++ b/tools/game-check/fixes/apexf1.mjs
+@@ -2122,4 +2122,23 @@ export default [
+       return bad.length ? 'F1 GARAGE DOORS: ' + bad.join('; ') : true;
+     },
+   },
++  {
++    id: 'fix-f1-marshals-all-tracks', mode: 'race',
++    ask: 'A marshal stands at EVERY marshal post on EVERY circuit in the menu: the fetched crew figure at the pit crews\' real size (2.63 m standing) in orange marshal overalls, beside the post\'s orange hut facing the track, poses varying post to post with some holding a flag in the post\'s own flag colour - the audit found the posts (an orange hut, a pole and a flag every ~130 m on all tracks) standing completely empty, with no people at them at all (owner Nov 10 2026 missing-list item 2)',
++    test: async (page, h) => {
++      const bad = [];
++      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
++        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
++        let r = null;
++        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.marshals) return null; return T.marshals(); }).catch(() => null); }
++        if (!r) { bad.push(tr + ': no marshals were built'); continue; }
++        if (r.posts < 20) bad.push(tr + ': only ' + r.posts + ' marshal posts on the lap (the posts ring every circuit every ~130 m)');
++        if (r.marshals !== r.posts) bad.push(tr + ': ' + r.marshals + ' marshals for ' + r.posts + ' posts');
++        if (r.covered !== r.posts) bad.push(tr + ': only ' + r.covered + ' of ' + r.posts + ' posts have their marshal beside them');
++        if (r.worstOff > 3) bad.push(tr + ': a marshal stands ' + r.worstOff + ' m from his post');
++        if (r.stand < 2.5 || r.stand > 2.76) bad.push(tr + ': a marshal stands ' + r.stand + ' m tall (the crews\' real size is 2.63 m against the 8.47 m car)');
++      }
++      return bad.length ? 'F1 MARSHALS: ' + bad.join('; ') : true;
++    },
++  },
+ ];
