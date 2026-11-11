@@ -2122,4 +2122,23 @@ export default [
       return bad.length ? 'F1 GARAGE DOORS: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'fix-f1-marshals-all-tracks', mode: 'race',
+    ask: 'A marshal stands at EVERY marshal post on EVERY circuit in the menu: the fetched crew figure at the pit crews\' real size (2.63 m standing) in orange marshal overalls, beside the post\'s orange hut facing the track, poses varying post to post with some holding a flag in the post\'s own flag colour - the audit found the posts (an orange hut, a pole and a flag every ~130 m on all tracks) standing completely empty, with no people at them at all (owner Nov 10 2026 missing-list item 2)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.marshals) return null; return T.marshals(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no marshals were built'); continue; }
+        if (r.posts < 20) bad.push(tr + ': only ' + r.posts + ' marshal posts on the lap (the posts ring every circuit every ~130 m)');
+        if (r.marshals !== r.posts) bad.push(tr + ': ' + r.marshals + ' marshals for ' + r.posts + ' posts');
+        if (r.covered !== r.posts) bad.push(tr + ': only ' + r.covered + ' of ' + r.posts + ' posts have their marshal beside them');
+        if (r.worstOff > 3) bad.push(tr + ': a marshal stands ' + r.worstOff + ' m from his post');
+        if (r.stand < 2.5 || r.stand > 2.76) bad.push(tr + ': a marshal stands ' + r.stand + ' m tall (the crews\' real size is 2.63 m against the 8.47 m car)');
+      }
+      return bad.length ? 'F1 MARSHALS: ' + bad.join('; ') : true;
+    },
+  },
 ];
