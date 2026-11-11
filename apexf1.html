@@ -1189,6 +1189,9 @@ const Track = {
         else MECH_POSE.crouch(rig,0.45); // the ready crouch
       }
       root.add(f); figs.push(f);
+      // owner Nov 10 2026 'the heaviness will be your job': a marshal never moves after this pose, so his skeleton is worked out on the first frames he is drawn and then left alone -
+      // without this every visible marshal re-sent ~10 bone pictures to the phone's graphics chip EVERY frame (~380 for 40 men)
+      f.traverse(o=>{ if(o.isSkinnedMesh && o.skeleton && !o.skeleton.__frozen){ const sk=o.skeleton, up=sk.update.bind(sk); let n=0; sk.__frozen=true; sk.update=function(){ if(n<3){ n++; up(); } }; } });
     });
     this._marshalFigs=figs;
   }catch(e){ console.warn('marshals',e); } },
