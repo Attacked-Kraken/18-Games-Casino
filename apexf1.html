@@ -283,9 +283,9 @@ setTimeout(function(){
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
   <div id="placeChip">P1</div>
   <div id="gapbox">GAP —</div>
-  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
+  <div id="tirebox"><div class="tcap">TIRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">TIRES 100% · 0 laps</div><div class="tcap" style="margin-top:4px">BODY</div><div class="wearbar"><i id="bodyFill" style="width:100%"></i></div><div id="bodyPct" style="font-size:11px;color:#8fa8c8">BODY 100%</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
   <div id="fuelbox"><div style="font-size:9px;letter-spacing:2px;color:#8fa8c8;font-weight:800">FUEL</div><div class="fbar"><i id="fuelFill" style="width:100%"></i></div><div id="fuelPct" style="font-size:11px;color:#9fd8ff">100%</div></div>
-  <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TYRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
+  <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TIRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
@@ -2414,7 +2414,7 @@ function boothTimingTex(i){ // our own timing tower on the booth's screen: a tea
     x.fillStyle = own ? '#ffffff' : '#9fb6cc'; x.fillText(t2.name, 64, y);
     x.textAlign = 'right'; x.fillText(r2 === 0 ? 'LEADER' : '+' + (r2*1.7 + ((r2*137 + i*89) % 90)/100).toFixed(3), 496, y); x.textAlign = 'left'; }
   x.fillStyle = '#57b6ff'; x.font = '700 14px Arial, sans-serif'; x.fillText('LAP 12/18', 16, 288);
-  x.fillStyle = '#ffd76a'; x.fillText('TYRES', 292, 288); x.fillRect(344, 281, 56, 7);
+  x.fillStyle = '#ffd76a'; x.fillText('TIRES', 292, 288); x.fillRect(344, 281, 56, 7);
   x.fillStyle = '#37d67a'; x.fillText('FUEL', 412, 288); x.fillRect(452, 281, 52, 7);
   const tex = new THREE.CanvasTexture(cnv); tex.colorSpace = THREE.SRGBColorSpace;
   BOOTH._tt[i] = tex; return tex;
@@ -3177,7 +3177,7 @@ const PitCrew = {
     const seat=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.06,0.5),seatM); seat.position.set(0,top-0.02,0.02); sub.add(seat);
     // the monitor: a stand in front of him and a timing screen facing him
     const mpole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.02,6),pedM); mpole.position.set(0,0.51,0.62); sub.add(mpole);
-    const scrC=document.createElement('canvas'); scrC.width=256; scrC.height=160; { const x=scrC.getContext('2d'); x.fillStyle='#0a141f'; x.fillRect(0,0,256,160); x.fillStyle='#37d67a'; x.font='900 26px Arial'; x.fillText('PIT',14,34); x.fillStyle='#e8f2ff'; x.font='900 20px Arial'; x.fillText('APEX',176,34); x.fillStyle='#ffd76a'; x.font='700 16px Arial'; x.fillText('TYRES   FUEL',14,64); x.fillStyle='#57b6ff'; for(let i=0;i<4;i++) x.fillRect(14,84+i*17,140+((i*53)%70),8); }
+    const scrC=document.createElement('canvas'); scrC.width=256; scrC.height=160; { const x=scrC.getContext('2d'); x.fillStyle='#0a141f'; x.fillRect(0,0,256,160); x.fillStyle='#37d67a'; x.font='900 26px Arial'; x.fillText('PIT',14,34); x.fillStyle='#e8f2ff'; x.font='900 20px Arial'; x.fillText('APEX',176,34); x.fillStyle='#ffd76a'; x.font='700 16px Arial'; x.fillText('TIRES   FUEL',14,64); x.fillStyle='#57b6ff'; for(let i=0;i<4;i++) x.fillRect(14,84+i*17,140+((i*53)%70),8); }
     const scrT=new THREE.CanvasTexture(scrC); scrT.colorSpace=THREE.SRGBColorSpace;
     const scrB=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.46,0.03),pedM); scrB.position.set(0,1.12,0.615); sub.add(scrB);
     const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.66,0.42),new THREE.MeshBasicMaterial({map:scrT})); scr.position.set(0,1.12,0.598); scr.rotation.x=-0.16; scr.rotation.y=Math.PI; sub.add(scr); // the screen faces HIM, not the lane
@@ -3760,7 +3760,7 @@ const Race = {
     // owner Nov 6 2026 'there is no pit': PIT works from anywhere on the lap - it arms the stop and tells you how far the pit entry sign is
     if(p.pitIntent){ p.pitIntent=false; banner('PIT CANCELLED','',800,'#8fa8c8'); return; }
     const L=Track.length, sN=((p.s%L)+L)%L, pitInS=Track.cfg.pitIn*L, dist=Math.round(((pitInS-sN)%L+L)%L);
-    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tyres',1400,'#9fd8ff');
+    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tires',1400,'#9fd8ff');
     this.showPitMenu();
   },
   openTyreChoice(){ if(!this.player||!(this.mode==='race'||this.mode==='quali')||this.player.inPits) return; this.showPitMenu(); },
@@ -3771,7 +3771,7 @@ const Race = {
       const d=document.createElement('div'); d.className='tirepick'+(t===this.player.pitTireChoice?' sel':'');
       d.innerHTML=`<span style="color:${TIRES[t].color}">●</span> ${t}`;
       d.onclick=()=>{ this.player.pitTireChoice=t;
-        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); const n=$('tireNext'); if(n){ n.textContent='NEXT STOP: '+t; n.style.color=TIRES[t].color; } banner('NEXT STOP: '+t,'Tyres change when you pit',1100,TIRES[t].color);
+        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); const n=$('tireNext'); if(n){ n.textContent='NEXT STOP: '+t; n.style.color=TIRES[t].color; } banner('NEXT STOP: '+t,'Tires change when you pit',1100,TIRES[t].color);
         setTimeout(()=>$('pitMenu').classList.add('hidden'),350); };
       box.appendChild(d);
     }
@@ -4060,15 +4060,16 @@ const HUD={
     const t=TIRES[p.tire];
     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
+    { const bd=Math.max(0,Math.round(100-(p.damage||0)*100)); $('bodyFill').style.width=bd+'%'; const bp=$('bodyPct'); bp.textContent='BODY '+bd+'%'; bp.style.color=bd<30?'#ff5a5a':'#8fa8c8'; bp.style.fontWeight=bd<30?'900':''; } // owner Nov 11 2026: a body damage bar beside the tire bar
     $('fuelFill').style.width=Math.max(0,Math.min(100,p.fuel))+'%'; $('fuelPct').textContent=Math.round(p.fuel)+'%'; $('fuelPct').style.color=p.fuel<25?'#ff5a5a':'#9fd8ff'; // owner Nov 8 2026: live fuel gauge next to the tyre box
     { const pp=$('pitPanel'), ppl=$('pitPlace');
       if(p.inPits && !p._pitWasIn){ p._pitPlaceIn=p.position; p._pitPlaceOut=0; } // owner Nov 9 2026 PLACE MARKER: the place he came in at, read from the game's OWN standings (Race.positions() sets car.position - the same number the HUD place box and the results use; no second ranking is invented)
       if(!p.inPits && p._pitWasIn && p._pitPlaceIn){ p._pitPlaceOut=p.position; p._pitPlaceUntil=performance.now()+6000; } // released and rejoined (pit exit complete): the new place from the same standings - the pair then stays up 6 s so he sees what the stop cost or gained
       p._pitWasIn=p.inPits;
-      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
+      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TIRES OFF':u<0.75?'FRESH TIRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
       else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
-    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TYRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps')+((p.damage||0)>0.02?' · DAMAGE '+Math.round(p.damage*100)+'%':''); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
+    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TIRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps'); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
     document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
     $('ersFill').style.width=p.ers+'%';
