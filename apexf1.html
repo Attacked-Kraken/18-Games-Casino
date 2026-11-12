@@ -3289,12 +3289,15 @@ class Car {
         this.pitTimer-=dt; this.v=0;
         if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); PitCrew.end(this); }
       } else {
-        this.v += clamp(targetV-this.v, -30*dt, 12*dt);
+        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
+          this.v=clamp(this.v+(this.throttle*12-this.brake*30)*dt,0,targetV); }
+        else this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
       { const L0=Track.length, sM=((this.s%L0)+L0)%L0, toBox=((this.pitBoxS-sM+L0*1.5)%L0)-L0/2; // passing lane 3.5 m nearer the track, the car swings into its own box only to stop (Nov 4 2026: cars no longer drive through a stopped car)
         const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
         let pitTgt=Track.pitDAt(this.s)-lane;
         if(!Track.gp){ const toOut=((pitOutS-sM+L0)%L0); if(toOut<140) pitTgt*=clamp(toOut/140,0,1); } // owner Nov 8 2026: blend back onto the road over the last 140 m before the pit exit - the car used to be let go at the full pit offset (14 m out, on the grass)
+        if(this.isPlayer){ const near=Math.abs(toBox)<25&&!this.pitStopDone; const want=near?0:(Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0); this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); pitTgt+=this._pitOff; } // owner Nov 12 2026: steer inside the lane (up to 2.2 m), the car still parks itself at its box
         this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5)); }
       this.s+=this.v*dt;
       const sN=((this.s%Track.length)+Track.length)%Track.length;
