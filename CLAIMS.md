@@ -358,3 +358,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | CAR CENSUS | window 6 | apexracer.html (one-slot wrap table), tools/game-check/fixes/apexracer.mjs (9 play-car-census tests), jobs/CENSUS-w6.md | build/census-apexracer - DONE PR #2091 merged b53e1430 |
 | OWNER RIM-FIT | window 6 | apexracer.html (rim fit, brakes, no-fake), tools/game-check/fixes/apexracer/rimfit.mjs, jobs/RIMFIT-w6.md | build/owner-rimfit-apexracer - DONE PR #2100 merged 751033c65 |
 | G-412 | window 6 | tools/game-check/fixes/apexracer/rimfit.mjs (buildCar hardening), jobs/G-412.md | build/owner-rimfit-apexracer (rode PR #2100) - DONE PR #2100 merged 751033c65 |
+
+| OWNER startup-speed | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, CLAIMS.md | fix/apexracer-startup-speed - CLAIMED Muse algre141 Nov 12 1:07 PM CST (owner order) |
