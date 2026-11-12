@@ -138,7 +138,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #gapbox { position:absolute; left:12px; top:96px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; color:#9fd8ff; }
   #tirebox { cursor:pointer; pointer-events:auto; position:absolute; right:12px; top:12px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
   #tirebox .cmp { font-weight:900; font-size:16px; }
-  #fuelbox { position:absolute; right:12px; top:118px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
+  #fuelbox { position:absolute; right:12px; top:130px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
   #fuelbox .fbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
   #fuelbox .fbar i { display:block; height:100%; background:#57b6ff; }
   #pitPanel { position:absolute; left:150px; top:150px; width:150px; background:#060b14e6; border:1px solid #ffd76a; border-radius:12px; padding:4px 8px 5px; text-align:center; z-index:5; } /* owner Nov 11 2026 'can't see anything': the pit panel is a small card in the top-left corner (was a wide box over the middle of the screen) */
@@ -154,7 +154,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #drsTag { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); font-weight:900; font-size:15px; letter-spacing:2px; color:#0a0f1a; background:#37d67a; border-radius:8px; padding:6px 14px; }
   #flagTag { position:absolute; left:50%; top:12px; transform:translateX(-50%); font-weight:900; font-size:15px; letter-spacing:3px; border-radius:8px; padding:7px 18px; }
   #warnTag { position:absolute; left:50%; top:64px; transform:translateX(-50%); font-size:13px; font-weight:700; color:#ffd76a; background:#060b14cc; border:1px solid #ffd76a66; padding:6px 12px; border-radius:8px; }
-  #wxTag { position:absolute; left:12px; top:150px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; }
+  #wxTag { position:absolute; left:12px; top:172px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; }
   #ersbar { position:absolute; right:12px; bottom:170px; width:120px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:11px; color:#9fd8ff; }
   #ersbar .track { height:7px; background:#1a2440; border-radius:4px; overflow:hidden; margin-top:4px; }
   #ersbar .track i { display:block; height:100%; background:#37d67a; }
@@ -231,8 +231,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   body.touch #minimap { left:112px; top:12px; bottom:auto; width:84px; height:84px; }
   #lapbox { top:56px; }
   body.touch #gapbox { top:132px; }
-  body.touch #btnCam { left:auto; right:136px; top:12px; bottom:auto; width:64px; height:48px; }
-  body.touch #btnPit { left:auto; right:208px; top:12px; bottom:auto; width:64px; height:48px; }
+  body.touch #btnCam { left:auto; right:196px; top:12px; bottom:auto; width:42px; height:32px; font-size:10px; border-radius:9px; } /* owner Nov 12 2026: small, clear of the tire box and Studio */
+  body.touch #btnPit { left:auto; right:244px; top:12px; bottom:auto; width:42px; height:32px; font-size:10px; border-radius:9px; }
   body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
   @media (pointer:coarse) and (orientation:landscape) {
     body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
@@ -250,11 +250,11 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(16px,3.2vw,26px); font-weight:900; letter-spacing:2px; text-shadow:0 2px 10px #000; } /* owner Nov 3 2026: PENALTY / CONTACT signs were too big - they covered the road */
   #banner .b2 { font-size:12px; color:#cfe0ff; margin-top:3px; }
-  #lights { position:fixed; left:50%; top:15%; transform:translateX(-50%); z-index:36; display:flex; gap:16px; background:#060b14d9; padding:14px 20px; border-radius:18px; border:1px solid #ffffff2a; }
-  .light { width:56px; height:56px; border-radius:50%; background:#2a1214; border:2px solid #000; }
-  .light.red { background:#ff2222; box-shadow:0 0 22px #ff2222; }
+  #lights { position:fixed; left:50%; top:9%; transform:translateX(-50%); z-index:36; display:flex; gap:9px; background:#060b14d9; padding:7px 12px; border-radius:12px; border:1px solid #ffffff2a; }
+  .light { width:30px; height:30px; border-radius:50%; background:#2a1214; border:2px solid #000; }
+  .light.red { background:#ff2222; box-shadow:0 0 12px #ff2222; }
   .light.out { background:#111; }
-  .light.green { background:#22dd55; box-shadow:0 0 26px #22dd55; }
+  .light.green { background:#22dd55; box-shadow:0 0 14px #22dd55; }
   table.stand { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
   table.stand td, table.stand th { padding:4px 6px; border-bottom:1px solid #1c2b44; text-align:left; }
   table.stand th { color:#8fa8c8; font-size:11px; letter-spacing:1px; }
@@ -1611,8 +1611,8 @@ const Track = {
       const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
     const f0=this.frameAt(0);
     const sp=(tex,sx,sy,y)=>{ const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false})); m.scale.set(sx,sy,1); m.position.set(f0.x,f0.y+y,f0.z); g.add(m); return m; };
-    sp(mk('START','#37d67a',512,160,120),16,5,15);
-    sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5);
+    this._startSign=sp(mk('START','#37d67a',512,160,120),16,5,15);
+    this._finishSign=sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5); this._finishSign.visible=false;
     this._lapTex=[null]; for(let n=1;n<=10;n++) this._lapTex.push(mk('LAP '+n,'#ffd76a',384,128,96));
     this._lapSign=sp(this._lapTex[1],10,3.3,4.2);
   },
@@ -1899,6 +1899,10 @@ const Track = {
     const m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0; g.updateMatrixWorld(true);
     for(const o of g.children){ if(!o.isInstancedMesh) continue; let ch=false; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y<-100) continue; v.applyMatrix4(o.matrixWorld); if(inside(v.x,v.z)){ m.elements[13]-=500; o.setMatrixAt(i,m); ch=true; n++; } } if(ch) o.instanceMatrix.needsUpdate=true; }
     F.cleared=n; },
+  updateLineSigns(){ // owner Nov 12 2026: START only at the beginning, FINISH only on the last lap
+    try{ const R=Race, inRace=R.mode==='race', last=inRace&&R.lap>=R.laps;
+      if(this._startSign) this._startSign.visible=!inRace||(R.raceT<6&&R.lap<=1);
+      if(this._finishSign) this._finishSign.visible=!!last; }catch(e){} },
   setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
     // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
@@ -3773,7 +3777,7 @@ const Race = {
     if(!P.released){ const cap=Math.max(3,P.v-1.5); for(const c of this.cars){ if(c.v>cap) c.v=cap; } }
     if(P.done>=P.run-0.01){ P.g.position.copy(P.home.pos); P.g.rotation.y=P.home.yaw; this.pace=null; }
   },
-  beginRace(){ this.pilotRestore(); this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); }catch(e){}
+  beginRace(){ this.pilotRestore(); this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); Track.updateLineSigns(); }catch(e){}
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -3885,7 +3889,7 @@ const Race = {
     if(!this.drsEnabled && this.lap>=2){ this.drsEnabled=true; banner('DRS ENABLED','','1000','#37d67a'); }
     this.updateWeather(dt);
     this.updateCars(dt,false);
-    try{ this.updatePace(dt); }catch(e){ this.pace=null; }
+    try{ this.updatePace(dt); }catch(e){ this.pace=null; } try{ Track.updateLineSigns(); }catch(e){}
     if(this.contactGrace>0) this.contactGrace-=dt; else carContact(this.cars,dt);
     const order=this.positions();
     // lap crossing + finish
@@ -4675,6 +4679,7 @@ window.__test = {
     const own=new Set(); for(const rt of [Track._pitEnvRoot,Track._furnRoot]) if(rt) rt.traverse(o=>own.add(o)); // Nov 10 2026: the pit complex's own pieces (gantry posts, the wall's fence posts) and the race furniture BELONG at the lane - this probe counts the trackside scenery that strays onto it
     g.traverse(o=>{ if(!o.isInstancedMesh||own.has(o)) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
     return {pts:P.length,n,near}; },
+  signs: (o) => { if(o){ if(o.lap!=null) Race.lap=o.lap; if(o.raceT!=null) Race.raceT=o.raceT; if(o.mode) Race.mode=o.mode; } Track.updateLineSigns(); return { start:!!(Track._startSign&&Track._startSign.visible), finish:!!(Track._finishSign&&Track._finishSign.visible), lap:Race.lap, laps:Race.laps, mode:Race.mode }; }, // robot: which line signs show
   paceStep: (n) => { for(let i=0;i<n&&Race.pace;i++) Race.updatePace(1/30); return window.__test.paceProbe(); }, // robot: run the pilot car's own clock ahead (a slow robot browser would take minutes of real time)
   paceProbe: () => { const P=Race.pace, g=Race.pilotGroup(), L=Track.length; if(!g) return { noCar:true }; let vmax=0; for(const c of Race.cars) if(c.v>vmax) vmax=c.v; const h=Race._pilotHome; return { active:!!P, released:P?P.released:null, pv:P?+P.v.toFixed(1):0, done:P?+P.done.toFixed(0):0, run:P?+P.run.toFixed(0):0, vmax:+vmax.toFixed(1), home:h?Math.hypot(g.position.x-h.pos.x,g.position.z-h.pos.z):null, pos:[g.position.x,g.position.z] }; }, // Nov 11 2026: pilot car state for the robot
   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof

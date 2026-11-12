@@ -2264,4 +2264,21 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-line-signs-start-finish',
+    ask: 'The START sign should show only at the beginning of the race and the FINISH sign only on the last lap.',
+    mode: 'race',
+    async test(page, h) {
+      const ok = await h.eval(() => !!(window.__test && window.__test.signs)).catch(() => false);
+      if (!ok) return 'no test hook';
+      const a = await h.eval(() => window.__test.signs());
+      if (a.mode === 'race' && a.finish && a.lap < a.laps) return 'FINISH showed on lap ' + a.lap + ' of ' + a.laps;
+      const b = await h.eval(() => { return window.__test.signs({ lap: 99, raceT: 30, mode: 'race' }); });
+      if (!b.finish) return 'FINISH did not show on the last lap';
+      if (b.start) return 'START still showed late in the race';
+      const c = await h.eval(() => { return window.__test.signs({ lap: 2, raceT: 60, mode: 'race' }); });
+      if (c.finish) return 'FINISH showed on lap 2';
+      return true;
+    },
+  },
 ];

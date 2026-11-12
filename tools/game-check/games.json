@@ -112,7 +112,7 @@
         {
           "part": "track",
           "regions": [
-            "^(buildSkyDome|initGL|trackGroundY|GPBoot|GPAttach|applyGroundKit|GPSetLights|GPPlay|buildRaceFurniture|_loadEmergency|tickEmergency|updatePitBoard|clearPaddock|_emEnv|_glowTex|_buildApron|pilotOn|pilotGroup|pilotRestore|startPace|updatePace)$"
+            "^(buildSkyDome|initGL|trackGroundY|GPBoot|GPAttach|applyGroundKit|GPSetLights|GPPlay|buildRaceFurniture|_loadEmergency|tickEmergency|updatePitBoard|clearPaddock|_emEnv|_glowTex|_buildApron|pilotOn|pilotGroup|pilotRestore|startPace|updatePace|updateLineSigns|setLapSign|buildLineSigns)$"
           ]
         },
         {
