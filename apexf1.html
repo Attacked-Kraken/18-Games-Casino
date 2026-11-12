@@ -361,6 +361,7 @@ setTimeout(function(){
   <div class="card" id="shapeCard"><h3>SHAPE</h3><div class="row" id="shapeRow"></div></div>
   <div class="card" id="wrapCard"><h3>WRAP</h3><div class="row" id="wrapRow"></div></div>
   <div class="card" id="nameCard"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
+  <div class="card" id="assistCard"><h3>STEERING ASSIST</h3><div class="row" id="assistRow"></div></div>
   <div class="card" id="diffCard"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
   <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
   <button class="bigbtn alt" id="teamBack">‹ BACK</button>
@@ -3338,6 +3339,16 @@ class Car {
       } else { // stick centered: NO autopilot - the world heading holds, so the road curves away under the car and the driver must steer it back. The old law measured the heading against the road itself, so gas alone lapped hands-free (measured: 2,192 m in 60 s, dead centre the whole way)
         let rel=this._yawW-tanYaw; this.headAngle=Math.atan2(Math.sin(rel),Math.cos(rel));
       }
+      // STEERING ASSIST (owner Nov 12 2026 'taking turns you lose control and go all over grass'; method = Mario Kart Smart Steering / Real Racing 3 auto-steer: it does NOTHING while you are on the road and steering, it only acts when the nose points off the road and you are not steering back, and it turns harder than your own limit). Off by default - the no-autopilot rule above stays the base.
+      if(Car.assist && !this.inPits && this.v>8){
+        const e0=W/2, sg=this.d<0?-1:1, out=(Math.abs(this.d)-e0*0.45)/(e0*0.55); // 0 at 45% of the half-width, 1 at the road edge
+        const outward=this.headAngle*sg, inwardStick=this.steer*sg<-0.12;
+        if(out>0 && outward>-0.03 && !inwardStick){
+          const k=Math.min(1.3,0.35+out*1.2), aim=-0.08*sg;
+          this.headAngle+=clamp(aim-this.headAngle,-3.2*k*dt,3.2*k*dt); this._yawW=tanYaw+this.headAngle; this._assistT=0.25;
+        }
+      }
+      if(this._assistT>0) this._assistT-=dt;
       this.headAngle=clamp(this.headAngle,-1.15,1.15); // a held heading may drift past the steering cap on a long corner; the mesh still has to render it
       this._lastHead=this.headAngle;
       if(this._shoveT>0) this._shoveT-=dt;
@@ -3428,6 +3439,7 @@ class Car {
 }
 
 /* ================= INPUT ================= */
+Car.assist=false; try{ Car.assist=localStorage.getItem('f1_assist')==='1'; }catch(e){}
 const Input={ left:false,right:false,gas:false,brake:false,ers:false,steer:0,reverse:false };
 function bindHold(el,down,up){
   const on=e=>{e.preventDefault(); el.classList.add('on'); down();};
@@ -4310,6 +4322,14 @@ function initMenus(){
     d.onclick=()=>{ selDiff=id; try{ localStorage.setItem('f1_diff',id); }catch(e){} [...dr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carSavedFlash(); };
     dr.appendChild(d);
   }
+  // steering assist: OFF = you steer everything; ON = the car steers you back when it heads off the road
+  const ar=$('assistRow'); ar.innerHTML='';
+  for(const [id,label,sub] of [['0','OFF','You steer everything'],['1','ON','Steers you back from the grass']]){
+    const d=document.createElement('div'); d.className='pick'+((id==='1')===!!Car.assist?' sel':''); d.dataset.assist=id;
+    d.innerHTML=`<div class="t">${label}</div><div class="s">${sub}</div>`;
+    d.onclick=()=>{ Car.assist=(id==='1'); try{ localStorage.setItem('f1_assist',id); }catch(e){} [...ar.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carSavedFlash(); };
+    ar.appendChild(d);
+  }
   updateForecast();
   $('quickBtn').onclick=()=>{ pendingFriend=null; sessionCfg={career:false}; show('trackMenu'); };
   $('careerBtn').onclick=()=>{
@@ -4680,6 +4700,7 @@ window.__test = {
     g.traverse(o=>{ if(!o.isInstancedMesh||own.has(o)) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
     return {pts:P.length,n,near}; },
   signs: (o) => { if(o){ if(o.lap!=null) Race.lap=o.lap; if(o.raceT!=null) Race.raceT=o.raceT; if(o.mode) Race.mode=o.mode; } Track.updateLineSigns(); return { start:!!(Track._startSign&&Track._startSign.visible), finish:!!(Track._finishSign&&Track._finishSign.visible), lap:Race.lap, laps:Race.laps, mode:Race.mode }; }, // robot: which line signs show
+  assistRun: (on, d0, h0, secs) => { const p = Race.player; if(!p) return null; const was=Car.assist; Car.assist=!!on; p.d=d0; p.headAngle=h0; p._yawW=undefined; p.v=60; p.inPits=false; p.throttle=1; Input.gas=true; Input.brake=false; Input.steer=0; let maxD=0, hit=0, off=0; const n=Math.round(secs*60); for(let i=0;i<n;i++){ p.steer=0; p.throttle=1; p.update(1/60); p.v=Math.max(p.v,40); maxD=Math.max(maxD,Math.abs(p.d)); if(p.hitWall) hit++; if(Math.abs(p.d)>Track.width/2+1.6) off++; } Input.gas=false; Car.assist=was; return { maxD:+maxD.toFixed(2), half:+(Track.width/2).toFixed(2), hit, off, d:+p.d.toFixed(2), head:+p.headAngle.toFixed(3) }; }, // STEERING ASSIST proof: drop the car near the edge pointing outward, gas only, no stick, run N seconds
   paceStep: (n) => { for(let i=0;i<n&&Race.pace;i++) Race.updatePace(1/30); return window.__test.paceProbe(); }, // robot: run the pilot car's own clock ahead (a slow robot browser would take minutes of real time)
   paceProbe: () => { const P=Race.pace, g=Race.pilotGroup(), L=Track.length; if(!g) return { noCar:true }; let vmax=0; for(const c of Race.cars) if(c.v>vmax) vmax=c.v; const h=Race._pilotHome; return { active:!!P, released:P?P.released:null, pv:P?+P.v.toFixed(1):0, done:P?+P.done.toFixed(0):0, run:P?+P.run.toFixed(0):0, vmax:+vmax.toFixed(1), home:h?Math.hypot(g.position.x-h.pos.x,g.position.z-h.pos.z):null, pos:[g.position.x,g.position.z] }; }, // Nov 11 2026: pilot car state for the robot
   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof

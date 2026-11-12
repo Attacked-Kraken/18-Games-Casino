@@ -2281,4 +2281,21 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-steering-assist-keeps-car-on-road',
+    ask: 'Steering assist (owner Nov 12 2026, cornering): with the assist ON a car pointing off the road with no stick is steered back and never reaches the grass; with it OFF the same start leaves the road (so the assist is really what holds it)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const off = await h.eval(`window.__test.assistRun(false, 3.5, 0.18, 4)`).catch(() => null);
+      const on = await h.eval(`window.__test.assistRun(true, 3.5, 0.18, 4)`).catch(() => null);
+      if (!off || !on) return 'no assistRun hook result';
+      if (!(off.off > 0 || off.maxD > off.half + 1.6)) return 'control failed: with the assist OFF the car never left the road (maxD ' + off.maxD + ' of ' + off.half + ') so this test proves nothing';
+      if (on.off > 0 || on.maxD > on.half + 0.3) return 'assist ON still reached the grass: maxD ' + on.maxD + ' m of half-width ' + on.half + ' (off-road steps ' + on.off + ')';
+      return true;
+    },
+  },
 ];
