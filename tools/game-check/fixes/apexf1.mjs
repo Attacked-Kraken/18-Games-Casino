@@ -985,6 +985,7 @@ export default [
       for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
       if (!quali) return 'weekend never reached qualifying';
       const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setAssist(false)`); // the assist (on by default) only rescues a car heading off the road; this test proves the base rule, so it is switched off here
       await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
       let left = false, dist = 0, lastS = null;
       for (let i = 0; i < 40 && !left; i++) {
