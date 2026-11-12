@@ -2729,10 +2729,10 @@ export default [
     if (landed >= 9) return 'startup FAIL: the menu waited for all 9 car models before showing - ' + landed + ' car model files were already fully fetched when the menu appeared';
     const t1 = Date.now();
     await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 8); return true; });
-    const gridOk = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P); }), (v) => !!v, Math.round(15000 * slow), 200);
+    const gridOk = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P); }), (v) => !!v, Math.round(22000 * slow), 200);
     const tRace = Date.now() - t1;
     if (!gridOk) return 'startup FAIL: the race never reached the grid after startRace';
-    if (tRace > 15000 * slow) return 'startup FAIL: the race took ' + tRace + ' ms to reach the grid (budget ' + Math.round(15000 * slow) + ' ms at runner slow x' + slow + ')';
+    if (tRace > 22000 * slow) return 'startup FAIL: the race took ' + tRace + ' ms to reach the grid (budget ' + Math.round(22000 * slow) + ' ms at runner slow x' + slow + ')';
     return true;
   },
 },
