@@ -3601,7 +3601,17 @@ function aiPit(car, dt){
   }
 }
 // car-vs-car contact: push apart, scrub speed
-function carContact(cars, dt){
+function solidPair(a,b,ds){ // owner Nov 12 2026 'cars go through each other still': a HARD rule after the soft pushes - two bodies (5.4 m long, 2.4 m wide) never overlap. Whichever way they are less buried in each other is undone at once: side by side they are put apart sideways, nose into tail the car behind is put back behind the one ahead and cannot be faster than it
+        const CL=5.4, CW=2.4, pd=CW-Math.abs(a.d-b.d), ps=CL-Math.abs(ds);
+        if(pd>0 && ps>0 && !a.inPits && !b.inPits){
+          const sN2=((a.s%Track.length)+Track.length)%Track.length, nearLine=!(sN2>30 && sN2<Track.length-30);
+          if(pd<=ps || nearLine){ const sg=Math.sign(a.d-b.d)||1; a.d+=sg*pd/2; b.d-=sg*pd/2; const lim2=Track.width/2-0.8; for(const c of [a,b]){ const ex=Math.abs(c.d)-lim2; if(ex>0){ const k=Math.sign(c.d)*ex; a.d-=k; b.d-=k; } } }
+          else { const ahead=ds>0?a:b, behind=ds>0?b:a; behind.s-=ps; if(behind.v>ahead.v) behind.v=ahead.v; }
+          window.__f1solid=(window.__f1solid||0)+1;
+        } }
+function solidPass(cars){ const L=Track.length; for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){ const a=cars[i], b=cars[j]; if(a.retired||b.retired||a._free>0||b._free>0||(a.finished&&b.finished)) continue; let ds=(a.s-b.s)%L; if(ds>L/2)ds-=L; if(ds<-L/2)ds+=L; solidPair(a,b,ds); } } // a pack resolves in passes: pushing a car out of one neighbour can push it into another
+function carContact(cars, dt, graceOnly){
+  try{ for(let it=0;it<2;it++) solidPass(cars); }catch(e){}
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
@@ -3609,6 +3619,7 @@ function carContact(cars, dt){
     if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
+    if(graceOnly){ solidPair(a,b,ds); continue; } // start grace: no shoves, spins or damage - but still no driving through each other (owner Nov 12 2026)
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
@@ -3625,6 +3636,7 @@ function carContact(cars, dt){
         // owner Nov 4 2026 6:23 PM 'cars are still hanging onto each other fighting': only a car truly BEHIND (nose to tail, not alongside) is held back; side by side nobody is slowed, the lateral push does the separating
         if(Math.abs(ds)>4.6 && Math.abs(dd)<2.0 && behind.v>ahead.v) behind.v=Math.max(ahead.v,behind.v-60*dt); // no rear-ending into the car ahead
       }
+      solidPair(a,b,ds);
       const avg=(a.v+b.v)/2*0.985;
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
       if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
@@ -3912,7 +3924,7 @@ const Race = {
     this.updateWeather(dt);
     this.updateCars(dt,false);
     try{ this.updatePace(dt); }catch(e){ this.pace=null; } try{ Track.updateLineSigns(); }catch(e){}
-    if(this.contactGrace>0) this.contactGrace-=dt; else carContact(this.cars,dt);
+    if(this.contactGrace>0){ this.contactGrace-=dt; carContact(this.cars,dt,true); } else carContact(this.cars,dt);
     const order=this.positions();
     // lap crossing + finish
     for(const c of this.cars){
