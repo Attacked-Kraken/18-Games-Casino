@@ -1761,7 +1761,7 @@ const Track = {
       for(const k of [17,14,20]){ for(let back=gp?30:60; back<=gp?150:240 && !put; back+=10){ const sA=sEnd-back, A=pitAt(sA,k), B=pitAt(sA-9,k);
           if(apronOK(sA)&&[A,B,pitAt(sA+3,k+3),pitAt(sA-12,k+3),pitAt(sA+3,k-3),pitAt(sA-12,k-3)].every(q=>clear(q,4)&&standOK(q,2)&&T.distToPit(q.x,q.z)>=4.5)) put={A,B,k,sA}; } if(put) break; }
       if(put) T._buildApron(root, put.sA, sd0, pitAt, ribbon, WHITE, put.k, box);
-      rec.emergency=put?{ safety:note(put.A,{kind:'safety'}), medical:note(put.B,{kind:'medical'}), k:put.k, loaded:0, apron:{ s:round1(nrm(put.sA-16)), len:58, k0:11.5, k1:22.5 }, parkS:round1(nrm(put.sA)) }:null;
+      rec.emergency=put?{ safety:note(put.A,{kind:'safety'}), medical:note(put.B,{kind:'medical'}), loaded:0, apron:{ s:round1(nrm(put.sA-16)), len:58, k0:11.5, k1:22.5 }, parkS:round1(nrm(put.sA)) }:null;
       if(put) T._loadEmergency(root, put.A, put.B);
     }catch(e){ console.warn('furniture emergency',e); }
     // ---- the two meshes
@@ -1796,14 +1796,13 @@ const Track = {
       const lerp=(a,b,u)=>a+(b-a)*Math.max(0,Math.min(1,u));
       const sA0=sA-16, sA1=sA+6, sB1=sA+28; // apron then the link road
       strip(sA0,sA1,()=>11.5,()=>22.5);
-      strip(sA0-44,sA0,s=>lerp(2.6,11.5,(s-(sA0-44))/44),s=>lerp(12.0,22.5,(s-(sA0-44))/44)); // owner Nov 12 2026 'make a road for pilot and ambulance car not to go in grass': the same angled road leads IN to the apron from behind, so the pilot car arrives on asphalt
       const kLo=s=>lerp(11.5,2.6,(s-sA1)/(sB1-sA1)), kHi=s=>lerp(22.5,12.0,(s-sA1)/(sB1-sA1));
       strip(sA1,sB1,kLo,kHi);
       const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals();
       const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2})); m.name='emergencyApron'; root.add(m); T._apronMesh=m;
       const YEL=0xf2c300, F=f=>typeof f==='function'?f:()=>f, ln=(sa,sb,fa,fb,hex)=>ribbon(sa,sb,s=>T.pitDAt(s)+sd0*F(fa)(s),s=>T.pitDAt(s)+sd0*F(fb)(s),0.075,hex);
       // painted: white edge lines (apron back + link road both sides), a white box round each car, a yellow dashed guide down the link road
-      ln(sA0,sA1,22.1,22.35,WHITE); ln(sA0,sA1,11.9,12.15,WHITE); ln(sA0-0.2,sA0+0.05,11.9,22.35,WHITE); ln(sA0-44,sA0,s=>lerp(2.6,11.5,(s-(sA0-44))/44)+0.15,s=>lerp(2.6,11.5,(s-(sA0-44))/44)+0.4,WHITE); ln(sA0-44,sA0,s=>lerp(12.0,22.5,(s-(sA0-44))/44)-0.4,s=>lerp(12.0,22.5,(s-(sA0-44))/44)-0.15,WHITE);
+      ln(sA0,sA1,22.1,22.35,WHITE); ln(sA0,sA1,11.9,12.15,WHITE); ln(sA0-0.2,sA0+0.05,11.9,22.35,WHITE);
       ln(sA1,sB1,s=>kHi(s)-0.4,s=>kHi(s)-0.15,WHITE); ln(sA1,sB1,s=>kLo(s)+0.15,s=>kLo(s)+0.4,WHITE);
       for(const c of [sA-9,sA]){ const p=pitAt(c,kC), nx=-sd0*p.nx, nz=-sd0*p.nz, bx=(a,b,lx,lz)=>{ const X=p.x+p.tx*a+nx*b, Z=p.z+p.tz*a+nz*b; boxFn(X,p.y+0.07,Z,p.tx,p.tz,lx,0.02,lz,WHITE); }; bx(0,-1.7,6.0,0.12); bx(0,1.7,6.0,0.12); bx(-3.0,0,0.12,3.4); bx(3.0,0,0.12,3.4); } // each car's bay: a straight painted rectangle in the car's own frame
       for(let s=sA1+1; s<sB1-3; s+=3.2) ln(s,s+1.6,s2=>(kLo(s2)+kHi(s2))/2-0.1,s2=>(kLo(s2)+kHi(s2))/2+0.1,YEL);
@@ -3768,12 +3767,11 @@ const Race = {
     const vMax=36; let vT=left>110?vMax:left>60?vMax*0.7:Math.max(4,vMax*0.7*(left/60));
     P.v+=Math.sign(vT-P.v)*Math.min(Math.abs(vT-P.v),(vT>P.v?9:14)*dt); P.done=Math.min(P.run,P.done+P.v*dt);
     const s=P.s+P.done, nrm=x=>((x%L)+L)%L, q=Track.posAt(nrm(s),0), lane=Track.posAt(nrm(s),Track.pitDAt(nrm(s)));
-    const w1=sm((P.done-(P.run-170))/60), road=P.done-(P.run-60); // 170-110 m out: cross to the pit lane; last 60 m: along the paved entry road onto the apron (never over grass)
+    const w1=sm((P.done-(P.run-170))/60), u=sm((P.done-(P.run-60))/60); // 170-110 m out: cross to the pit lane; last 60 m: onto the apron
     let x=q.x+(lane.x-q.x)*w1, z=q.z+(lane.z-q.z)*w1, y=q.y+(lane.y-q.y)*w1;
-    const f=Track.frameAt(nrm(s)); let yaw=Math.atan2(-f.tz,f.tx), u=0;
-    if(road>0){ const em=Track.furniture&&Track.furniture.emergency, sd0=Track.pitSide||1, kH=em&&em.k!=null?em.k:17, t=sm(road/44); u=sm((road-44)/16);
-      const kk=(7.3+(kH-7.3)*t), pr=Track.posAt(nrm(s),Track.pitDAt(nrm(s))+sd0*kk); x=pr.x; z=pr.z; y=pr.y;
-      if(u>0){ x+=(P.home.pos.x-x)*u; z+=(P.home.pos.z-z)*u; y+=(P.home.pos.y-y)*u; let dy=P.home.yaw-yaw; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); yaw+=dy*u; } }
+    const f=Track.frameAt(nrm(s)); let yaw=Math.atan2(-f.tz,f.tx);
+    x+= (P.home.pos.x-x)*u; z+=(P.home.pos.z-z)*u; y+=(P.home.pos.y-y)*u;
+    let dy=P.home.yaw-yaw; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); yaw+=dy*u;
     P.g.position.set(x,y+0.04*(1-u),z); P.g.rotation.y=yaw;
     if(!P.released && left<110){ P.released=true; banner('GREEN FLAG','Race!',1100,'#37d67a'); Aud.beep(880,0.2,0.25); }
     if(!P.released){ const cap=Math.max(3,P.v-1.5); for(const c of this.cars){ if(c.v>cap) c.v=cap; } }
