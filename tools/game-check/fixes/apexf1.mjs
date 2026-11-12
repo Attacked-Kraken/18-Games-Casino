@@ -2299,4 +2299,26 @@ export default [
       return true;
     },
   },
+  // owner Nov 12 2026 'cars go through each other still'
+  {
+    id: 'play-cars-never-overlap', mode: 'race',
+    ask: 'Two F1 cars never sit inside each other: over 60 s of racing with the whole pack no pair of cars on track overlaps (4.8 m nose to tail and 1.9 m side by side) - owner Nov 12 2026',
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      const r = await h.eval(() => {
+        const T = window.__test, L = T.trackLength ? T.trackLength() : 0; let worst = null, bad = 0;
+        for (let i = 0; i < 1200; i++) { T.simStep(0.05, { skill: 'good' });
+          const cs = T.cars();
+          for (let a = 0; a < cs.length; a++) for (let b = a + 1; b < cs.length; b++) { const A = cs[a], B = cs[b]; if (A.finished || B.finished) continue;
+            let ds = A.s - B.s; if (L) { ds %= L; if (ds > L / 2) ds -= L; if (ds < -L / 2) ds += L; }
+            const dd = Math.abs(A.d - B.d); if (Math.abs(A.d) > 9 || Math.abs(B.d) > 9) continue; // pit lane / off the racing road
+            if (Math.abs(ds) < 4.8 && dd < 1.9) { bad++; if (!worst) worst = A.name + ' inside ' + B.name + ' (' + ds.toFixed(1) + ' m apart, ' + dd.toFixed(1) + ' m side by side) at step ' + i; } } }
+        return { bad, worst, solid: window.__f1solid || 0 };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.bad > 0) return 'F1: cars drove through each other ' + r.bad + ' times - first: ' + r.worst;
+      return true;
+    },
+  },
 ];
