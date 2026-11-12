@@ -1256,6 +1256,7 @@ const Track = {
       for(const sd of [-1,1]){
         const bx=p.x+p.nx*(W/2+3.5)*sd, bz=p.z+p.nz*(W/2+3.5)*sd;
         if(this.distToLoop(bx,bz)<W/2+1.5) continue; // G-32: no wall on the road
+        if(sd===1 && this.cfg && this.cfg.pitIn!=null){ const Ls=this.length, si=i/this.samples.length*Ls, a0=this.cfg.pitIn*Ls-120, a1=(this.cfg.pitOut!=null?this.cfg.pitOut*Ls:a0+600)+40; const inZ=a1>=a0? (si>=a0&&si<=a1) : (si>=a0||si<=a1); if(inZ) continue; } // owner Nov 12 2026 'why is that block there': the red/white trackside barriers stood in the pit lane once it moved back - none on the pit side from 120 m before the pit entry to past the exit
         const bar=new THREE.Mesh(barGeo, (i/8)%2?barMatR:barMatW);
         bar.position.set(bx, p.y+0.55, bz);
         bar.rotation.y=Math.atan2(p.tx,p.tz); g.add(bar);
@@ -4003,11 +4004,11 @@ const Race = {
       const L0=Track.length, sN=((p.s%L0)+L0)%L0, toBox=((p.pitBoxS-sN+L0*1.5)%L0)-L0/2;
       if(p.pitHold || (!p.pitStopDone && toBox<7 && toBox>-3)){
         const fv=new THREE.Vector3(1,0,0).applyQuaternion(m.quaternion), rv=new THREE.Vector3(0,0,1).applyQuaternion(m.quaternion);
-        const cp2=new THREE.Vector3(m.position.x+fv.x*8.0-rv.x*8.0, m.position.y+3.8, m.position.z+fv.z*8.0-rv.z*8.0); // owner Nov 8 2026 round 4: the real-size crew (2.63 m) stands taller than the old 1.2 m figures - the camera rides higher and further out so they frame the car instead of hiding it (9 m left the car small in a lot of empty lane; 7 m hid it behind the near-side men)
+        const cp2=new THREE.Vector3(m.position.x+fv.x*7.0-rv.x*5.2, m.position.y+3.6, m.position.z+fv.z*7.0-rv.z*5.2); // owner Nov 12 2026 'why can't I see' (photo: fence + black pit board filling the screen): the lane moved 3 m back, so the old 8 m side offset put the camera in the pit wall fence - 5.2 m keeps it on the lane side of the wall // owner Nov 8 2026 round 4: the real-size crew (2.63 m) stands taller than the old 1.2 m figures - the camera rides higher and further out so they frame the car instead of hiding it (9 m left the car small in a lot of empty lane; 7 m hid it behind the near-side men)
         const minY=Math.max(m.position.y, trackGroundY(cp2.x,cp2.z))+1.1; if(cp2.y<minY) cp2.y=minY;
         camera.position.lerp(cp2, 1-Math.exp(-dt/0.10));
         camera.lookAt(m.position.x, m.position.y+1.1, m.position.z);
-        if(camera.fov!==48){ camera.fov=48; camera.updateProjectionMatrix(); }
+        if(camera.fov!==58){ camera.fov=58; camera.updateProjectionMatrix(); }
         if(scene.userData.skyDome) scene.userData.skyDome.position.copy(camera.position);
         return;
       }
@@ -4123,7 +4124,7 @@ const HUD={
       if(p.inPits && !p._pitWasIn){ p._pitPlaceIn=p.position; p._pitPlaceOut=0; } // owner Nov 9 2026 PLACE MARKER: the place he came in at, read from the game's OWN standings (Race.positions() sets car.position - the same number the HUD place box and the results use; no second ranking is invented)
       if(!p.inPits && p._pitWasIn && p._pitPlaceIn){ p._pitPlaceOut=p.position; p._pitPlaceUntil=performance.now()+6000; } // released and rejoined (pit exit complete): the new place from the same standings - the pair then stays up 6 s so he sees what the stop cost or gained
       p._pitWasIn=p.inPits;
-      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TIRES OFF':u<0.75?'FRESH TIRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
+      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.toggle('hidden', !!p.pitStopDone); /* owner Nov 12 2026 'skip stop doesn't work': after release there is nothing to skip - the button goes away */ const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TIRES OFF':u<0.75?'FRESH TIRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
       else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
     { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TIRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps'); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
