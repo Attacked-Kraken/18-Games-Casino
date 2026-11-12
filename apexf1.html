@@ -1523,7 +1523,7 @@ const Track = {
     { const tyreI=new THREE.InstancedMesh(pitGeo().tyre, _pitTyreMat, 50);
       const boxI=new THREE.InstancedMesh(new THREE.BoxGeometry(1.1,0.55,0.55), dark, 20);
       const reelI=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.42,0.42,0.26,12), new THREE.MeshLambertMaterial({color:0x37404c}), 10);
-      const barI=new THREE.InstancedMesh(new THREE.BoxGeometry(2.4,0.5,0.32), new THREE.MeshLambertMaterial({color:0xd8d8d8}), 20);
+      const barI={ setMatrixAt(){}, instanceMatrix:{} }; // barrier panels removed (owner Nov 12 2026)
       let ti=0, ei=0, ri=0, bai=0;
       const M4e=(x,y,z,ry,rx)=>{ const m=new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx||0,ry||0,0,'YXZ')); m.setPosition(x,y,z); return m; };
       spotBase.forEach(sp=>{ const B=(m)=>sp.base.clone().multiply(m);
@@ -1532,9 +1532,9 @@ const Track = {
         tyreI.setMatrixAt(ti++, B(M4e(-3.9,0.3,2.4,0.3,1.15))); // one leaning against the stack
         boxI.setMatrixAt(ei++, B(M4e(-1.7,0.28,3.3,0.15))); boxI.setMatrixAt(ei++, B(M4e(0.55,0.28,3.35,-0.1))); // equipment boxes along the back
         reelI.setMatrixAt(ri++, B(M4e(3.35,0.45,2.5,0,Math.PI/2))); // the hose reel standing at the gantry post
-        barI.setMatrixAt(bai++, B(M4(-8.15,0.25,-1.6))); barI.setMatrixAt(bai++, B(M4(8.15,0.25,-1.6))); // barrier panels at the box boundaries, lane side - clear of the drive line and of every car stopping in the box
+        // owner Nov 12 2026 'what are the blocks in the middle when driving': the gray barrier panels at the box boundaries stood beside the cars in the lane - removed
       });
-      [tyreI,boxI,reelI,barI].forEach(im=>{ im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; root.add(im); });
+      [tyreI,boxI,reelI].forEach(im=>{ im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; root.add(im); });
       [4,7].forEach(bi=>{ const sp=spotBase[bi]; if(!sp) return; const tg=new THREE.Group(); const bp=new THREE.Vector3(bi===4?5.2:-5.4,0,bi===4?2.9:3.0).applyMatrix4(sp.base); tg.position.set(bp.x,sp.p.y,bp.z); tg.rotation.y=-Math.atan2(sp.p.f.tz,sp.p.f.tx)+(bi===4?0.4:-0.3); root.add(tg);
         const deck=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.07,0.75), dark); deck.position.y=0.48; tg.add(deck);
         const crate=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.6), new THREE.MeshLambertMaterial({color:0x8a93a3})); crate.position.set(-0.15,0.77,0); tg.add(crate);
