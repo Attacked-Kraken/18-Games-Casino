@@ -3313,6 +3313,10 @@ class Car {
     const throttle=this.throttle, brake=this.brake;
     const engineA=26*(1-Math.max(0,this.v-60)/80); // fade at high speed (G-27: much faster)
     let acc=throttle*Math.max(6,engineA)-brake*38-0.00005*this.v*this.v*60*(this.slip?0.82:1);
+    if(this.isPlayer && Race.cars){ // owner Nov 12 2026 'my car is slow, everybody leaves me behind': (1) corner-exit push - full throttle below 85% of the corner's limit pulls 18% harder, (2) catch-up - the further you are behind the car ahead of you, the more power and top speed you get (up to +7%, like Mario Kart / Forza's rubber band for the player), never when you are in front
+      if(throttle>0.8 && this.v<topV*0.85) acc*=1.18;
+      let gapB=0; for(const o of Race.cars){ if(o===this||o.finished) continue; const g=o.raceDist-this.raceDist; if(g>0&&(gapB===0||g<gapB)) gapB=g; }
+      const cu=Math.min(0.07, Math.max(0, gapB-60)*0.00006)*(Race.cheatLevel>0?1:0); if(cu>0){ acc*=1+cu*1.5; topV*=1+cu; } this._catchUp=cu; }
     if(this.ersUse && this.ers>0){ acc+=9; this.ers=Math.max(0,this.ers-14*dt); }
     else { this.ers=Math.min(100,this.ers+(brake>0.3?10:2.2)*dt); }
     // cornering: if too fast for corner, scrub + push wide
@@ -3520,7 +3524,7 @@ function aiDrive(car, dt){
   if(Race.player && !Race.player.finished && !car.finished){
     const gapS = Race.player.raceDist - car.raceDist; // + means player ahead
     if(gapS>0) cheat = 1 + Math.min(0.045, gapS*0.00004) * Race.cheatLevel;      // hunt you down
-    else cheat = 1 - Math.min(0.02, -gapS*0.00002) * Race.cheatLevel;           // back off when clear
+    else cheat = 1 - Math.min(0.05, -gapS*0.00004) * Race.cheatLevel;           // back off when clear (owner Nov 12 2026: was 2% max - a player who fell behind never saw the field wait)
   }
   // lookahead target speed
   const lookS=car.s+car.v*0.5+18;
