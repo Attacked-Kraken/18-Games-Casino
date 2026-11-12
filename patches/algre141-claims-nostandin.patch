@@ -1,9 +1,0 @@
-diff --git a/CLAIMS.md b/CLAIMS.md
-index c728c94..a42fe62 100644
---- a/CLAIMS.md
-+++ b/CLAIMS.md
-@@ -360,3 +360,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
- | G-412 | window 6 | tools/game-check/fixes/apexracer/rimfit.mjs (buildCar hardening), jobs/G-412.md | build/owner-rimfit-apexracer (rode PR #2100) - DONE PR #2100 merged 751033c65 |
- 
- | OWNER startup-speed | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, CLAIMS.md | fix/apexracer-startup-speed - CLAIMED Muse algre141 Nov 12 1:07 PM CST (owner order) |
-+| OWNER no-standin-glitch | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, CLAIMS.md | fix/apexracer-no-standin - CLAIMED Muse algre141 Nov 12 3:45 PM CST (owner order) |
