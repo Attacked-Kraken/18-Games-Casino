@@ -2212,4 +2212,28 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-tire-and-body-bars', mode: 'race',
+    ask: 'The HUD says TIRE (American spelling, never TYRE) and shows two bars: tires and body, each with a percent; body drops when the car is damaged',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 120; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) { await h.press('#raceBtn').catch(() => {}); for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); } }
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      await h.wait(800);
+      const r = await h.eval(() => { const g = id => (document.getElementById(id) || {}); const before = g('bodyPct').textContent; window.__test.damageProbe(14, 0.6); return new Promise(res => setTimeout(() => res({ box: (document.getElementById('tirebox') || {}).innerText || '', tire: g('tireAge').textContent, before, after: g('bodyPct').textContent, w: g('bodyFill').style.width }), 400)); }).catch(() => null);
+      if (!r) return 'could not read the tire box';
+      if (/TYRE/i.test(r.box)) return 'the HUD still spells it TYRE: ' + r.box.replace(/\s+/g, ' ');
+      if (!/TIRES \d+%/.test(r.tire)) return 'no TIRES N% line in the tire box (' + r.tire + ')';
+      if (!/BODY \d+%/.test(r.after)) return 'no BODY N% bar in the tire box (' + r.after + ')';
+      if (!(parseInt(r.after.replace(/\D/g, '')) < parseInt(r.before.replace(/\D/g, '')))) return 'the body bar did not drop after a hit (' + r.before + ' -> ' + r.after + ')';
+      return true;
+    },
+  },
 ];
