@@ -1256,6 +1256,7 @@ const Track = {
       for(const sd of [-1,1]){
         const bx=p.x+p.nx*(W/2+3.5)*sd, bz=p.z+p.nz*(W/2+3.5)*sd;
         if(this.distToLoop(bx,bz)<W/2+1.5) continue; // G-32: no wall on the road
+        if(sd===1 && this.cfg && this.cfg.pitIn!=null){ const Ls=this.length, si=i/this.samples.length*Ls, a0=this.cfg.pitIn*Ls-120, a1=(this.cfg.pitOut!=null?this.cfg.pitOut*Ls:a0+600)+40; const inZ=a1>=a0? (si>=a0&&si<=a1) : (si>=a0||si<=a1); if(inZ) continue; } // owner Nov 12 2026 'why is that block there': the red/white trackside barriers stood in the pit lane once it moved back - none on the pit side from 120 m before the pit entry to past the exit
         const bar=new THREE.Mesh(barGeo, (i/8)%2?barMatR:barMatW);
         bar.position.set(bx, p.y+0.55, bz);
         bar.rotation.y=Math.atan2(p.tx,p.tz); g.add(bar);
