@@ -3237,7 +3237,7 @@ class Car {
     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'), isPlayer ? (localStorage.getItem('f1_wrap')||'team') : 'team');
     this.mesh.scale.setScalar(1.416*(this.mesh.userData.sizeK||1)); // G-73 (x sizeK, Nov 4 2026: every car the same length): the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
-    this.tire='SOFT'; this.wear=0; this.tireAge=0;
+    this.tire='SOFT'; this.wear=0; this.tireAge=0; this.damage=0; this.retired=false;
     this.fuel=100; this._fuelAtStop=100; // owner Nov 8 2026: fuel is real - it burns per lap, the HUD shows it, the crew fills it during the stop
     this.ers=100; this.drsOpen=false; this.drsCount=0;
     this.lap=1; this.lastLapS=0; this.lapTimes=[]; this.bestLap=Infinity; this.totalTime=0;
@@ -3253,7 +3253,7 @@ class Car {
     const wearF=Math.max(0.55, 1-this.wear*0.5);
     const wx=Race.weather.grip; // 1 dry .. 0.55 heavy
     let g=t.pace>=0?1:1; // pace handled separately
-    let grip=wearF*wx;
+    let grip=wearF*wx*(1-0.35*(this.damage||0));
     if(wx<0.95 && !t.wet) grip*= (wx<0.75?0.55:0.75); // slicks in rain = ice
     if(wx>=0.95 && t.wet) grip*=0.8; // wets on dry overheat
     return grip;
@@ -3262,6 +3262,7 @@ class Car {
     const t=TIRES[this.tire];
     let p=t.pace + this.team.pace + (this.skill-0.75)*1.2;
     p+=Math.max(0,(this.wear-0.55))*2.2; // cliff
+    p+=(this.damage||0)*3.0; // owner Nov 11 2026: a damaged car is slower
     return p;
   }
   update(dt){
@@ -3378,6 +3379,7 @@ class Car {
     if(this.isPlayer){ this.tire=this.pitTireChoice||this.tire; }
     else { this.tire=this.pitChoice||'MEDIUM'; }
     this.wear=0; this.tireAge=0; this.pitted=true;
+    this.damage=0; // owner Nov 11 2026: the pit crew repairs the car too
     this.fuel=100; // owner Nov 8 2026: filled during the stop (it rises live in PitCrew.update) - this is the final top-off
   }
   placeMesh(dt){
@@ -3566,7 +3568,7 @@ function aiPit(car, dt){
   if(needWet) return;
   // planned stop: wear cliff or max age, but only after lap 2 and not last 2 laps
   if(Race.lap>2 && Race.lap<Race.laps-1 && !car.pitted){
-    if(car.wear>0.55 || car.tireAge>=t.maxAge*0.8){
+    if(car.wear>0.55 || car.damage>0.4 || car.tireAge>=t.maxAge*0.8){
       // don't stack with a car already pitting right ahead
       car.pitIntent=true; car.pitChoice=Race.baseTire(car,true); car.pitted=true;
     }
@@ -3577,6 +3579,7 @@ function carContact(cars, dt){
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
+    if(a.retired||b.retired) continue; // a wrecked car is out of the race
     if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
@@ -3607,9 +3610,23 @@ function carContact(cars, dt){
         const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
         a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
       }
+      { const rel=Math.abs(a.v-b.v); const hardAI=!(a.isPlayer||b.isPlayer);
+        if(!hardAI || rel>hitLine){ hitDamage(a,rel,dt,hardAI?0.5:1,ds>0?0.7:1.3); hitDamage(b,rel,dt,hardAI?0.5:1,ds>0?1.3:0.7); } } // owner Nov 11 2026: crashes break the car
       if(a.isPlayer||b.isPlayer){ Race.shake=Math.min(1,(Race.shake||0)+0.5); Aud.cheer(false); }
     }
   }
+}
+// owner Nov 11 2026: DAMAGE. A hit above 4 m/s of speed difference adds damage (per second of contact); the car behind takes more. 100% = the car is out of the race (last place). The pit crew repairs it.
+function hitDamage(car, rel, dt, k, share){
+  if(!car||car.retired||car.finished||rel<=4) return 0;
+  car.damage=Math.min(1,(car.damage||0)+(rel-4)*0.08*dt*(k||1)*(share||1));
+  if(car.damage>=1) retireCar(car);
+  return car.damage;
+}
+function retireCar(car){
+  if(car.retired) return; car.retired=true; car.damage=1;
+  car.finished=true; car.finishTime=Race.raceT+9000; // retired cars sort behind everyone who finished
+  if(car.isPlayer){ banner('RETIRED','Your car is too damaged - race over',2600,'#ff5a5a'); Race.onPlayerRetire(); }
 }
 /* ================= RACE DIRECTOR ================= */
 // G-119: height of the road nearest a point - the camera's floor reference
@@ -3689,7 +3706,7 @@ const Race = {
       if(c.crew) c.crew.visible=false; if(c._crewHideT){ clearTimeout(c._crewHideT); c._crewHideT=null; }
       for(const w of (c.mesh.userData.wheels||[])) w.visible=true; // a stop cut short by the grid must not leave a wheel hidden
       c.fuel=100; if(c._station) c._station.visible=false; if(c._gear) c._gear.visible=false; if(c._laneRow) c._laneRow.visible=false; { const pp=$('pitPanel'); if(pp) pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); } // owner Nov 8 2026: fresh tank on the grid; no station crew or pit panel left behind
-      c.wear=0; c.tireAge=0; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
+      c.wear=0; c.tireAge=0; c.damage=0; c.retired=false; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
       // G-55: a placed car starts with a clean heading - no leftover steering angle
       // from its last lap, and its nose snapped onto the track direction (a single
       // placeMesh step used to leave it most of the way toward wherever it last faced)
@@ -3893,6 +3910,7 @@ const Race = {
       c.update(dt);
     }
   },
+  onPlayerRetire(){ setTimeout(()=>{ if(this.mode==='menu') return; for(const c of this.cars) if(!c.finished){ c.finished=true; c.finishTime=this.raceT+rand(2,25)+c.penalty; } this.finishRace(); }, 3000); },
   onPlayerFinish(order){
     Aud.cheer(true); Track.crowd.excite=1;
     const p=this.player;
@@ -4050,7 +4068,7 @@ const HUD={
       if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
       else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
-    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TYRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps'); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
+    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TYRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps')+((p.damage||0)>0.02?' · DAMAGE '+Math.round(p.damage*100)+'%':''); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
     document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
     $('ersFill').style.width=p.ers+'%';
@@ -4652,6 +4670,8 @@ window.__test = {
     throttle: c.throttle, brake: c.brake
   })),
   wearPerLap: (tire, laps) => wearPerLap(tire, laps, 0),
+  damageProbe: (rel, secs) => { const p=Race.player||(Race.cars||[]).find(c=>c.isPlayer); if(!p) return null; const before=p.damage||0; for(let i=0;i<Math.round(secs*60);i++) hitDamage(p, rel, 1/60, 1, 1); return { before, after:p.damage, retired:p.retired, finished:p.finished }; },
+  repairProbe: () => { const p=Race.player||(Race.cars||[]).find(c=>c.isPlayer); if(!p) return null; p.damage=0.6; p.applyPitStop(); return p.damage; },
   race: () => ({
     mode: Race.mode, lap: Race.lap, laps: Race.laps,
     hasResults: !!Race.results,

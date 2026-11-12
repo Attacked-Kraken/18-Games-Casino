@@ -2189,4 +2189,27 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-damage-and-retirement', mode: 'race',
+    ask: 'Crashes damage the car: a hit adds damage, the pit stop repairs it, and 100% damage retires the car (it finishes last and the race is lost)',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 120; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) { await h.press('#raceBtn').catch(() => {}); for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); } }
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      let a = null;
+      for (let i = 0; i < 10 && !a; i++) { await h.wait(300); a = await h.eval(() => { const T = window.__test; if (!T || !T.damageProbe) return null; const rep = T.repairProbe(); const small = T.damageProbe(12, 0.5); const big = T.damageProbe(30, 5); return { rep, small, big }; }).catch(() => null); }
+      if (!a) return 'no damage probe on the test hook';
+      if (a.rep !== 0) return 'the pit stop did not repair the damage (damage ' + a.rep + ' after the stop)';
+      if (!(a.small.after > 0.02 && a.small.after < 0.5)) return 'a light 12 m/s hit should add some damage but not wreck the car (damage ' + a.small.after + ')';
+      if (!a.big.retired || a.big.after < 1) return 'a long 30 m/s crash did not retire the car (damage ' + a.big.after + ')';
+      return true;
+    },
+  },
 ];
