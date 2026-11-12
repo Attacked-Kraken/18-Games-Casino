@@ -3280,7 +3280,7 @@ class Car {
     const pitInS=Track.cfg.pitIn*Track.length, pitOutS=Track.cfg.pitOut*Track.length;
     if(this.pitIntent && !this.inPits && !this.finished){
       const sN=((this.s%Track.length)+Track.length)%Track.length;
-      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
+      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this._pitFree=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
         if(this.isPlayer) $('pitMenu').classList.add('hidden'); }
     }
     if(this.inPits){
@@ -3290,7 +3290,7 @@ class Car {
         this.pitTimer-=dt; this.v=0;
         if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); PitCrew.end(this); }
       } else {
-        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
+        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05||this._pitFree)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
           this.v=clamp(this.v+(this.throttle*12-this.brake*30)*dt,0,targetV); }
         else this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
@@ -3298,8 +3298,17 @@ class Car {
         const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
         let pitTgt=Track.pitDAt(this.s)-lane;
         if(!Track.gp){ const toOut=((pitOutS-sM+L0)%L0); if(toOut<140) pitTgt*=clamp(toOut/140,0,1); } // owner Nov 8 2026: blend back onto the road over the last 140 m before the pit exit - the car used to be let go at the full pit offset (14 m out, on the grass)
-        if(this.isPlayer){ const near=Math.abs(toBox)<25&&!this.pitStopDone; const want=near?0:(Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0); this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); pitTgt+=this._pitOff; } // owner Nov 12 2026: steer inside the lane (up to 2.2 m), the car still parks itself at its box
-        this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5)); }
+        const d0=this.d;
+        const fromIn=((sM-pitInS+L0)%L0), pastCrew=this.pitStopDone && !this.pitHold && toBox<-8; // past his own box and its crew
+        if(this.isPlayer && pastCrew){ // owner Nov 12 2026 'coming out it's all the player's control to get back on track as soon as the last crew is passed': released and past the crew = he steers. The pit wall still stands until 215 m into the lane (box 10 + 15 m), after that he may cross straight onto the track
+          this._pitFree=true; const wallEnd=fromIn<215, minD=wallEnd?(W/2+1.2):0, maxD=Track.pitDAt(this.s)+2.8;
+          if(Math.abs(this.steer)>0.05) this.d+=this.steer*Math.max(6,this.v)*0.42*dt; else this.d=lerp(this.d,pitTgt,Math.min(1,dt*0.8));
+          this.d=clamp(this.d,minD,maxD);
+          if(!wallEnd && this.d<W/2-0.3){ // back on the track: the race is his again
+            this.inPits=false; this.pitIntent=false; this._pitFree=false; if(this.crew) this.crew.visible=false; if(this._station) this._station.visible=false; if(this._gear) this._gear.visible=false; if(this._laneRow) this._laneRow.visible=false; if(this._chief) this._chief.visible=false; }
+        } else if(this.isPlayer && !this.pitStopDone && Math.abs(toBox)>25){ const want=Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0; this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); this.d=lerp(this.d, pitTgt+this._pitOff, Math.min(1,dt*2.5)); }
+        else this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5));
+        { const hd=(this.d-d0)/Math.max(dt,1e-3); this.headAngle=this.v>2? Math.asin(clamp(hd/this.v,-0.5,0.5)) : 0; } } // owner Nov 12 2026 'it stays gliding sideways': the nose turns the way the car moves across the lane
       this.s+=this.v*dt;
       const sN=((this.s%Track.length)+Track.length)%Track.length;
       if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
@@ -3601,7 +3610,17 @@ function aiPit(car, dt){
   }
 }
 // car-vs-car contact: push apart, scrub speed
-function carContact(cars, dt){
+function solidPair(a,b,ds){ // owner Nov 12 2026 'cars go through each other still': a HARD rule after the soft pushes - two bodies (5.4 m long, 2.4 m wide) never overlap. Whichever way they are less buried in each other is undone at once: side by side they are put apart sideways, nose into tail the car behind is put back behind the one ahead and cannot be faster than it
+        const CL=5.4, CW=2.4, pd=CW-Math.abs(a.d-b.d), ps=CL-Math.abs(ds);
+        if(pd>0 && ps>0 && !a.inPits && !b.inPits){
+          const sN2=((a.s%Track.length)+Track.length)%Track.length, nearLine=!(sN2>30 && sN2<Track.length-30);
+          if(pd<=ps || nearLine){ const sg=Math.sign(a.d-b.d)||1; a.d+=sg*pd/2; b.d-=sg*pd/2; const lim2=Track.width/2-0.8; for(const c of [a,b]){ const ex=Math.abs(c.d)-lim2; if(ex>0){ const k=Math.sign(c.d)*ex; a.d-=k; b.d-=k; } } }
+          else { const ahead=ds>0?a:b, behind=ds>0?b:a; behind.s-=ps; if(behind.v>ahead.v) behind.v=ahead.v; }
+          window.__f1solid=(window.__f1solid||0)+1;
+        } }
+function solidPass(cars){ const L=Track.length; for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){ const a=cars[i], b=cars[j]; if(a.retired||b.retired||a._free>0||b._free>0||(a.finished&&b.finished)) continue; let ds=(a.s-b.s)%L; if(ds>L/2)ds-=L; if(ds<-L/2)ds+=L; solidPair(a,b,ds); } } // a pack resolves in passes: pushing a car out of one neighbour can push it into another
+function carContact(cars, dt, graceOnly){
+  try{ for(let it=0;it<2;it++) solidPass(cars); }catch(e){}
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
@@ -3609,6 +3628,7 @@ function carContact(cars, dt){
     if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
+    if(graceOnly){ solidPair(a,b,ds); continue; } // start grace: no shoves, spins or damage - but still no driving through each other (owner Nov 12 2026)
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
@@ -3625,6 +3645,7 @@ function carContact(cars, dt){
         // owner Nov 4 2026 6:23 PM 'cars are still hanging onto each other fighting': only a car truly BEHIND (nose to tail, not alongside) is held back; side by side nobody is slowed, the lateral push does the separating
         if(Math.abs(ds)>4.6 && Math.abs(dd)<2.0 && behind.v>ahead.v) behind.v=Math.max(ahead.v,behind.v-60*dt); // no rear-ending into the car ahead
       }
+      solidPair(a,b,ds);
       const avg=(a.v+b.v)/2*0.985;
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
       if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
@@ -3912,7 +3933,7 @@ const Race = {
     this.updateWeather(dt);
     this.updateCars(dt,false);
     try{ this.updatePace(dt); }catch(e){ this.pace=null; } try{ Track.updateLineSigns(); }catch(e){}
-    if(this.contactGrace>0) this.contactGrace-=dt; else carContact(this.cars,dt);
+    if(this.contactGrace>0){ this.contactGrace-=dt; carContact(this.cars,dt,true); } else carContact(this.cars,dt);
     const order=this.positions();
     // lap crossing + finish
     for(const c of this.cars){
