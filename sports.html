@@ -108,12 +108,12 @@
   .exitfs { display: none; position: absolute; z-index: 2; top: calc(4px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     appearance: none; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); color: #fff; border-radius: 999px;
     width: 34px; height: 34px; font: 800 15px/1 inherit; cursor: pointer; opacity: .8; }
-  .stage.fs .exitfs { display: block; }
+  .stage.fs .exitfs { display: none; } /* owner Nov 12 2026: the X and pencil on top of games are gone */
   /* owner 2026-10-17: the pencil / record tools must be reachable while a game is full screen (dev page only) */
   .fspen { display: none; position: absolute; z-index: 2; top: calc(4px + env(safe-area-inset-top)); left: calc(50% + 24px);
     appearance: none; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); border-radius: 999px;
     width: 28px; height: 28px; padding: 0; font: 13px/1 inherit; cursor: pointer; opacity: .9; }
-  .stage.fs .fspen { display: block; }
+  .stage.fs .fspen { display: none; }
   body.fsopen { overflow: hidden; }
   footer { text-align: center; color: #5d6875; font-size: 12px; letter-spacing: .1em; margin-top: 26px; line-height: 1.7; }
 </style>
