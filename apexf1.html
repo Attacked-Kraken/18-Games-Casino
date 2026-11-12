@@ -3280,7 +3280,7 @@ class Car {
     const pitInS=Track.cfg.pitIn*Track.length, pitOutS=Track.cfg.pitOut*Track.length;
     if(this.pitIntent && !this.inPits && !this.finished){
       const sN=((this.s%Track.length)+Track.length)%Track.length;
-      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
+      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this._pitFree=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
         if(this.isPlayer) $('pitMenu').classList.add('hidden'); }
     }
     if(this.inPits){
@@ -3290,7 +3290,7 @@ class Car {
         this.pitTimer-=dt; this.v=0;
         if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); PitCrew.end(this); }
       } else {
-        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
+        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05||this._pitFree)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
           this.v=clamp(this.v+(this.throttle*12-this.brake*30)*dt,0,targetV); }
         else this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
@@ -3298,8 +3298,17 @@ class Car {
         const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
         let pitTgt=Track.pitDAt(this.s)-lane;
         if(!Track.gp){ const toOut=((pitOutS-sM+L0)%L0); if(toOut<140) pitTgt*=clamp(toOut/140,0,1); } // owner Nov 8 2026: blend back onto the road over the last 140 m before the pit exit - the car used to be let go at the full pit offset (14 m out, on the grass)
-        if(this.isPlayer){ const near=Math.abs(toBox)<25&&!this.pitStopDone; const want=near?0:(Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0); this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); pitTgt+=this._pitOff; } // owner Nov 12 2026: steer inside the lane (up to 2.2 m), the car still parks itself at its box
-        this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5)); }
+        const d0=this.d;
+        const fromIn=((sM-pitInS+L0)%L0), pastCrew=this.pitStopDone && !this.pitHold && toBox<-8; // past his own box and its crew
+        if(this.isPlayer && pastCrew){ // owner Nov 12 2026 'coming out it's all the player's control to get back on track as soon as the last crew is passed': released and past the crew = he steers. The pit wall still stands until 215 m into the lane (box 10 + 15 m), after that he may cross straight onto the track
+          this._pitFree=true; const wallEnd=fromIn<215, minD=wallEnd?(W/2+1.2):0, maxD=Track.pitDAt(this.s)+2.8;
+          if(Math.abs(this.steer)>0.05) this.d+=this.steer*Math.max(6,this.v)*0.42*dt; else this.d=lerp(this.d,pitTgt,Math.min(1,dt*0.8));
+          this.d=clamp(this.d,minD,maxD);
+          if(!wallEnd && this.d<W/2-0.3){ // back on the track: the race is his again
+            this.inPits=false; this.pitIntent=false; this._pitFree=false; if(this.crew) this.crew.visible=false; if(this._station) this._station.visible=false; if(this._gear) this._gear.visible=false; if(this._laneRow) this._laneRow.visible=false; if(this._chief) this._chief.visible=false; }
+        } else if(this.isPlayer && !this.pitStopDone && Math.abs(toBox)>25){ const want=Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0; this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); this.d=lerp(this.d, pitTgt+this._pitOff, Math.min(1,dt*2.5)); }
+        else this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5));
+        { const hd=(this.d-d0)/Math.max(dt,1e-3); this.headAngle=this.v>2? Math.asin(clamp(hd/this.v,-0.5,0.5)) : 0; } } // owner Nov 12 2026 'it stays gliding sideways': the nose turns the way the car moves across the lane
       this.s+=this.v*dt;
       const sN=((this.s%Track.length)+Track.length)%Track.length;
       if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
