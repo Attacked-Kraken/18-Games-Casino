@@ -2236,4 +2236,32 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-pilot-car-leads-then-leaves',
+    ask: 'The pilot car should lead the field off the start, hold every car behind it, then peel off onto its apron and park, and the green flag should free the race.',
+    mode: 'race',
+    async test(page, h) {
+      const grid = await h.eval(() => !!(window.__test && window.__test.race)).catch(() => false);
+      if (!grid) return 'no test hook';
+      await h.eval(() => { window.__pilotForce = true; });
+      let loaded = false;
+      for (let i = 0; i < 80 && !loaded; i++) { loaded = await h.eval(() => { const q = window.__test.paceProbe(); return !!q && !q.noCar; }).catch(() => false); if (!loaded) await h.wait(250); }
+      if (!loaded) return 'the safety car model never loaded';
+      for (let p = 0; p < 3; p++) { await h.press('#raceBtn').catch(() => {}); await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => '?'); if (md === 'lights' || md === 'race') break; }
+      let seen = null, was = false, ended = false, capBroken = null, released = false;
+      for (let i = 0; i < 160 && !was; i++) { await h.wait(250); const q = await h.eval(() => window.__test.paceProbe()).catch(() => null); if (q && q.active) { was = true; seen = q; } }
+      for (let i = 0; i < 60 && was && !ended; i++) {
+        const q = await h.eval(() => window.__test.paceStep(30)).catch(() => null);
+        if (!q) continue;
+        if (q.active) { seen = q; if (q.released) released = true; if (!q.released && q.vmax > q.pv + 0.1) capBroken = 'a car ran at ' + q.vmax + ' m/s while the pilot car did ' + q.pv; }
+        else ended = true, seen = q;
+      }
+      if (!was) return 'the pilot car never led the race (pace never started)';
+      if (capBroken) return capBroken;
+      if (!released) return 'the green flag never came';
+      if (!ended) return 'the pilot car never left the track (still leading after 60 s of its own clock)';
+      if (!(seen.home < 0.6)) return 'the pilot car did not park back on its apron (' + seen.home + ' m away)';
+      return true;
+    },
+  },
 ];
