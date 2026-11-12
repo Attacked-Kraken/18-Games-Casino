@@ -2712,4 +2712,28 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-startup-fast',
+  ask: "Owner Nov 12 2026: the game is 'so delayed showing and getting started' - on opening, the menu must show WITHOUT waiting for all nine car models (19 MB) to download and parse first, and starting a race must reach the grid promptly with the models that race fields loaded (no stand-in cars)",
+  parts: ['menu'],
+  async test(page, h) {
+    const slow = await h.eval(() => window.__slow || 1).catch(() => 1);
+    const url = page.url();
+    const t0 = Date.now();
+    await page.goto(url, { waitUntil: 'commit', timeout: 60000 });
+    const menuOk = await h.poll(() => h.eval(() => { const m = document.getElementById('menu'); return !!(m && getComputedStyle(m).display !== 'none' && window.__erc); }), (v) => !!v, Math.round(15000 * slow), 150);
+    const tMenu = Date.now() - t0;
+    if (!menuOk) return 'startup FAIL: the menu never showed after a fresh load';
+    if (tMenu > 6000 * slow) return 'startup FAIL: the menu took ' + tMenu + ' ms to show on a fresh load (budget ' + Math.round(6000 * slow) + ' ms at runner slow x' + slow + ') - booting is still gated on heavy work';
+    const landed = await h.eval(() => { const names = ['goblin-', 'patriot-', 'tokii-', 'shc-', 'le-mans', 'phoenix-', 'hover-car', 'futuristic-muscle', 'duke-69']; return performance.getEntriesByType('resource').filter((e) => names.some((n) => e.name.includes(n))).length; });
+    if (landed >= 9) return 'startup FAIL: the menu waited for all 9 car models before showing - ' + landed + ' car model files were already fully fetched when the menu appeared';
+    const t1 = Date.now();
+    await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 8); return true; });
+    const gridOk = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P); }), (v) => !!v, Math.round(22000 * slow), 200);
+    const tRace = Date.now() - t1;
+    if (!gridOk) return 'startup FAIL: the race never reached the grid after startRace';
+    if (tRace > 22000 * slow) return 'startup FAIL: the race took ' + tRace + ' ms to reach the grid (budget ' + Math.round(22000 * slow) + ' ms at runner slow x' + slow + ')';
+    return true;
+  },
+},
 ];
