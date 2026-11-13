@@ -312,3 +312,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - An action that only works at one spot needs a visible sign there and a distance everywhere else (PIT, #2396); an option button that changes nothing on screen under another option is a bug (team colour under a wrap, #2395/#2397).
 - A preview camera fits each model's measured size (#2397); a texture projected onto a body must be isotropic or it streaks (#2420); nothing heavy runs in the frame the car crosses the line (#2386/#2387).
 
+
+## 2026-11-13 help desk
+- A HELP line about a PR must be checked against GitHub's merged flag first: #2472 sat as an open HELP line for 3 days after the robot had merged it. Read the PR before writing 'waiting for'.
