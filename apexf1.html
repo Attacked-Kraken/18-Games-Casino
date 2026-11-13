@@ -1828,7 +1828,7 @@ const Track = {
       rec.emergency[key+'Mats']=names; };
     const run=async()=>{ const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
       for(const it of parts){ try{
-        let gl=T._emCache[it.file]; if(!gl){ const buf=await fetch(it.file).then(r=>{ if(!r.ok) throw new Error(it.file+' '+r.status); return r.arrayBuffer(); }); gl=T._emCache[it.file]=await new GLTFLoader().parseAsync(buf,''); }
+        let gl=T._emCache[it.file]; if(!gl){ const buf=await fetch(it.file).then(r=>{ if(!r.ok) throw new Error(it.file+' '+r.status); return r.arrayBuffer(); }); gl=T._emCache[it.file]=await new GLTFLoader().parseAsync(buf,''); try{ texShrink(gl.scene,512); }catch(e){} } /* owner Nov 12 2026: parked cars seen from afar - 512 pictures (the ambulance carried a 1024) */
         if(!root.parent) return; // the circuit was rebuilt while this loaded
         finish(gl,it.key);
         const car=gl.scene.clone(true); car.updateMatrixWorld(true);
@@ -1999,7 +1999,7 @@ function cmSoften(m){ // keeps the model's colours but makes printed brand words
 }
 function cmTyre(m){ // repaints the model's own tyre picture: no smudges, our name on the sidewall in yellow
   const img=m.map&&m.map.image; if(!img||!img.width) return m; const name=m.name||'';
-  const W=2048, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
+  const W=1536, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); /* owner Nov 12 2026: 2048 -> 1536 (two tyre sheets were 45 MB of the phone's picture memory); the name stays readable */ // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
   const YEL='#f4d21c', FONT=(px)=>'900 '+px+'px Arial Black, Arial, sans-serif';
   const mirror=(fn)=>{ x.save(); x.translate(W,0); x.scale(-1,1); fn(); x.restore(); }; // the model's tyre picture is stored mirrored
   if(/Meshpart6/i.test(name)){ // modern car: a round sidewall picture with the rim in the middle
@@ -2032,6 +2032,8 @@ function CMBoot(){
       const buf = await fetch(M.file).then(r=>r.arrayBuffer());
       const gltf = await new GLTFLoader().parseAsync(buf, '');
       const root = gltf.scene; root.updateMatrixWorld(true);
+      try{ const keep=new Set(); root.traverse(o=>{ if(o.isMesh&&o.material&&M.body.test(o.material.name||'')&&o.material.map) keep.add(o.material.map); }); const done=new Set(); // owner Nov 12 2026 (picture memory under the 300 MB phone line): the car's small parts (wheels, driver, wings, cockpit) carried 1024 pictures - the classic car alone had 13 of them (73 MB). Everything but the body paint is drawn at 512 (a car on the phone screen never shows more); the body paint stays full size
+        root.traverse(o=>{ if(!o.isMesh||!o.material) return; for(const m of (Array.isArray(o.material)?o.material:[o.material])) for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap']){ const t=m[k], im=t&&t.image; if(!im||keep.has(t)||done.has(t)||!im.width||Math.max(im.width,im.height)<=512) continue; done.add(t); try{ const c=texCap(im,512); if(c!==im){ t.image=c; t.needsUpdate=true; } }catch(e){} } }); }catch(e){}
       // drop the model's own wheels + driver, find the tyres' size and axle positions from the wheel meshes first
       const wheels = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'') && /Wheel|Meshpart2Mtl|Meshpart6Mtl/.test(o.material.name||'')) wheels.push(o); });
       const wb = new THREE.Box3(); for(const w of wheels) wb.expandByObject(w);
