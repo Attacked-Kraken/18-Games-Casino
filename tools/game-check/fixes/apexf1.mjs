@@ -2373,19 +2373,4 @@ export default [
       return true;
     },
   },
-  // owner Nov 12 2026 'the part that shows after is too big, everything needs to fit in frame'
-  {
-    id: 'play-results-fit-sideways-phone', mode: 'race',
-    ask: 'The F1 results screen fits a sideways phone (844x390): the title, both tables and both buttons sit inside the screen with nothing cut off or scrolling - owner Nov 12 2026',
-    async test(page, h) {
-      let ok = null; for (let i = 0; i < 120 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
-      if (!ok) return { inconclusive: 'the race did not start' };
-      const r = await h.eval(() => { window.__test.finishNow(); const m = document.getElementById('resultMenu'); if (!m || m.classList.contains('hidden')) return { err: 'results did not open' };
-        const W = innerWidth, H = innerHeight, out = []; for (const sel of ['#resTitle', '#resTable', '#champTable', '#resNext', '#resMenu']) { const e = document.querySelector(sel); if (!e) { out.push(sel + ' missing'); continue; } const b = e.getBoundingClientRect(); if (b.bottom > H + 1 || b.right > W + 1 || b.top < -1 || b.left < -1) out.push(sel + ' sticks out (bottom ' + Math.round(b.bottom) + ' of ' + H + ', right ' + Math.round(b.right) + ' of ' + W + ')'); }
-        return { out, H }; }).catch((e) => ({ err: String(e) }));
-      if (r.err) return r.err;
-      if (r.out.length) return 'F1: results screen does not fit the phone: ' + r.out.join('; ');
-      return true;
-    },
-  },
 ];

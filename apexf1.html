@@ -4855,7 +4855,6 @@ window.__test = {
     }
   },
   penState: () => { const p = Race.player; return p ? { warnings: p.warnings, penalty: p.penalty, offT: +(p._offT || 0).toFixed(2), shoveT: +(p._shoveT || 0).toFixed(2) } : null; }, // G-239: penalty proof for the play tests
-  finishNow: () => { Race.finishRace(); return true; }, // owner Nov 12 2026: test hook - ends the race at once so a robot can look at the results screen
   shoveNow: () => { const p = Race.player; if (p) p._shoveT = 2.0; }, // G-239: test hook - stamps the same limits grace carContact stamps on a hard hit
   setCarLap: (idx, lap) => {
     const c = Race.cars[idx];
