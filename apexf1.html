@@ -47,6 +47,14 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     .overlay .bigbtn { margin:4px auto; padding:7px 12px; font-size:14px; border-radius:9px; }
     #raceBtn { min-height:44px; box-sizing:border-box; } #gridMenu .card { padding-top:4px; padding-bottom:4px; } #gridMenu table.stand td, #gridMenu table.stand th { padding:1px 5px; } /* G-224: LIGHTS OUT is a full 44px tap target; the grid rows give back the fit headroom it spends (the stack sat at exactly 390) */
     .overlay table.stand { margin-top:2px; }
+    /* owner Nov 12 2026 'the part that shows after is too big, everything needs to fit in frame': the results screen on a sideways phone is one compact block - title on top, the two tables side by side, the two buttons in one row, nothing scrolls */
+    #resultMenu { display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; column-gap:8px; row-gap:0; align-content:start; justify-items:stretch; padding:4px 10px; overflow:hidden; }
+    #resultMenu .title { grid-column:1 / -1; font-size:16px !important; margin:0 0 2px; text-align:center; }
+    #resultMenu .card { width:auto !important; margin:0; padding:4px 6px; min-width:0; }
+    #resultMenu .card h3 { font-size:10px; margin:0 0 2px; }
+    #resultMenu table.stand { font-size:10px; margin:0; }
+    #resultMenu table.stand td, #resultMenu table.stand th { padding:0 4px; line-height:1.25; }
+    #resultMenu .bigbtn { margin:4px 0 0; padding:6px 8px; font-size:13px; min-height:38px; width:auto; }
     .overlay table.stand td, .overlay table.stand th { padding:2px 6px; }
     #menu { flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:flex-start; }
     #menu .title, #menu .menuSub, #menu .card { flex:0 0 100%; }
@@ -138,22 +146,23 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #gapbox { position:absolute; left:12px; top:96px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; color:#9fd8ff; }
   #tirebox { cursor:pointer; pointer-events:auto; position:absolute; right:12px; top:12px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
   #tirebox .cmp { font-weight:900; font-size:16px; }
-  #fuelbox { position:absolute; right:12px; top:118px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
+  #fuelbox { position:absolute; right:12px; top:130px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
   #fuelbox .fbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
   #fuelbox .fbar i { display:block; height:100%; background:#57b6ff; }
-  #pitPanel { position:absolute; left:50%; bottom:118px; transform:translateX(-50%); background:#060b14e6; border:1px solid #ffd76a; border-radius:12px; padding:10px 18px; text-align:center; min-width:240px; z-index:5; }
-  #pitPanel .pc { font-size:26px; font-weight:900; color:#ffd76a; }
+  #pitPanel { position:absolute; left:150px; top:150px; width:150px; background:#060b14e6; border:1px solid #ffd76a; border-radius:12px; padding:4px 8px 5px; text-align:center; z-index:5; } /* owner Nov 11 2026 'can't see anything': the pit panel is a small card in the top-left corner (was a wide box over the middle of the screen) */
+  #pitPanel > div:first-child { display:none; } #pitPanel:not(.hidden) ~ #wxTag { display:none; }
+  #pitPanel .pc { font-size:20px; font-weight:900; color:#ffd76a; }
   #placeChip { position:absolute; left:50%; top:10px; transform:translateX(-50%); background:#060b14e6; border:2px solid #ffd76a; border-radius:999px; padding:2px 20px 4px; font-size:32px; font-weight:900; color:#ffffff; letter-spacing:1px; z-index:6; }
-  #pitPanel .pbar { width:220px; height:8px; background:#1a2440; border-radius:4px; margin:5px auto; overflow:hidden; }
+  #pitPanel .pbar { width:130px; height:6px; background:#1a2440; border-radius:4px; margin:3px auto; overflow:hidden; }
   #pitPanel .pbar i { display:block; height:100%; }
-  #pitSkip { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); pointer-events:auto; z-index:6; background:#d21f26; color:#fff; border:2px solid #ffd76a; border-radius:14px; font-family:Arial, sans-serif; font-size:20px; font-weight:900; letter-spacing:1px; padding:16px 34px; min-height:60px; min-width:230px; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.55); }
+  #pitSkip { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); pointer-events:auto; z-index:34; touch-action:none; background:#d21f26; color:#fff; border:2px solid #ffd76a; border-radius:14px; font-family:Arial, sans-serif; font-size:14px; font-weight:900; letter-spacing:1px; padding:8px 18px; min-height:44px; min-width:140px; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.55); } /* owner Nov 9 2026 pit-button fix: was absolute inside #hud (z 20, UNDER the touch-controls layer z 30, no safe-area inset) - now a top-level fixed button above the touch layer, clear of the iPhone home indicator / browser bar, and touch-action:none so a tap is never read as a scroll or zoom gesture */
   #pitSkip:active { background:#ff3b42; } /* owner Nov 9 2026: SKIP STOP - a big thumb-sized button under the pit panel, up only while the car is in the pits */
   .wearbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
   .wearbar i { display:block; height:100%; background:linear-gradient(90deg,#37d67a,#ffd76a 60%,#ff5a5a); }
   #drsTag { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); font-weight:900; font-size:15px; letter-spacing:2px; color:#0a0f1a; background:#37d67a; border-radius:8px; padding:6px 14px; }
   #flagTag { position:absolute; left:50%; top:12px; transform:translateX(-50%); font-weight:900; font-size:15px; letter-spacing:3px; border-radius:8px; padding:7px 18px; }
   #warnTag { position:absolute; left:50%; top:64px; transform:translateX(-50%); font-size:13px; font-weight:700; color:#ffd76a; background:#060b14cc; border:1px solid #ffd76a66; padding:6px 12px; border-radius:8px; }
-  #wxTag { position:absolute; right:12px; top:96px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; }
+  #wxTag { position:absolute; left:12px; top:172px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; }
   #ersbar { position:absolute; right:12px; bottom:170px; width:120px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:11px; color:#9fd8ff; }
   #ersbar .track { height:7px; background:#1a2440; border-radius:4px; overflow:hidden; margin-top:4px; }
   #ersbar .track i { display:block; height:100%; background:#37d67a; }
@@ -172,7 +181,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #btnRev { right:218px; bottom:250px; width:72px; height:72px; font-size:13px; border-radius:16px; }
   #btnDRS { right:14px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   #btnERS { right:98px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
-  #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; touch-action:none; }
   #btnCam { left:98px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   /* mobile: HUD elements move clear of the thumb zones */
   body.touch #minimap { left:12px; top:176px; bottom:auto; width:104px; height:104px; }
@@ -230,8 +239,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   body.touch #minimap { left:112px; top:12px; bottom:auto; width:84px; height:84px; }
   #lapbox { top:56px; }
   body.touch #gapbox { top:132px; }
-  body.touch #btnCam { left:auto; right:136px; top:12px; bottom:auto; width:64px; height:48px; }
-  body.touch #btnPit { left:auto; right:208px; top:12px; bottom:auto; width:64px; height:48px; }
+  body.touch #btnCam { left:auto; right:196px; top:12px; bottom:auto; width:42px; height:32px; font-size:10px; border-radius:9px; } /* owner Nov 12 2026: small, clear of the tire box and Studio */
+  body.touch #btnPit { left:auto; right:244px; top:12px; bottom:auto; width:42px; height:32px; font-size:10px; border-radius:9px; }
   body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
   @media (pointer:coarse) and (orientation:landscape) {
     body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
@@ -249,11 +258,11 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(16px,3.2vw,26px); font-weight:900; letter-spacing:2px; text-shadow:0 2px 10px #000; } /* owner Nov 3 2026: PENALTY / CONTACT signs were too big - they covered the road */
   #banner .b2 { font-size:12px; color:#cfe0ff; margin-top:3px; }
-  #lights { position:fixed; left:50%; top:15%; transform:translateX(-50%); z-index:36; display:flex; gap:16px; background:#060b14d9; padding:14px 20px; border-radius:18px; border:1px solid #ffffff2a; }
-  .light { width:56px; height:56px; border-radius:50%; background:#2a1214; border:2px solid #000; }
-  .light.red { background:#ff2222; box-shadow:0 0 22px #ff2222; }
+  #lights { position:fixed; left:50%; top:9%; transform:translateX(-50%); z-index:36; display:flex; gap:9px; background:#060b14d9; padding:7px 12px; border-radius:12px; border:1px solid #ffffff2a; }
+  .light { width:30px; height:30px; border-radius:50%; background:#2a1214; border:2px solid #000; }
+  .light.red { background:#ff2222; box-shadow:0 0 12px #ff2222; }
   .light.out { background:#111; }
-  .light.green { background:#22dd55; box-shadow:0 0 26px #22dd55; }
+  .light.green { background:#22dd55; box-shadow:0 0 14px #22dd55; }
   table.stand { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
   table.stand td, table.stand th { padding:4px 6px; border-bottom:1px solid #1c2b44; text-align:left; }
   table.stand th { color:#8fa8c8; font-size:11px; letter-spacing:1px; }
@@ -283,10 +292,9 @@ setTimeout(function(){
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
   <div id="placeChip">P1</div>
   <div id="gapbox">GAP —</div>
-  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
+  <div id="tirebox"><div class="tcap">TIRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">TIRES 100% · 0 laps</div><div class="wearbar" style="margin-top:3px"><i id="bodyFill" style="width:100%"></i></div><div id="bodyPct" style="font-size:11px;color:#8fa8c8">BODY 100%</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
   <div id="fuelbox"><div style="font-size:9px;letter-spacing:2px;color:#8fa8c8;font-weight:800">FUEL</div><div class="fbar"><i id="fuelFill" style="width:100%"></i></div><div id="fuelPct" style="font-size:11px;color:#9fd8ff">100%</div></div>
-  <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TYRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
-  <button id="pitSkip" class="hidden">SKIP STOP ⏩</button>
+  <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TIRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
@@ -308,6 +316,8 @@ setTimeout(function(){
   <div class="tbtn" id="btnCam">CAM</div>
 </div>
 
+<button id="pitSkip" class="hidden">SKIP STOP ⏩</button>
+
 <div id="vignette"></div>
 
 <div id="lapPop"></div>
@@ -326,7 +336,7 @@ setTimeout(function(){
   <button class="bigbtn alt" id="friendBtn">👥 PLAY WITH FRIENDS</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
-  <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 13px ui-monospace,Menlo,monospace;color:#9fd8ff">Finish a race to earn your code</div>
+  <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 12px ui-monospace,Menlo,monospace;color:#9fd8ff;word-break:break-all;overflow-wrap:anywhere;line-height:1.35;user-select:all;-webkit-user-select:all">Finish a race to earn your code</div>
   <div style="font-size:12px;color:#8fa8c8;margin-top:6px">Share it — friends paste it to race your driver, AI-driven at your rating.</div></div>
 </div>
 
@@ -359,6 +369,7 @@ setTimeout(function(){
   <div class="card" id="shapeCard"><h3>SHAPE</h3><div class="row" id="shapeRow"></div></div>
   <div class="card" id="wrapCard"><h3>WRAP</h3><div class="row" id="wrapRow"></div></div>
   <div class="card" id="nameCard"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
+  <div class="card" id="assistCard"><h3>STEERING ASSIST</h3><div class="row" id="assistRow"></div></div>
   <div class="card" id="diffCard"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
   <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
   <button class="bigbtn alt" id="teamBack">‹ BACK</button>
@@ -407,7 +418,7 @@ setTimeout(function(){
 <div class="overlay hidden" id="pitMenu" style="background:rgba(3,6,12,.55)">
   <div class="card" style="text-align:center"><h3>PIT STOP — CHOOSE TIRES</h3>
     <div class="pitopt" id="pitTires"></div>
-    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~2.0s + pit-lane time</div>
+    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~6s + pit-lane time</div>
   </div>
 </div>
 
@@ -432,7 +443,11 @@ setTimeout(function(){
     <div style="margin-top:6px"><b>"Williams FW16 + Ayrton Senna"</b> by GRIP420, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/williams-fw16-ayrton-senna-ba86f97de7184b6b836458815897156f" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
     <div style="margin-top:6px"><b>"car mechanic"</b> by asset_for_games, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: used as the pit crew at real size, shirt back lettered APEX ARCADE CREW.</div>
     <div style="margin-top:6px"><b>"Gamer Setup_pack"</b> by Phuc13b, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/gamer-setup-pack-49aa58309ef64c3c8ba0be1a8fa1b84d" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: the desk and monitor are the pit-wall timing booth at every box - palette repainted in team colours, our own timing tower on the screen, case fans removed.</div>
-    <div style="margin-top:6px"><b>"[Free] Drawer Tool Cart (Used)"</b> by Robert Prispilović, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/free-drawer-tool-cart-used-da8955e5c8c448e58b013951f48148a0" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: scaled to real size, paint repainted in team colours; one stands beside every booth.</div>
+    <div style="margin-top:6px"><b>"[Free] Drawer Tool Cart (Used)"</b> by Robert Prispilović, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/free-drawer-tool-cart-used-da8955e5c8c448e58b013951f48148a0" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: scaled to real size, paint repainted in team colours; one stands beside every booth.
+      <div style="margin-top:6px"><b>"car mechanic"</b> by BELAZ, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"Generic Sport Car Low Poly"</b> by Han66st, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/generic-sport-car-low-poly-7ad3bfb2bd7449c19698fc7d0592a601" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: the orange car cut out of the three-car file - it is the parked safety car.</div>
+      <div style="margin-top:6px"><b>"Ambulance - Low Poly"</b> by calebcram, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/ambulance-low-poly-c38293926711435d868dde2c389e748b" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP) - it is the parked medical car.</div>
+    </div>
     <div class="row"></div>
   </div>
   <button class="bigbtn alt" id="howClose">CLOSE</button>
@@ -684,6 +699,8 @@ const TIRES = {
   INTER: { name:'INTER', color:'#1c9e4a', pace:-1.6,  deg:0.045, maxAge:20, wet:true },
   WET:   { name:'WET',   color:'#1c5fe8', pace:-2.4,  deg:0.05,  maxAge:20, wet:true },
 };
+// owner Nov 11 2026: laps are short, so tyre wear is scaled to the race length - a Soft set hits the cliff (wear 0.6) at about two thirds of a 5-lap race, so a pit stop is worth making at any length
+function wearPerLap(tire, laps, wet){ const k=Math.max(1,Math.min(6,28/Math.max(1,laps||5))); return TIRES[tire].deg*k*(wet>0.4?0.7:1); }
 /* ================= TRACK BUILDER ================= */
 let renderer, scene, camera;
 const isTouch = matchMedia('(pointer: coarse)').matches;
@@ -868,7 +885,7 @@ const Track = {
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
     this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
     try{ this.buildPitSigns(this.group); }catch(e){}
-    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
+    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } try{ this.buildRaceFurniture(this.group); this.clearPaddock(); }catch(e){ console.warn('furniture',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
     if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
       const f0=this.frameAt(0);
       for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
@@ -923,7 +940,7 @@ const Track = {
     const vLat=Math.sqrt(Math.max(8, 42*grip*SN('car.grip',1,{min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'})/Math.max(c,1e-5))); // lateral accel limit
     return Math.min(92*SN('car.top',1,{min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'}), vLat); // 92 m/s ~ 331 km/h
   },
-  clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); },
+  clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); this._stands=[]; this.furniture=null; this._pitBoard=null; },
   buildMeshes(){
     this.clearGroup(); const g=this.group, W=this.width, N=this.samples.length;
     // grass
@@ -1002,6 +1019,7 @@ const Track = {
     this.buildTrackside(g, th);
     this.buildCityLife(g, th);
     if(th.kind) this.buildEnvironment(g, th);
+    try{ this.clearPaddock(); }catch(e){ console.warn('paddock',e); } // after ALL the scenery is down: the pad, the podium strip and the motorhome paddock are swept clear of it
   },
   /* owner Nov 2 2026 9:10 PM "use the layout but we need an environment": each circuit gets its own world - instanced, cheap on phones */
   buildEnvironment(g, th){
@@ -1115,6 +1133,7 @@ const Track = {
   buildTrackside(g, th){ try{ const PIT_CLEAR_M=9;
     const W=this.width, S=this.samples, N=S.length; if(N<20) return;
     const cnt={tyres:0,posts:0,rails:0,huts:0,flags:0,lamps:0,trees:0}; this.trackside=cnt;
+    const mPosts=[]; // owner Nov 10 2026 missing-list item 2: every placed marshal post is recorded (hut spot + frame + side + flag colour) so buildMarshals can stand a man at it
     const up=new THREE.Vector3(0,1,0), m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pos=new THREE.Vector3();
     const mk=(geo,mat,max)=>{ const im=new THREE.InstancedMesh(geo,mat,max); im.count=0; im.frustumCulled=false; g.add(im); return im; };
     const put=(im,x,y,z,rot,sx,sy,sz,col)=>{ if(im.count>=im.instanceMatrix.count) return false; q.setFromAxisAngle(up,rot||0); pos.set(x,y,z); sc.set(sx||1,sy||1,sz||1); m.compose(pos,q,sc); im.setMatrixAt(im.count,m); if(col!==undefined) im.setColorAt(im.count,col); im.count++; return true; };
@@ -1134,7 +1153,7 @@ const Track = {
         for(const sd of [-1,1]){ const o=at(W/2+7.2,sd); if(!clear(o.x,o.z,5)) continue; if(put(posts,o.x,p.y,o.z,0,1,4.6,1)) cnt.posts++;
           for(const hh of [2.3,4.4]) if(put(rails,o.x+p.tx*4,p.y+hh,o.z+p.tz*4,rot-Math.PI/2,8,1,1)) cnt.rails++; } }
       if(accM>=130){ accM=0; const sd=(k++%2)?1:-1, o=at(W/2+9.5,sd); if(clear(o.x,o.z,7)){ // marshal post: orange hut, pole, flag (yellow / green / blue by turns)
-          if(put(huts,o.x,p.y,o.z,rot,1,1,1)) cnt.huts++; if(put(lampP,o.x+p.tx*2.2,p.y,o.z+p.tz*2.2,0,1,5.5,1)) cnt.flags++; const fc=[cYel,cGrn,cBlue][k%3];
+          const mRec={x:o.x,y:p.y,z:o.z,tx:p.tx,tz:p.tz,nx:p.nx,nz:p.nz,sd,fci:0}; if(put(huts,o.x,p.y,o.z,rot,1,1,1)){ cnt.huts++; mPosts.push(mRec); } if(put(lampP,o.x+p.tx*2.2,p.y,o.z+p.tz*2.2,0,1,5.5,1)) cnt.flags++; const fc=[cYel,cGrn,cBlue][k%3]; mRec.fci=k%3;
           if(put(flags,o.x+p.tx*2.2+p.nx*sd*0.55,p.y+5.1,o.z+p.tz*2.2+p.nz*sd*0.55,rot+Math.PI/2,1,1,1,fc)) cnt.flags++; } }
       if(accL>=55 && !(th.kind==='city'||th.kind==='harbour')){ accL=0; const sd=(k++%2)?1:-1, o=at(W/2+11,sd); if(clear(o.x,o.z,8)){ if(put(lampP,o.x,p.y,o.z,0,1,10,1)) cnt.lamps++; put(lampH,o.x-p.nx*sd*0.8,p.y+10,o.z-p.nz*sd*0.8,rot,1,1,1); } }
     }
@@ -1144,7 +1163,53 @@ const Track = {
       for(let t=0;t<900&&tt.count<260;t++){ const p=S[(Math.random()*N)|0], sd=Math.random()<0.5?1:-1, off=W/2+16+Math.random()*60, x=p.x+p.nx*off*sd, z=p.z+p.nz*off*sd; if(this.distToLoop(x,z)<W/2+14) continue; const s=0.8+Math.random()*0.9;
         put(tt,x,this.groundBase,z,0,s,s,s); put(tc,x,this.groundBase,z,0,s,s,s,new THREE.Color().setHSL(0.33,0.5,0.16+Math.random()*0.12)); cnt.trees++; } tt.instanceMatrix.needsUpdate=true; tc.instanceMatrix.needsUpdate=true; if(tc.instanceColor) tc.instanceColor.needsUpdate=true; }
     for(const im of [tyres,posts,rails,huts,flags,lampH,lampP]){ im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; }
+    this.marshalPosts=mPosts; this.buildMarshals(g, mPosts); // the posts get their marshals (missing-list item 2) in the same build pass, so every path that plants posts (built-in, GP kit, owner circuits) gets the men too
   }catch(e){ console.warn('trackside',e); } },
+  /* owner Nov 10 2026 missing-list item 2: MARSHALS at the marshal posts. The posts have stood empty since
+     buildTrackside first planted them (Nov 4 accessories round: an orange hut, a pole and a flag every ~130 m,
+     nobody home). Each post now gets ONE marshal: the fetched mechanic - the same model, MECH.scale (2.63 m,
+     the pit crews' people-vs-car size) and atlas-repaint machinery as the pit crews - in the MARSHAL kit
+     (MECH_KITS[10], international orange, plain back), skins dealt from the variety cycle so the lap is not
+     one man cloned. He stands beside his hut toward its pole, half a step closer to the track, facing it.
+     Poses cycle by post: a flag marshal (right arm straight up, MECH_POSE.lollipop, a hand flag on a pole at
+     the lollipop anchor, cloth in the post's own flag colour), a lean, an easy stand, a ready crouch. Poses
+     are set once at build - no per-frame tick for ~40 men spread over a whole lap. If the model has not
+     landed the articulated pit figure in orange stands in; the boots are awaited before the world builds
+     in the real flow, so that path never fires there. */
+  buildMarshals(g, posts){ try{
+    if(!posts || !posts.length){ this._marshalFigs=[]; return; }
+    const root=new THREE.Group(); g.add(root);
+    const poleGeo=new THREE.CylinderGeometry(0.02,0.02,1.1,5), poleMat=new THREE.MeshLambertMaterial({color:0x23262b});
+    const clothGeo=new THREE.PlaneGeometry(0.62,0.42);
+    const clothMats=[0xf5d90a,0x1fa84a,0x1d4fa8].map(c=>new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide})); // the posts' own flag colours, in buildTrackside's order: yellow / green / blue
+    const suitFb=new THREE.MeshLambertMaterial({color:0xff6a00});
+    const figs=[];
+    posts.forEach((P,i)=>{
+      let f=mechMan(MECH.scale, 10, MECH_VARSEQ[i%6]);
+      if(!f){ f=pitFigure(suitFb,[-1.15,-1.15]); f.scale.setScalar(2.19); }
+      f.position.set(P.x+P.tx*1.7-P.nx*P.sd*0.7, P.y, P.z+P.tz*1.7-P.nz*P.sd*0.7); // beside the hut toward its pole, half a step closer to the track than the hut stands
+      f.rotation.y=Math.atan2(-P.nx*P.sd,-P.nz*P.sd); // face the track
+      const kind=i%4, rig=f.userData.rig;
+      if(kind===0){ // the flag marshal: arm straight up, his flag in the raised hand
+        if(rig){ rig.reset(); MECH_POSE.lollipop(rig,1);
+          const pole=new THREE.Mesh(poleGeo,poleMat); pole.position.set(-0.25,1.60,0.1);
+          const cloth=new THREE.Mesh(clothGeo,clothMats[P.fci]); cloth.position.set(-0.58,1.93,0.1);
+          f.add(pole,cloth);
+        } else { const pole=new THREE.Mesh(poleGeo,poleMat); pole.scale.setScalar(0.85); pole.position.set(0.3,1.05,0);
+          const cloth=new THREE.Mesh(clothGeo,clothMats[P.fci]); cloth.position.set(0.62,1.28,0); f.add(pole,cloth); }
+      }
+      else if(rig){ rig.reset();
+        if(kind===1) MECH_POSE.lean(rig,0.75);
+        else if(kind===2){ rig.pose('LeftForeArm_012','x',-0.4); rig.pose('RightForeArm_035','x',-0.4); } // standing easy, forearms half-bent
+        else MECH_POSE.crouch(rig,0.45); // the ready crouch
+      }
+      root.add(f); figs.push(f);
+      // owner Nov 10 2026 'the heaviness will be your job': a marshal never moves after this pose, so his skeleton is worked out on the first frames he is drawn and then left alone -
+      // without this every visible marshal re-sent ~10 bone pictures to the phone's graphics chip EVERY frame (~380 for 40 men)
+      f.traverse(o=>{ if(o.isSkinnedMesh && o.skeleton && !o.skeleton.__frozen){ const sk=o.skeleton, up=sk.update.bind(sk); let n=0; sk.__frozen=true; sk.update=function(){ if(n<3){ n++; up(); } }; } });
+    });
+    this._marshalFigs=figs;
+  }catch(e){ console.warn('marshals',e); } },
   buildStands(g){ const W=this.width; // track width (lost in a refactor)
     // grandstands ringing the main straight + a few corners, with animated crowd
     this.crowd={ list:[], excite:0 };
@@ -1182,7 +1247,7 @@ const Track = {
       }
       inst.instanceMatrix.needsUpdate=true; if(inst.instanceColor) inst.instanceColor.needsUpdate=true;
       stand.add(inst);
-      stand.position.set(cx,cy,cz); stand.rotation.y=yaw+(side>0?Math.PI:0)+Math.PI/2;
+      stand.position.set(cx,cy,cz); stand.rotation.y=yaw+(side>0?Math.PI:0)+Math.PI/2; { const fl=Math.hypot(p.x-cx,p.z-cz)||1; (this._stands=this._stands||[]).push({x:cx,z:cz,fx:(p.x-cx)/fl,fz:(p.z-cz)/fl}); } // the race furniture keeps clear of every stand (centre + the way it faces)
       // face the track
       stand.lookAt(p.x,cy+4,p.z);
       g.add(stand);
@@ -1199,6 +1264,7 @@ const Track = {
       for(const sd of [-1,1]){
         const bx=p.x+p.nx*(W/2+3.5)*sd, bz=p.z+p.nz*(W/2+3.5)*sd;
         if(this.distToLoop(bx,bz)<W/2+1.5) continue; // G-32: no wall on the road
+        if(sd===1 && this.cfg && this.cfg.pitIn!=null){ const Ls=this.length, si=i/this.samples.length*Ls, a0=this.cfg.pitIn*Ls-120, a1=(this.cfg.pitOut!=null?this.cfg.pitOut*Ls:a0+600)+40; const inZ=a1>=a0? (si>=a0&&si<=a1) : (si>=a0||si<=a1); if(inZ) continue; } // owner Nov 12 2026 'why is that block there': the red/white trackside barriers stood in the pit lane once it moved back - none on the pit side from 120 m before the pit entry to past the exit
         const bar=new THREE.Mesh(barGeo, (i/8)%2?barMatR:barMatW);
         bar.position.set(bx, p.y+0.55, bz);
         bar.rotation.y=Math.atan2(p.tx,p.tz); g.add(bar);
@@ -1206,7 +1272,7 @@ const Track = {
     }
   },
   updateCrowd(dt, excite){
-    if(this._pitEnv) try{ this.updatePitEnv(dt); }catch(e){} // owner Nov 8 2026 round 3: neighbour crews at work
+    if(this._pitEnv) try{ this.updatePitEnv(dt); }catch(e){} try{ this.updatePitBoard(dt); }catch(e){} try{ this.tickEmergency(dt); }catch(e){} // owner Nov 8 2026 round 3: neighbour crews at work
     this.crowd.excite=Math.max(excite, this.crowd.excite-dt*0.4);
     const e=this.crowd.excite;
     this._cwT=(this._cwT||0)+dt; if(this._cwT<0.05 && this._cwDone) return; this._cwT=0; this._cwDone=true; // owner Nov 6 2026: crowd bounce rewritten 20x a second, not every frame
@@ -1233,7 +1299,7 @@ const Track = {
     }
     bld.position.set(px,p.y+5,pz); bld.rotation.y=Math.atan2(p.tx,p.tz)+Math.PI/2;
     bld.castShadow=!isTouch; g.add(bld);
-    this.pitSide = 1; this.pitD = this.width/2+5;
+    this.pitSide = 1; this.pitD = this.width/2+8; // owner Nov 12 2026 'push the pit back more, 5 cars should fit side by side, my guys are changing tires in the fence': the lane (and the boxes, garages, lines built from it) sits 3 m further back - 8.6 m of room between the wall and the stopped car's crew side
     { const L=this.length, pts=[]; for(let ds=-80; ds<=300; ds+=4){ const bp=this.frameAt(((s0+ds)%L+L)%L); pts.push([bp.x+bp.nx*this.pitD, bp.z+bp.nz*this.pitD]); } this.setPitPts(pts); }
     // pit boxes: white outlines on pit lane
     const boxMat=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.7});
@@ -1244,7 +1310,7 @@ const Track = {
       box.rotation.x=-Math.PI/2; box.rotation.z=-Math.atan2(bp.tx,bp.tz);
       box.position.set(bx,bp.y+0.04,bz); g.add(box);
     }
-    try{ this.buildPitComplex(g); }catch(e){ console.warn('pitenv',e); } // owner Nov 8 2026 round 3: the whole pit complex (pad, stands, spots, working crews, trailers)
+    try{ this.buildPitComplex(g); }catch(e){ console.warn('pitenv',e); } try{ this.buildRaceFurniture(g); }catch(e){ console.warn('furniture',e); } // owner Nov 8 2026 round 3: the whole pit complex (pad, stands, spots, working crews, trailers)
   },
   buildPitComplex(g){ // owner Nov 8 2026 round 3 (owner: 'Still needs a whole concrete pad with stands and spots and crews working with trailers'): the pit stops being a strip of grass beside the road. One concrete apron under the whole pit area, a grandstand full of people across the track, every team's spot marked and gantry'd, neighbour crews actually WORKING at their spots, and the team transporters parked behind. Built once per track from the same pit geometry as everything else (frameAt / pitDAt / the 170/9 box spacing). Cost control: the row furniture is three InstancedMeshes, the pad is one ribbon, figures are the cheap two-mesh men - detail was cut, life was not.
     const L=this.length, s0=this.cfg.pitIn*L, box0=s0+30, step=170/9, W=this.width;
@@ -1260,12 +1326,81 @@ const Track = {
       c.strokeStyle='rgba(74,76,80,0.6)'; c.lineWidth=7; c.strokeRect(0,0,256,256);
       const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=4;
       const seg=9.43, ds0=-250, ds1=320, n=Math.ceil((ds1-ds0)/4.7), pos=[], uv=[], idx=[];
-      for(let i=0;i<=n;i++){ const ds=ds0+(ds1-ds0)*i/n, s=((s0+ds)%L+L)%L, dC=this.pitDAt(s), dIn=dC-5.6, dOut=dC+24;
+      for(let i=0;i<=n;i++){ const ds=ds0+(ds1-ds0)*i/n, s=((s0+ds)%L+L)%L, dC=this.pitDAt(s), dIn=dC-5.6-(this.gp?0:3), dOut=dC+24+(this.gp?0:0);
         const a=this.posAt(s,dIn), b=this.posAt(s,dOut);
         pos.push(a.x,a.y+0.02,a.z, b.x,b.y+0.02,b.z); uv.push((ds-ds0)/seg,0, (ds-ds0)/seg,(dOut-dIn)/seg);
         if(i<n){ const k=i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); } }
       const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals();
       const pad=new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide})); root.add(pad);
+    }
+    // ---- 1b. THE PIT WALL (owner Nov 9 2026 missing-list item 1): one continuous concrete wall between the pit lane and the race track, running the whole box stretch - 15 m before box 1 to 15 m past box 10. Anchored to this track's own road edge on the pit side (centre pitSide*(W/2-0.42), 0.45 m thick, top at +1.0 m): the only anchor true on both build paths - built-ins pass at pitD-3.5 with the car's track-side edge at W/2-0.02, while the GP kit lane runs at its own offset where a pitD-based anchor would land mid-road. The only openings are the entry and exit blends themselves, which cross this line outside the span (bench-measured entry margin 37 m on all five tracks).
+    { const WALL_INSET=0.42, WALL_T=0.45, WALL_H=1.0, wsd=this.pitSide||1, wdC=wsd*(W/2-WALL_INSET), wdLane=wdC+wsd*WALL_T/2, wdRoad=wdC-wsd*WALL_T/2;
+      // FINISH (owner Nov 10 2026: 'make the wall read better'): same mesh, same geometry - a painted finish on a canvas tile (8 m x 1.15 m; each 4 m segment maps half a tile so the lettering repeats every 8 m): light warm concrete clearly off the pad's tone, an Apex red band across the top 20% so the top edge reads from down the lane, a dark foot strip so the base separates from the ground, APEX ARCADE lettering on both faces.
+      const wcv=document.createElement('canvas'); wcv.width=2048; wcv.height=256; const wx=wcv.getContext('2d');
+      wx.fillStyle='#d9d5cc'; wx.fillRect(0,0,2048,256);
+      for(let k=0;k<2600;k++){ wx.fillStyle=Math.random()<0.5?'rgba(70,66,60,0.07)':'rgba(255,255,255,0.08)'; wx.fillRect(Math.random()*2048,Math.random()*256,2,2); }
+      for(let k=0;k<26;k++){ const sx=Math.random()*2048, sl=40+Math.random()*110; wx.fillStyle='rgba(96,92,86,'+(0.04+Math.random()*0.06)+')'; wx.fillRect(sx,49,3+Math.random()*6,sl); }
+      // REALISM (owner Nov 10 2026: 'make it more realistic'): the 4 m panel joints get a shaded edge - a dark groove with a light lip beside it - and the base picks up grime above the foot strip, so the face has depth up close. Letters, band and foot below are exactly as approved.
+      for(const jx of [0,1022,2045]){ wx.fillStyle='rgba(52,50,47,0.55)'; wx.fillRect(jx,49,5,207); wx.fillStyle='rgba(255,255,255,0.30)'; wx.fillRect(jx+5,49,2,207); }
+      const wg=wx.createLinearGradient(0,148,0,200); wg.addColorStop(0,'rgba(74,66,54,0)'); wg.addColorStop(1,'rgba(74,66,54,0.22)'); wx.fillStyle=wg; wx.fillRect(0,148,2048,52);
+      for(let k=0;k<22;k++){ const sx=Math.random()*2048; wx.fillStyle='rgba(80,72,60,'+(0.05+Math.random()*0.08)+')'; wx.fillRect(sx,166+Math.random()*20,4+Math.random()*10,34); }
+      wx.fillStyle='#c8222a'; wx.fillRect(0,0,2048,45); wx.fillStyle='rgba(0,0,0,0.25)'; wx.fillRect(0,42,2048,3);
+      wx.fillStyle='#f2f0ea'; wx.fillRect(0,45,2048,4);
+      wx.font='900 128px Arial, sans-serif'; wx.textAlign='center'; wx.textBaseline='middle';
+      wx.fillStyle='rgba(255,255,255,0.35)'; wx.fillText('APEX ARCADE',1024,128);
+      wx.fillStyle='#26282c'; wx.fillText('APEX ARCADE',1024,125);
+      wx.fillStyle='#33363b'; wx.fillRect(0,200,2048,56); wx.fillStyle='rgba(0,0,0,0.3)'; wx.fillRect(0,200,2048,4); wx.fillStyle='#26282c'; wx.fillRect(0,238,2048,18);
+      const wtex=new THREE.CanvasTexture(wcv); wtex.colorSpace=THREE.SRGBColorSpace; wtex.wrapS=THREE.RepeatWrapping; wtex.anisotropy=4;
+      const wsts=[]; for(let ds=-15; ds<=185; ds+=4) wsts.push(((box0+ds)%L+L)%L);
+      const wpos=[], wuv=[], wcorner=(s,d,y)=>{ const p=this.posAt(s,d); return [p.x,p.y+y,p.z]; }, wquad=(a,b,c2,d2,ua,ub,uc,ud)=>{ wpos.push(a[0],a[1],a[2], b[0],b[1],b[2], c2[0],c2[1],c2[2], a[0],a[1],a[2], c2[0],c2[1],c2[2], d2[0],d2[1],d2[2]); wuv.push(ua[0],ua[1], ub[0],ub[1], uc[0],uc[1], ua[0],ua[1], uc[0],uc[1], ud[0],ud[1]); };
+      for(let i=0;i<wsts.length-1;i++){ const sA=wsts[i], sB=wsts[i+1], u0=(i%2)*0.5, u1=u0+0.5;
+        const rbA=wcorner(sA,wdRoad,-0.15), rtA=wcorner(sA,wdRoad,WALL_H), lbA=wcorner(sA,wdLane,-0.15), ltA=wcorner(sA,wdLane,WALL_H);
+        const rbB=wcorner(sB,wdRoad,-0.15), rtB=wcorner(sB,wdRoad,WALL_H), lbB=wcorner(sB,wdLane,-0.15), ltB=wcorner(sB,wdLane,WALL_H);
+        wquad(rbA,rbB,rtB,rtA, [u1,0],[u0,0],[u0,1],[u1,1]); wquad(ltA,ltB,lbB,lbA, [u0,1],[u1,1],[u1,0],[u0,0]); wquad(rtA,rtB,ltB,ltA, [u0,0.88],[u1,0.88],[u1,0.97],[u0,0.97]);
+      }
+      wquad(wcorner(wsts[0],wdLane,-0.15), wcorner(wsts[0],wdRoad,-0.15), wcorner(wsts[0],wdRoad,WALL_H), wcorner(wsts[0],wdLane,WALL_H), [0.02,0],[0.10,0],[0.10,1],[0.02,1]);
+      wquad(wcorner(wsts[wsts.length-1],wdRoad,-0.15), wcorner(wsts[wsts.length-1],wdLane,-0.15), wcorner(wsts[wsts.length-1],wdLane,WALL_H), wcorner(wsts[wsts.length-1],wdRoad,WALL_H), [0.90,0],[0.98,0],[0.98,1],[0.90,1]);
+      const wgeo=new THREE.BufferGeometry(); wgeo.setAttribute('position', new THREE.Float32BufferAttribute(wpos,3)); wgeo.setAttribute('uv', new THREE.Float32BufferAttribute(wuv,2)); wgeo.computeVertexNormals();
+      const wallMesh=new THREE.Mesh(wgeo, new THREE.MeshLambertMaterial({map:wtex, side:THREE.DoubleSide})); root.add(wallMesh);
+      env.wall={ mesh:wallMesh, stations:wsts.map(s=>[s,wdC]), h:WALL_H, t:WALL_T };
+    }
+    // ---- 1c. PIT WALL REALISM (owner Nov 10 2026: 'make it more realistic'): the 1b wall keeps its exact measured geometry - env.wall above is untouched and the play test reads only that record. What a real pit wall carries on top of the concrete is added as SEPARATE meshes the probe never sees: a coping cap (0.60 m wide, 0.08 m thick) that overhangs the wall and keeps the approved red line on its top face, debris-fence posts every 8 m, and ONE see-through chain-link fence plane running the whole 200 m.
+    { const CAP_W=0.60, CAP_H=0.08, WALL_H2=1.0, FEN_H=1.8, fsd=this.pitSide||1, fdC=fsd*(W/2-0.42), fdLane=fdC+fsd*CAP_W/2, fdRoad=fdC-fsd*CAP_W/2, fenBase=WALL_H2+CAP_H, fenTop=fenBase+FEN_H;
+      const fsts=[]; for(let ds=-15; ds<=185; ds+=4) fsts.push(((box0+ds)%L+L)%L);
+      const fcorner=(s,d,y)=>{ const p=this.posAt(s,d); return [p.x,p.y+y,p.z]; };
+      // the cap: one ribbon - light concrete cheeks, red top face (canvas zones: y 0-32 concrete = v 0.5-1, y 32-64 red = v 0-0.5)
+      const ccv=document.createElement('canvas'); ccv.width=128; ccv.height=64; const ccx=ccv.getContext('2d');
+      ccx.fillStyle='#cfccc2'; ccx.fillRect(0,0,128,32); for(let k=0;k<260;k++){ ccx.fillStyle=Math.random()<0.5?'rgba(70,66,60,0.08)':'rgba(255,255,255,0.08)'; ccx.fillRect(Math.random()*128,Math.random()*32,2,2); }
+      ccx.fillStyle='#c8222a'; ccx.fillRect(0,32,128,32); ccx.fillStyle='rgba(0,0,0,0.18)'; ccx.fillRect(0,32,128,3);
+      const ctex=new THREE.CanvasTexture(ccv); ctex.colorSpace=THREE.SRGBColorSpace; ctex.anisotropy=4;
+      const cpos=[], cuv=[], cquad=(a,b,c,d2,ua,ub,uc,ud)=>{ cpos.push(a[0],a[1],a[2], b[0],b[1],b[2], c[0],c[1],c[2], a[0],a[1],a[2], c[0],c[1],c[2], d2[0],d2[1],d2[2]); cuv.push(ua[0],ua[1], ub[0],ub[1], uc[0],uc[1], ua[0],ua[1], uc[0],uc[1], ud[0],ud[1]); };
+      for(let i=0;i<fsts.length-1;i++){ const sA=fsts[i], sB=fsts[i+1];
+        const rbA=fcorner(sA,fdRoad,WALL_H2), rtA=fcorner(sA,fdRoad,fenBase), lbA=fcorner(sA,fdLane,WALL_H2), ltA=fcorner(sA,fdLane,fenBase);
+        const rbB=fcorner(sB,fdRoad,WALL_H2), rtB=fcorner(sB,fdRoad,fenBase), lbB=fcorner(sB,fdLane,WALL_H2), ltB=fcorner(sB,fdLane,fenBase);
+        cquad(rbA,rbB,rtB,rtA, [0,0.55],[1,0.55],[1,0.95],[0,0.95]); cquad(ltA,ltB,lbB,lbA, [0,0.95],[1,0.95],[1,0.55],[0,0.55]); cquad(rtA,rtB,ltB,ltA, [0,0.05],[1,0.05],[1,0.45],[0,0.45]);
+      }
+      cquad(fcorner(fsts[0],fdLane,WALL_H2), fcorner(fsts[0],fdRoad,WALL_H2), fcorner(fsts[0],fdRoad,fenBase), fcorner(fsts[0],fdLane,fenBase), [0,0.55],[1,0.55],[1,0.95],[0,0.95]);
+      cquad(fcorner(fsts[fsts.length-1],fdRoad,WALL_H2), fcorner(fsts[fsts.length-1],fdLane,WALL_H2), fcorner(fsts[fsts.length-1],fdLane,fenBase), fcorner(fsts[fsts.length-1],fdRoad,fenBase), [0,0.55],[1,0.55],[1,0.95],[0,0.95]);
+      const cgeo=new THREE.BufferGeometry(); cgeo.setAttribute('position', new THREE.Float32BufferAttribute(cpos,3)); cgeo.setAttribute('uv', new THREE.Float32BufferAttribute(cuv,2)); cgeo.computeVertexNormals();
+      root.add(new THREE.Mesh(cgeo, new THREE.MeshLambertMaterial({map:ctex, side:THREE.DoubleSide})));
+      // fence posts: one InstancedMesh, a post every 8 m along the wall line
+      const psts=[]; for(let ds=-15; ds<=185; ds+=8) psts.push(((box0+ds)%L+L)%L);
+      const fposts=new THREE.InstancedMesh(new THREE.BoxGeometry(0.07,FEN_H+0.1,0.07), dark, psts.length);
+      for(let i=0;i<psts.length;i++){ const pp=this.posAt(psts[i],fdC); fposts.setMatrixAt(i, M4(pp.x, pp.y+fenBase+(FEN_H+0.1)/2-0.05, pp.z, -Math.atan2(pp.f.tz,pp.f.tx))); }
+      fposts.instanceMatrix.needsUpdate=true; root.add(fposts);
+      // the fence itself: ONE see-through chain-link plane the whole run - alpha-tested diamond grid, both faces; what is behind it stays visible
+      const fcv=document.createElement('canvas'); fcv.width=fcv.height=128; const fcx=fcv.getContext('2d');
+      fcx.clearRect(0,0,128,128); fcx.strokeStyle='rgba(176,182,188,0.95)'; fcx.lineWidth=3;
+      for(let k=-128;k<256;k+=32){ fcx.beginPath(); fcx.moveTo(k,0); fcx.lineTo(k+128,128); fcx.stroke(); fcx.beginPath(); fcx.moveTo(k+128,0); fcx.lineTo(k,128); fcx.stroke(); }
+      const ftex=new THREE.CanvasTexture(fcv); ftex.colorSpace=THREE.SRGBColorSpace; ftex.wrapS=ftex.wrapT=THREE.RepeatWrapping; ftex.anisotropy=4;
+      const fpos=[], fuv=[];
+      for(let i=0;i<fsts.length-1;i++){ const sA=fsts[i], sB=fsts[i+1], u0=i*4, u1=u0+4;
+        const bA=fcorner(sA,fdC,fenBase), tA=fcorner(sA,fdC,fenTop), bB=fcorner(sB,fdC,fenBase), tB=fcorner(sB,fdC,fenTop);
+        fpos.push(bA[0],bA[1],bA[2], bB[0],bB[1],bB[2], tB[0],tB[1],tB[2], bA[0],bA[1],bA[2], tB[0],tB[1],tB[2], tA[0],tA[1],tA[2]);
+        fuv.push(u0,0, u1,0, u1,1.8, u0,0, u1,1.8, u0,1.8);
+      }
+      const fgeo=new THREE.BufferGeometry(); fgeo.setAttribute('position', new THREE.Float32BufferAttribute(fpos,3)); fgeo.setAttribute('uv', new THREE.Float32BufferAttribute(fuv,2)); fgeo.computeVertexNormals();
+      root.add(new THREE.Mesh(fgeo, new THREE.MeshLambertMaterial({map:ftex, transparent:true, alphaTest:0.4, side:THREE.DoubleSide})));
     }
     // ---- 2. EVERY SPOT dressed: a tall gantry frame + team panel + number board + tyre stack at all ten boxes (round 2's lane row only dressed the boxes near the player's). Posts/beams/panels/stacks are one InstancedMesh each.
     { const postG=new THREE.BoxGeometry(0.22,4.4,0.22), beamG=new THREE.BoxGeometry(7.6,0.26,0.26), panelG=new THREE.BoxGeometry(7.6,0.62,0.08);
@@ -1291,6 +1426,55 @@ const Track = {
       const bdm=boothMan(i, MECH_VARSEQ[(i+1)%6]); if(bdm){ bdm.position.set(5.05,0,3.66); bdm.rotation.y=0.15; bg.add(bdm); env.anims.push({k:'booth', fig:bdm, ph:i*1.31, role:0}); } // PEGFIX ROUND (owner: the other crews should 'be out there in there booth also'): a crewman stands at the desk of EVERY booth, watching the screen and the lane - not just the seated chief (posed in updatePitEnv)
       const bcm=boothMan(i, MECH_VARSEQ[(i+4)%6]); if(bcm){ bcm.position.set(7.52,0,3.58); bcm.rotation.y=0; bg.add(bcm); env.anims.push({k:'booth', fig:bcm, ph:i*1.31+0.7, role:1}); } // and a second crewman works the tool cart at every booth
       }); }
+    // ---- 2c. THE GARAGES (owner Nov 10 2026 missing-list item 3: garage doors + detail on the pit building): measured first - the only pit building in the game (buildPits' one blank 120x10x14 dark slab) stands ~160 m before the box row beside the pit entry (capital: centre s 5196.7 vs boxes s 5388-5558), so no door painted on it could ever line up with a box, and behind the boxes themselves there was nothing but the booths. So the garages are a face at the back of the pad in the complex's own frame, built like the pad and the wall: ONE ribbon mesh, stations every 4 m from 15 m before box 1 to 15 m past box 10, standing at pitDAt+6.4 - about a metre behind the deepest booth fixture (the seat at z 5.02), clear of the working spots (z <= 3.6) and the clutter (z <= 3.35) on both build paths - carrying ONE canvas texture across the whole 200 m: ten roller-shutter doors centred exactly on the ten box centres, each framed in its team's colour with a team-colour header band carrying the box number and the team name, an office window band above the doors, and an APEX ARCADE sign band along the top. +1 mesh, +1 draw call. The old slab is untouched, as are the booths, crews, wall, box markings and pad.
+    { const FACE_OFF=6.4, FACE_H=8.0;
+      const cv=document.createElement('canvas'); cv.width=4096; cv.height=512; const c=cv.getContext('2d');
+      const MX=4096/200, MY=512/FACE_H, X=ds=>(ds+15)*MX, Y=h=>(FACE_H-h)*MY;
+      c.fillStyle='#d8d4c9'; c.fillRect(0,0,4096,512); // the piers: light warm concrete, clearly off the pad's tone
+      for(let k=0;k<5200;k++){ c.fillStyle=Math.random()<0.5?'rgba(70,66,60,0.06)':'rgba(255,255,255,0.07)'; c.fillRect(Math.random()*4096,Math.random()*512,2,2); }
+      for(let k=0;k<30;k++){ const sx=Math.random()*4096, sl=30+Math.random()*90; c.fillStyle='rgba(96,92,86,'+(0.03+Math.random()*0.05)+')'; c.fillRect(sx,Y(5.3),3+Math.random()*5,sl); } // weathering streaks under the window band
+      c.fillStyle='#33363b'; c.fillRect(0,Y(0.28),4096,Y(0)-Y(0.28)); // the plinth
+      const wy0=Y(6.9), wy1=Y(5.3); // the office window band: dark glass, mullions, a few lit panes
+      const grd=c.createLinearGradient(0,wy0,0,wy1); grd.addColorStop(0,'#31445c'); grd.addColorStop(0.5,'#1d2a3a'); grd.addColorStop(1,'#141e2a');
+      c.fillStyle=grd; c.fillRect(0,wy0,4096,wy1-wy0);
+      c.fillStyle='rgba(255,216,150,0.75)';
+      for(let k=0;k<26;k++){ if(Math.random()<0.6) c.fillRect(Math.random()*4096, wy0+8+Math.random()*Math.max(4,(wy1-wy0-52)), 14+Math.random()*30, 14+Math.random()*16); }
+      c.fillStyle='rgba(10,14,20,0.85)'; for(let x=0;x<=4096;x+=Math.round(1.25*MX)) c.fillRect(x,wy0,3,wy1-wy0);
+      c.fillStyle='rgba(255,255,255,0.20)'; c.fillRect(0,wy0,4096,3); c.fillRect(0,wy1-3,4096,3);
+      c.fillStyle='#141c2c'; c.fillRect(0,0,4096,Y(6.9)); // the sign band along the top
+      c.fillStyle='#0d1420'; c.fillRect(0,0,4096,5);
+      c.fillStyle='#c9a227'; c.fillRect(0,Y(6.98),4096,3); c.fillRect(0,Y(7.92),4096,3);
+      c.font='900 56px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#f2f0ea';
+      for(let k=0;k<8;k++) c.fillText('APEX ARCADE', (12.5+k*25)*MX, Y(7.45));
+      c.fillStyle='rgba(70,68,64,0.5)'; for(let i=0;i<=10;i++){ const bx=4096-X(i*step-step/2); c.fillRect(bx-2, Y(5.3), 4, Y(0.28)-Y(5.3)); } // pier seams at the box boundaries (canvas x is mirrored against the stations - see the door loop)
+      const hex=n=>'#'+n.toString(16).padStart(6,'0');
+      for(let i=0;i<10;i++){ const team=TEAMS[i%TEAMS.length], col=hex(team?team.color:0x888888), cx=4096-X(i*step), dw=5.2*MX, top=Y(4.48), bot=Y(0.28); // mirrored canvas x: with u falling 1 -> 0 along the stations, box i's station samples exactly this x, so door i lands on box i and its glyphs (drawn normally) read correctly
+        c.fillStyle=col; c.fillRect(cx-dw/2-7, top-7, dw+14, bot-top+7); // the team-colour frame
+        c.fillStyle='#c6ccd4'; c.fillRect(cx-dw/2, top, dw, bot-top); // the shutter itself: aluminium slats
+        const sg=c.createLinearGradient(cx-dw/2,0,cx+dw/2,0); sg.addColorStop(0,'rgba(0,0,0,0.16)'); sg.addColorStop(0.5,'rgba(255,255,255,0.10)'); sg.addColorStop(1,'rgba(0,0,0,0.16)'); c.fillStyle=sg; c.fillRect(cx-dw/2, top, dw, bot-top);
+        for(let y=top+0.3*MY; y<bot-2; y+=0.3*MY){ c.fillStyle='rgba(40,44,50,0.45)'; c.fillRect(cx-dw/2, y, dw, 2.5); c.fillStyle='rgba(255,255,255,0.35)'; c.fillRect(cx-dw/2, y+2.5, dw, 1.5); }
+        c.fillStyle='#1d2a3a'; const vy=top+0.55*MY; for(let vx=-1.8; vx<=1.8; vx+=1.2) c.fillRect(cx+vx*MX-0.45*MX, vy, 0.9*MX, 0.5*MY); // the vision strip
+        c.fillStyle='rgba(255,255,255,0.18)'; for(let vx=-1.8; vx<=1.8; vx+=1.2) c.fillRect(cx+vx*MX-0.45*MX, vy, 0.9*MX, 4);
+        c.fillStyle='rgba(40,44,50,0.5)'; c.fillRect(cx-1.5, top, 3, bot-top); // centre seam
+        c.fillStyle='#2c2f34'; c.fillRect(cx-14, bot-0.5*MY, 10, 5); c.fillRect(cx+4, bot-0.5*MY, 10, 5); // handles
+        c.fillStyle=col; c.fillRect(cx-dw/2-7, Y(5.3), dw+14, Y(4.48)-Y(5.3)); // the header band in team colour
+        c.fillStyle='rgba(0,0,0,0.22)'; c.fillRect(cx-dw/2-7, Y(4.48)-4, dw+14, 4);
+        c.fillStyle='#ffffff'; c.textBaseline='middle';
+        c.font='900 44px Arial, sans-serif'; c.textAlign='left'; c.fillText(String(i+1), cx-dw/2+2, Y(4.9)); // the box number
+        c.font='900 30px Arial, sans-serif'; c.textAlign='right'; c.fillText(team?team.name:'', cx+dw/2-2, Y(4.9)); // the team name
+      }
+      const tex=new THREE.CanvasTexture(texCap(cv, 2048)); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=4;
+      const gsts=[]; for(let ds=-15; ds<=185; ds+=4) gsts.push(((box0+ds)%L+L)%L);
+      const gpos=[], guv=[], gcorner=(s,y)=>{ const p=this.posAt(s, this.pitDAt(s)+FACE_OFF); return [p.x,p.y+y,p.z]; };
+      const gquad=(a,b,c2,d2,ua,ub,uc,ud)=>{ gpos.push(a[0],a[1],a[2], b[0],b[1],b[2], c2[0],c2[1],c2[2], a[0],a[1],a[2], c2[0],c2[1],c2[2], d2[0],d2[1],d2[2]); guv.push(ua[0],ua[1], ub[0],ub[1], uc[0],uc[1], ua[0],ua[1], uc[0],uc[1], ud[0],ud[1]); };
+      for(let i=0;i<gsts.length-1;i++){ const sA=gsts[i], sB=gsts[i+1], u0=i/(gsts.length-1), u1=(i+1)/(gsts.length-1);
+        const bA=gcorner(sA,-0.15), bB=gcorner(sB,-0.15), tA=gcorner(sA,FACE_H), tB=gcorner(sB,FACE_H);
+        gquad(bA,bB,tB,tA, [1-u0,0],[1-u1,0],[1-u1,1],[1-u0,1]); // u runs 1 -> 0 CONTINUOUSLY along the stations, the pit wall's road-face rule (its alternating 0.5 steps are the same decrease seen through RepeatWrapping): a lane-side viewer needs u falling with s for lettering to read. The first bench build decreased u only inside each 4 m strip (a sawtooth - strips in order, each flipped in place: doors on their boxes, glyphs backwards); the geometry dump's uv array proved it
+      }
+      const ggeo=new THREE.BufferGeometry(); ggeo.setAttribute('position', new THREE.Float32BufferAttribute(gpos,3)); ggeo.setAttribute('uv', new THREE.Float32BufferAttribute(guv,2)); ggeo.computeVertexNormals();
+      const faceMesh=new THREE.Mesh(ggeo, new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide})); root.add(faceMesh);
+      env.garages={ mesh:faceMesh, faceOff:FACE_OFF, h:FACE_H, doors:Array.from({length:10},(_,i)=>({ i, s:((box0+i*step)%L+L)%L })), stations:gsts.map(s=>[s, this.pitDAt(s)+FACE_OFF]) };
+    }
     // ---- 3. THE GRANDSTAND across the track from the boxes, full of people (same instanced crowd as the other stands, so it bounces with the race). Checked clear of the whole loop like buildStands does.
     { const sMid=s0+115; let sd=-(W/2+17), cc=this.posAt(sMid,sd), guard=0;
       const clear=(x,z)=>this.distToLoop(x,z)>=W/2+12;
@@ -1348,7 +1532,7 @@ const Track = {
     { const tyreI=new THREE.InstancedMesh(pitGeo().tyre, _pitTyreMat, 50);
       const boxI=new THREE.InstancedMesh(new THREE.BoxGeometry(1.1,0.55,0.55), dark, 20);
       const reelI=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.42,0.42,0.26,12), new THREE.MeshLambertMaterial({color:0x37404c}), 10);
-      const barI=new THREE.InstancedMesh(new THREE.BoxGeometry(2.4,0.5,0.32), new THREE.MeshLambertMaterial({color:0xd8d8d8}), 20);
+      const barI={ setMatrixAt(){}, instanceMatrix:{} }; // barrier panels removed (owner Nov 12 2026)
       let ti=0, ei=0, ri=0, bai=0;
       const M4e=(x,y,z,ry,rx)=>{ const m=new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx||0,ry||0,0,'YXZ')); m.setPosition(x,y,z); return m; };
       spotBase.forEach(sp=>{ const B=(m)=>sp.base.clone().multiply(m);
@@ -1357,9 +1541,9 @@ const Track = {
         tyreI.setMatrixAt(ti++, B(M4e(-3.9,0.3,2.4,0.3,1.15))); // one leaning against the stack
         boxI.setMatrixAt(ei++, B(M4e(-1.7,0.28,3.3,0.15))); boxI.setMatrixAt(ei++, B(M4e(0.55,0.28,3.35,-0.1))); // equipment boxes along the back
         reelI.setMatrixAt(ri++, B(M4e(3.35,0.45,2.5,0,Math.PI/2))); // the hose reel standing at the gantry post
-        barI.setMatrixAt(bai++, B(M4(-8.15,0.25,-1.6))); barI.setMatrixAt(bai++, B(M4(8.15,0.25,-1.6))); // barrier panels at the box boundaries, lane side - clear of the drive line and of every car stopping in the box
+        // owner Nov 12 2026 'what are the blocks in the middle when driving': the gray barrier panels at the box boundaries stood beside the cars in the lane - removed
       });
-      [tyreI,boxI,reelI,barI].forEach(im=>{ im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; root.add(im); });
+      [tyreI,boxI,reelI].forEach(im=>{ im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; root.add(im); });
       [4,7].forEach(bi=>{ const sp=spotBase[bi]; if(!sp) return; const tg=new THREE.Group(); const bp=new THREE.Vector3(bi===4?5.2:-5.4,0,bi===4?2.9:3.0).applyMatrix4(sp.base); tg.position.set(bp.x,sp.p.y,bp.z); tg.rotation.y=-Math.atan2(sp.p.f.tz,sp.p.f.tx)+(bi===4?0.4:-0.3); root.add(tg);
         const deck=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.07,0.75), dark); deck.position.y=0.48; tg.add(deck);
         const crate=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.6), new THREE.MeshLambertMaterial({color:0x8a93a3})); crate.position.set(-0.15,0.77,0); tg.add(crate);
@@ -1437,8 +1621,8 @@ const Track = {
       const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
     const f0=this.frameAt(0);
     const sp=(tex,sx,sy,y)=>{ const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false})); m.scale.set(sx,sy,1); m.position.set(f0.x,f0.y+y,f0.z); g.add(m); return m; };
-    sp(mk('START','#37d67a',512,160,120),16,5,15);
-    sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5);
+    this._startSign=sp(mk('START','#37d67a',512,160,120),16,5,15);
+    this._finishSign=sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5); this._finishSign.visible=false;
     this._lapTex=[null]; for(let n=1;n<=10;n++) this._lapTex.push(mk('LAP '+n,'#ffd76a',384,128,96));
     this._lapSign=sp(this._lapTex[1],10,3.3,4.2);
   },
@@ -1454,6 +1638,285 @@ const Track = {
     sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),18,4.5,pin-300,9);
     sp(mk('PIT','#ffd76a',320,160,120),10,5,pin+100,8);
   },
+  /* owner Nov 10 2026 9:29 PM 'Yes do all them complete 1-6' (the rest of the missing list, built by Claude - window 6 was out of usage):
+     RACE FURNITURE, one build pass on every circuit (built-in, GP kit, owner circuits), everything placed from the track's own frames:
+     1 BRAKING BOARDS 150 / 100 / 50 before every real braking zone (found from maxSpeedAt, the same corner speeds the cars drive to) + a green DRS board where each DRS zone opens;
+     2 PIT LIMIT: the round limit sign (the limiter's own 22 m/s = 80) where the limit starts, the struck-out one where it ends, a white line across the lane at both, and on the built-in circuits the solid white entry and exit lines along the wall line;
+     3 PODIUM (1-2-3 steps, backdrop, carpet) + PARC FERME (fenced park, gate sign, three marked bays) on the pad past the last box;
+     4 TEAM MOTORHOMES: ten two-storey units in the teams' colours on their own paddock slab behind the transporters;
+     5 SECTOR BOARDS S1 / S2 / S3, a yellow pair either side of the road at each third of the lap;
+     6 THE PIT BOARD: hung over the pit wall at the player's own box, written once a lap as he comes onto the pit straight (place, gap, lap) and at once with BOX when he calls a stop.
+     Cost: ONE sign sheet (1024 canvas), ONE textured mesh for every sign face, ONE vertex-colour mesh for every post / box / painted line / slab, two small meshes for the pit board. Nothing ticks per frame except the board's 4-a-second check.
+     Every piece is recorded in Track.furniture (probe: __test.furniture). A piece that would land on the road elsewhere (the loop folding back) is skipped, never forced. */
+  buildRaceFurniture(g){
+    const T=this, L=this.length, W=this.width, sd0=this.pitSide||1, nrm=s=>((s%L)+L)%L, s0=this.cfg.pitIn*L, gp=!!this.gp;
+    const root=new THREE.Group(); g.add(root); this._furnRoot=root;
+    const rec={ brake:[], drs:[], sector:[], pitSigns:[], lines:[], podium:null, parc:null, motorhomes:[], zones:0 }; this.furniture=rec;
+    // ---- the one sign sheet
+    const AT=1024, lim=Math.round(22*3.6/10)*10; // lim: the pit limiter (22 m/s in Car.update) to the nearest ten = 80
+    if(!T._furnAtlas){ // drawn once and kept for every later circuit build (the sheet is the same on all of them) - no new picture memory when he changes track
+    const cv=document.createElement('canvas'); cv.width=cv.height=AT; const c=cv.getContext('2d'), cells={};
+    const cell=(name,x,y,w,h,draw)=>{ cells[name]=[x,y,w,h]; c.save(); c.translate(x,y); c.beginPath(); c.rect(0,0,w,h); c.clip(); draw(w,h); c.restore(); };
+    const txt=(s,x,y,px,colr)=>{ c.font='900 '+px+'px Arial Black, Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=colr; c.fillText(s,x,y); };
+    const plate=(w,h,bg,edge)=>{ c.fillStyle=bg; c.fillRect(0,0,w,h); if(edge){ c.strokeStyle=edge; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8); } };
+    ['150','100','50'].forEach((n,i)=>cell('b'+n,i*192,0,192,128,(w,h)=>{ plate(w,h,'#f4f4f4','#111'); txt(n,w/2,h/2+5,n.length>2?82:96,'#111'); }));
+    [1,2,3].forEach((n,i)=>cell('s'+n,576+i*144,0,144,128,(w,h)=>{ plate(w,h,'#f5d90a','#111'); txt('SECTOR',w/2,27,22,'#111'); txt(''+n,w/2,82,78,'#111'); }));
+    cell('lim',0,128,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#d21f26'; c.fill(); c.beginPath(); c.arc(w/2,h/2,57,0,7); c.fillStyle='#fff'; c.fill(); txt(''+lim,w/2,h/2+5,62,'#111'); });
+    cell('limEnd',160,128,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#111'; c.fill(); c.beginPath(); c.arc(w/2,h/2,68,0,7); c.fillStyle='#fff'; c.fill(); txt(''+lim,w/2,h/2+5,62,'#9aa0a8');
+      c.save(); c.beginPath(); c.arc(w/2,h/2,66,0,7); c.clip(); c.strokeStyle='#111'; c.lineWidth=7; for(const o of [-13,0,13]){ c.beginPath(); c.moveTo(w/2-60+o,h/2+60+o); c.lineTo(w/2+60+o,h/2-60+o); c.stroke(); } c.restore(); });
+    cell('drs',320,128,256,128,(w,h)=>{ plate(w,h,'#12a150','#fff'); txt('DRS',w/2,h/2+5,92,'#fff'); });
+    [1,2,3].forEach((n,i)=>cell('n'+n,576+i*128,128,128,128,(w,h)=>{ plate(w,h,'#101418'); txt(''+n,w/2,h/2+7,100,['#ffd76a','#d9dde2','#d08a4a'][i]); }));
+    cell('podium',0,288,640,192,(w,h)=>{ plate(w,h,'#0a0e16'); c.fillStyle='#d21f26'; c.fillRect(0,0,w,16); c.fillRect(0,h-16,w,16); txt('APEX ARCADE',w/2,78,74,'#fff'); txt('GRAND PRIX',w/2,144,42,'#ffd76a'); });
+    cell('parc',640,288,384,96,(w,h)=>{ plate(w,h,'#12305e','#fff'); txt('PARC FERMÉ',w/2,h/2+4,50,'#fff'); });
+    cell('pitlim',640,384,384,96,(w,h)=>{ plate(w,h,'#f4f4f4','#111'); txt('PIT LANE LIMIT',w/2,h/2+4,38,'#111'); });
+    TEAMS.slice(0,10).forEach((t,i)=>cell('t'+i,(i%4)*256,480+((i/4)|0)*64,256,64,(w,h)=>{ plate(w,h,'#0d1118'); c.fillStyle='#'+new THREE.Color(t.color).getHexString(); c.fillRect(0,0,w,8); c.fillRect(0,h-8,w,8); txt(t.name,w/2,h/2+3,t.name.length>8?30:36,'#fff'); }));
+    cell('dark',0,700,32,32,(w,h)=>plate(w,h,'#14181d'));
+    cell('disc',64,700,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#3a4250'; c.fill(); });
+    const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=4; T._furnAtlas={tex,cells}; }
+    const cells=T._furnAtlas.cells, tex=T._furnAtlas.tex;
+    // ---- sign faces: one textured mesh. face() = a panel that reads when you look AGAINST its normal (Nx,Nz); its back is plain dark unless a cell is named
+    const AP=[],AU=[],AI=[];
+    const quad=(x,y,z,rx,rz,w,h,n)=>{ const q=cells[n], e=1.5, u0=(q[0]+e)/AT, u1=(q[0]+q[2]-e)/AT, vt=1-(q[1]+e)/AT, vb=1-(q[1]+q[3]-e)/AT, k=AP.length/3, hx=rx*w/2, hz=rz*w/2;
+      AP.push(x-hx,y-h/2,z-hz, x+hx,y-h/2,z+hz, x+hx,y+h/2,z+hz, x-hx,y+h/2,z-hz); AU.push(u0,vb,u1,vb,u1,vt,u0,vt); AI.push(k,k+1,k+2,k,k+2,k+3); };
+    const face=(x,y,z,Nx,Nz,w,h,n,back)=>{ quad(x,y,z,Nz,-Nx,w,h,n); if(back!==false) quad(x-Nx*0.04,y,z-Nz*0.04,-Nz,Nx,w,h,back||'dark'); };
+    // ---- solids: one vertex-colour mesh. box() = centred at (x,y,z), length lx along (ax,az); ribbon() = a flat strip along the lap between two lateral offsets (numbers or functions of s)
+    const BP=[],BN=[],BC=[],BI=[], col=new THREE.Color(), m4=new THREE.Matrix4();
+    const box=(x,y,z,ax,az,lx,ly,lz,hex)=>{ const gB=new THREE.BoxGeometry(lx,ly,lz); m4.makeRotationY(Math.atan2(-az,ax)); m4.setPosition(x,y,z); gB.applyMatrix4(m4); col.set(hex);
+      const k=BP.length/3, p=gB.attributes.position, n=gB.attributes.normal, ix=gB.index; for(let i=0;i<p.count;i++){ BP.push(p.getX(i),p.getY(i),p.getZ(i)); BN.push(n.getX(i),n.getY(i),n.getZ(i)); BC.push(col.r,col.g,col.b); }
+      for(let i=0;i<ix.count;i++) BI.push(k+ix.getX(i)); gB.dispose(); };
+    const ribbon=(sA,sB,dA,dB,yOff,hex)=>{ col.set(hex); const n=Math.max(1,Math.ceil((sB-sA)/4)), fA=typeof dA==='function'?dA:()=>dA, fB=typeof dB==='function'?dB:()=>dB, k0=BP.length/3;
+      for(let i=0;i<=n;i++){ const s=nrm(sA+(sB-sA)*i/n), a=T.posAt(s,fA(s)), b=T.posAt(s,fB(s)); BP.push(a.x,a.y+yOff,a.z, b.x,b.y+yOff,b.z); BN.push(0,1,0,0,1,0); BC.push(col.r,col.g,col.b,col.r,col.g,col.b);
+        if(i<n){ const k=k0+i*2; BI.push(k,k+1,k+2, k+1,k+3,k+2, k,k+2,k+1, k+1,k+2,k+3); } } };
+    const at=(s,d)=>{ const p=T.posAt(nrm(s),d), f=p.f, tl=Math.hypot(f.tx,f.tz)||1, nl=Math.hypot(f.nx,f.nz)||1; return { x:p.x, y:p.y, z:p.z, tx:f.tx/tl, tz:f.tz/tl, nx:f.nx/nl, nz:f.nz/nl, s:nrm(s), d }; };
+    const pitAt=(s,k)=>at(s, T.pitDAt(nrm(s))+sd0*k); // k metres further from the track than the pit lane's own line
+    const clear=(p,m)=>T.distToLoop(p.x,p.z)>=W/2+m, offPit=(p)=>T.distToPit(p.x,p.z)>=6.5;
+    const seg=(p,q,y,th,hex)=>{ const dx=q.x-p.x, dz=q.z-p.z, len=Math.hypot(dx,dz)||1; box((p.x+q.x)/2,(p.y+q.y)/2+y,(p.z+q.z)/2,dx/len,dz/len,len,th,th,hex); };
+    const POST=0x2b3038, WHITE=0xf2f2f2;
+    const round1=v=>+v.toFixed(1), note=(p,extra)=>Object.assign({s:round1(p.s), x:round1(p.x), y:round1(p.y), z:round1(p.z)}, extra||{});
+    const taken=[]; const free=(p)=>taken.every(q=>Math.hypot(q.x-p.x,q.z-p.z)>=9);
+    const standOK=(p,m)=>(T._stands||[]).every(q=>{ const dx=p.x-q.x, dz=p.z-q.z, mm=(m===undefined?2.5:m); return Math.abs(dx*q.fx+dz*q.fz)>=9+mm || Math.abs(dz*q.fx-dx*q.fz)>=24+mm; }); // a grandstand's roof is 48 x 18, turned to face the road: nothing of ours inside it
+    // a trackside board on a post, facing the oncoming cars
+    const board=(p,cellName,w,h,yMid)=>{ box(p.x+p.tx*0.1,p.y+(yMid+h/2)/2,p.z+p.tz*0.1,p.tx,p.tz,0.14,yMid+h/2,0.14,POST); face(p.x,p.y+yMid,p.z,-p.tx,-p.tz,w,h,cellName); taken.push(p); };
+    const beside=(s,sd,off,m)=>{ for(const side of [sd,-sd]){ const p=at(s,side*(W/2+off)); if(clear(p,m) && offPit(p) && free(p)){ p.side=side; return p; } } return null; };
+    // ---- 1a. BRAKING BOARDS
+    try{ const ST=6, n=Math.floor(L/ST), v=[]; for(let i=0;i<n;i++) v.push(T.maxSpeedAt(i*ST,1));
+      const zs=[];
+      for(let i=0;i<n;i++){ const vi=v[i]; if(vi>84) continue; let low=true; for(let k=-12;k<=12&&low;k++) if(v[(i+k+n)%n]<vi-0.01) low=false; if(!low) continue;
+        let j=i, st=0; const bite=Math.min(89,vi+Math.max(8,(92-vi)*0.6)); while(v[((j%n)+n)%n]<bite && st<90){ j--; st++; } // back to where the corner starts to bite
+        if(v[(((j-10)%n)+n)%n]<vi+10) continue; // no faster stretch before it: not a braking zone
+        zs.push({s:nrm(j*ST), out:(T.frameAt(i*ST).curv>0?-1:1)}); }
+      zs.sort((a,b)=>a.s-b.s); const keep=[]; for(const z of zs){ const pv=keep[keep.length-1]; if(pv && z.s-pv.s<260) continue; keep.push(z); }
+      if(keep.length>1 && nrm(keep[0].s-keep[keep.length-1].s)<260) keep.pop();
+      for(const z of keep.slice(0,10)){ let put=0; for(const dist of [150,100,50]){ const p=beside(z.s-dist, z.out, 3.6, 2.6); if(!p) continue; board(p,'b'+dist,3.8,2.55,3.3); rec.brake.push(note(p,{n:dist,side:p.side})); put++; } if(put) rec.zones++; }
+    }catch(e){ console.warn('furniture brake',e); }
+    // ---- 1b. DRS BOARDS: where each zone opens (a zone that opens on the line itself is signed 45 m after it - nothing new crowds the start line)
+    try{ for(const zn of (T.cfg.drs||[])){ let s=nrm(zn[0]*L); if(s<45||s>L-45) s=45; const p=beside(s,-sd0,4.3,2.6); if(!p) continue;
+        for(const o of [-2.3,2.3]) box(p.x-p.tz*o+p.tx*0.1,p.y+2.5,p.z+p.tx*o+p.tz*0.1,p.tx,p.tz,0.16,5.0,0.16,POST);
+        face(p.x,p.y+3.6,p.z,-p.tx,-p.tz,5.6,2.8,'drs'); taken.push(p); rec.drs.push(note(p,{side:p.side})); } }catch(e){ console.warn('furniture drs',e); }
+    // ---- 5. SECTOR BOARDS: a yellow pair at the start of each third of the lap
+    try{ [120,L/3,2*L/3].forEach((sS,i)=>{ for(const sd of [1,-1]){ let p=null; for(let tries=0;tries<5&&!p;tries++){ const q=at(sS+tries*14, sd*(W/2+3.4)); if(clear(q,2.6)&&offPit(q)&&free(q)) p=q; }
+          if(!p) continue; board(p,'s'+(i+1),3.2,2.85,3.5); rec.sector.push(note(p,{n:i+1,side:sd})); } }); }catch(e){ console.warn('furniture sector',e); }
+    // ---- 2. PIT LIMIT SIGNS + LINES
+    try{ const sL=s0+10, laneLen=nrm(T.cfg.pitOut*L-s0), sE=s0+laneLen-(gp?25:140), wallD=sd0*(W/2-0.42);
+      const limSign=(p,cellName,kind)=>{ box(p.x+p.tx*0.1,p.y+1.65,p.z+p.tz*0.1,p.tx,p.tz,0.14,3.3,0.14,POST); face(p.x,p.y+3.35,p.z,-p.tx,-p.tz,2.0,2.0,cellName,'disc'); if(kind==='start') face(p.x,p.y+1.95,p.z,-p.tx,-p.tz,2.4,0.6,'pitlim'); rec.pitSigns.push(note(p,{kind})); };
+      const pO=pitAt(sL, gp?4.2:2.8); if(clear(pO,0.8)) limSign(pO,'lim','start');
+      const pI=gp? pitAt(sL,-4.2) : at(s0+13.6, wallD); if(clear(pI,gp?0.8:-2)) limSign(pI,'lim','start');
+      const pE=gp? pitAt(sE,4.2) : at(sE, sd0*(W/2+4.7)); if(clear(pE,1.0)) limSign(pE,'limEnd','end');
+      if(gp){ ribbon(sL,sL+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); ribbon(sE,sE+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); }
+      else { ribbon(sL,sL+0.5, sd0*(W/2-0.1), s=>T.pitDAt(s)+sd0*3.0, 0.07, WHITE); ribbon(sE,sE+0.5, sd0*(W/2+0.1), sd0*(W/2+3.1), 0.07, WHITE);
+        ribbon(s0-12, s0+15, wallD-0.13, wallD+0.13, 0.07, WHITE); rec.lines.push({kind:'entryLine', s:round1(nrm(s0-12)), len:27});
+        const xA=s0+215, xB=s0+laneLen-108; if(xB-xA>20){ ribbon(xA, xB, wallD-0.13, wallD+0.13, 0.07, WHITE); rec.lines.push({kind:'exitLine', s:round1(nrm(xA)), len:round1(xB-xA)}); } }
+      rec.lines.push({kind:'limitStart', s:round1(nrm(sL))}, {kind:'limitEnd', s:round1(nrm(sE))}); rec.limit=lim;
+    }catch(e){ console.warn('furniture pit limit',e); }
+    // ---- 3. PODIUM + PARC FERME: a strip along the lane past the last box, the way a real pit straight has it - the top three park in line, nose to tail, and the podium stands beside them.
+    // Everything fits between the lane and 12 m behind it, because on the GP kit circuit the kit's own pit building stands 13 m back; on the built-in circuits the open pad is behind.
+    // Where: straight after the last box when the main grandstand leaves room there, otherwise on the pad just before the first box (48 m of clear strip either way; the first that fits wins).
+    try{ const okSpot=q=>clear(q,3)&&standOK(q), probe=(a,b)=>{ const o=[]; for(let s=a;s<=b+0.01;s+=5) for(const k of [4,12.5]) o.push(pitAt(s,k)); return o.every(okSpot); };
+      let base=null; for(const b of [s0+222, s0-58]) if(base===null && probe(b,b+48)) base=b;
+      const sP=(base===null?s0+229:base+7), bayL=10.2, sA=(base===null?0:base+16), sB=sA+3*bayL;
+      if(base!==null || probe(sP-7,sP+7)){
+        const P=pitAt(sP,9.6), Fx=-sd0*P.nx, Fz=-sd0*P.nz; // (Fx,Fz): from the podium toward the track
+        const rgt=(-sd0*P.nz)*P.tx+(sd0*P.nx)*P.tz>0?1:-1; // which way along the lap is the watcher's right (2nd stands on his left, 3rd on his right)
+        const st=(off,hgt,n)=>{ const x=P.x+P.tx*off, z=P.z+P.tz*off; box(x,P.y+hgt/2,z,P.tx,P.tz,3.0,hgt,2.6,0xf4f4f4); const fh=Math.min(0.95,hgt-0.12); face(x+Fx*1.32,P.y+hgt/2,z+Fz*1.32,Fx,Fz,fh,fh,'n'+n,false); };
+        st(0,1.2,1); st(-3.0*rgt,0.85,2); st(3.0*rgt,0.6,3);
+        box(P.x-Fx*2.05,P.y+2.8,P.z-Fz*2.05,P.tx,P.tz,11.6,5.6,0.3,0x14181d); face(P.x-Fx*1.88,P.y+3.75,P.z-Fz*1.88,Fx,Fz,11.0,3.3,'podium',false);
+        box(P.x+Fx*3.4,P.y+0.05,P.z+Fz*3.4,P.tx,P.tz,11.0,0.06,4.0,0xb0182a);
+        rec.podium=note(P,{steps:3, where:(base===null||base>s0)?'after the boxes':'before the boxes'});
+      }
+      if(base!==null){
+        for(const k of [4.0,8.4]) ribbon(sA,sB, s=>T.pitDAt(s)+sd0*(k-0.09), s=>T.pitDAt(s)+sd0*(k+0.09), 0.06, WHITE);
+        for(let b=0;b<=3;b++) ribbon(sA+b*bayL-0.09,sA+b*bayL+0.09, s=>T.pitDAt(s)+sd0*4.0, s=>T.pitDAt(s)+sd0*8.4, 0.06, WHITE);
+        const ring=[[sA-1,5.6],[sA-1,9.2]]; for(let s=sA+3;s<sB+0.5;s+=4) ring.push([s,9.2]); ring.push([sB+1,9.2],[sB+1,5.6]); // the fence: along the back and a short return at each end; the lane side stays open
+        for(let i=0;i<ring.length;i++){ const a=ring[i], pa=pitAt(a[0],a[1]); box(pa.x,pa.y+0.8,pa.z,pa.tx,pa.tz,0.12,1.6,0.12,POST); if(i+1<ring.length){ const pb=pitAt(ring[i+1][0],ring[i+1][1]); seg(pa,pb,0.65,0.07,0xc9ced6); seg(pa,pb,1.45,0.07,0xc9ced6); } }
+        for(let b=0;b<3;b++){ const q=pitAt(sA+(b+0.5)*bayL, 9.25), Fx=-sd0*q.nx, Fz=-sd0*q.nz; box(q.x-Fx*0.1,q.y+1.55,q.z-Fz*0.1,q.tx,q.tz,0.12,3.1,0.12,POST); face(q.x,q.y+2.3,q.z,Fx,Fz,1.5,1.5,'n'+(b+1)); } // 1 nearest the podium
+        const gM=pitAt((sA+sB)/2,9.3), GFx=-sd0*gM.nx, GFz=-sd0*gM.nz; for(const o of [-4,4]){ const q=pitAt((sA+sB)/2+o,9.4); box(q.x,q.y+2.9,q.z,q.tx,q.tz,0.16,5.8,0.16,POST); }
+        face(gM.x,gM.y+4.75,gM.z,GFx,GFz,7.6,1.9,'parc');
+        rec.parc=note(pitAt((sA+sB)/2,6.2),{bays:3, len:round1(sB-sA)});
+      } }catch(e){ console.warn('furniture podium',e); }
+    // ---- 4. TEAM MOTORHOMES: ten two-storey units behind the transporters, each on its own piece of paddock slab, fronts toward the pit building
+    try{ for(let i=0;i<10;i++){ const sM=s0+70+i*20, Cn=pitAt(sM,32), team=TEAMS[i%TEAMS.length], tc=team?team.color:0x888888;
+        if(![pitAt(sM-8,39.5),pitAt(sM+8,39.5),pitAt(sM-8,26),pitAt(sM+8,26)].every(q=>clear(q,5)&&standOK(q,2))) continue;
+        ribbon(sM-10,sM+10, s=>T.pitDAt(s)+sd0*24, s=>T.pitDAt(s)+sd0*39.5, 0.02, 0x8f9499);
+        const Fx=-sd0*Cn.nx, Fz=-sd0*Cn.nz, X=Cn.x, Z=Cn.z, Y=Cn.y;
+        box(X,Y+1.75,Z,Cn.tx,Cn.tz,13,3.5,7.5,tc); box(X,Y+5.0,Z,Cn.tx,Cn.tz,13,3.0,7.5,0xf2f2f2); box(X,Y+5.0,Z,Cn.tx,Cn.tz,13.08,1.5,7.58,0x27384a); box(X,Y+6.6,Z,Cn.tx,Cn.tz,14,0.22,8.6,tc);
+        box(X+Fx*4.5,Y+3.35,Z+Fz*4.5,Cn.tx,Cn.tz,9,0.14,1.6,0xf2f2f2); for(const o of [-4.3,4.3]) box(X+Fx*5.2+Cn.tx*o,Y+1.67,Z+Fz*5.2+Cn.tz*o,Cn.tx,Cn.tz,0.1,3.34,0.1,POST);
+        box(X+Fx*3.78,Y+1.2,Z+Fz*3.78,Cn.tx,Cn.tz,2.0,2.4,0.06,0x1b2028); // the door
+        box(X+Fx*3.5,Y+7.5,Z+Fz*3.5,Cn.tx,Cn.tz,6.8,1.7,0.2,0x14181d); face(X+Fx*3.62,Y+7.5,Z+Fz*3.62,Fx,Fz,6.2,1.55,'t'+(i%10),false); // the team's name on a roof board
+        rec.motorhomes.push(note(Cn,{team:team?team.id:''})); } }catch(e){ console.warn('furniture motorhomes',e); }
+    // ---- 4b. THE SAFETY CAR + THE MEDICAL CAR (owner Nov 11 2026: the two circled Sketchfab shapes): parked nose-forward on the apron beside the pit exit, flashing light bars. Positions are found from this circuit's own pit lane and recorded in rec.emergency; the models load after the circuit is built.
+    try{ const laneLen=nrm(T.cfg.pitOut*L-s0), sEnd=s0+laneLen; let put=null;
+      // owner Nov 11 2026 'make an asphalt area they get out and in from': the two cars stand on their own paved apron (sA-16 .. sA+6 along the lane, 11.5-22.5 m behind it) joined to the pit lane by a short angled road (sA+6 .. sA+28) the cars drive out of and back into. The whole footprint has to be clear, and it keeps off the podium / parc ferme strip and the motorhome slabs.
+      const apronOK=sA=>{ const bad=[[s0+205,s0+280],[s0-64,s0-0]].some(r=>{ const a=sA-18, b=sA+30; const na=nrm(a-r[0]), nb=nrm(b-r[0]); return na<=r[1]-r[0] || nb<=r[1]-r[0] || nrm(r[0]-a)<=48; }); if(bad) return false;
+        for(const ds of [-16,-8,0,6,16,28]) for(const kk of [3,8,12,17,22.5]) { const q=pitAt(sA+ds,kk); if(!(clear(q,1.5)&&standOK(q,1))) return false; } return true; };
+      for(const k of [17,14,20]){ for(let back=gp?30:60; back<=gp?150:240 && !put; back+=10){ const sA=sEnd-back, A=pitAt(sA,k), B=pitAt(sA-9,k);
+          if(apronOK(sA)&&[A,B,pitAt(sA+3,k+3),pitAt(sA-12,k+3),pitAt(sA+3,k-3),pitAt(sA-12,k-3)].every(q=>clear(q,4)&&standOK(q,2)&&T.distToPit(q.x,q.z)>=4.5)) put={A,B,k,sA}; } if(put) break; }
+      if(put) T._buildApron(root, put.sA, sd0, pitAt, ribbon, WHITE, put.k, box);
+      rec.emergency=put?{ safety:note(put.A,{kind:'safety'}), medical:note(put.B,{kind:'medical'}), k:put.k, loaded:0, apron:{ s:round1(nrm(put.sA-16)), len:58, k0:11.5, k1:22.5 }, parkS:round1(nrm(put.sA)) }:null;
+      if(put) T._loadEmergency(root, put.A, put.B);
+    }catch(e){ console.warn('furniture emergency',e); }
+    // ---- the two meshes
+    if(BP.length){ const bg=new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(BP,3)); bg.setAttribute('normal', new THREE.Float32BufferAttribute(BN,3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(BC,3)); bg.setIndex(BI);
+      const sm=new THREE.Mesh(bg, new THREE.MeshLambertMaterial({vertexColors:true})); sm.name='raceFurnitureSolids'; root.add(sm); rec.solids=sm; }
+    if(AP.length){ const ag=new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(AP,3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(AU,2)); ag.setIndex(AI);
+      const am=new THREE.Mesh(ag, new THREE.MeshBasicMaterial({map:tex, alphaTest:0.5})); am.name='raceFurnitureSigns'; root.add(am); rec.signs=am; }
+    // ---- 6. THE PIT BOARD: built hidden, hung at the player's own box by updatePitBoard once the race knows his team
+    try{ if(!T._pitBoardCv){ const bc0=document.createElement('canvas'); bc0.width=256; bc0.height=320; const bt0=new THREE.CanvasTexture(bc0); bt0.colorSpace=THREE.SRGBColorSpace; T._pitBoardCv={cv:bc0,tex:bt0}; } const bc=T._pitBoardCv.cv, bt=T._pitBoardCv.tex; // one small canvas, kept across circuit builds
+      const grp=new THREE.Group(); grp.visible=false; root.add(grp);
+      const fm=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.4), new THREE.MeshBasicMaterial({map:bt})); fm.position.z=0.05; grp.add(fm);
+      const dm=new THREE.Mesh(new THREE.BoxGeometry(2.0,2.5,0.08), new THREE.MeshBasicMaterial({color:0x14181d})); grp.add(dm);
+      const pole=new THREE.Mesh(new THREE.BoxGeometry(0.1,1,0.1), dm.material); root.add(pole); pole.visible=false;
+      this._pitBoard={ grp, pole, cv:bc, tex:bt, key:'', placed:-1, t:1, snap:null, armed:false };
+    }catch(e){ console.warn('furniture pit board',e); }
+  },
+  _emEnv(){ // owner Nov 11 2026 'looks cartoonish': a small sky + softbox picture the paint and glass of the two cars reflect (built once, shared; only these cars use it)
+    if(this._emEnvTex) return this._emEnvTex; try{ const cv=document.createElement('canvas'); cv.width=512; cv.height=256; const x=cv.getContext('2d');
+      const g=x.createLinearGradient(0,0,0,256); g.addColorStop(0,'#6f95c4'); g.addColorStop(0.45,'#dfe8f2'); g.addColorStop(0.5,'#c9ccd0'); g.addColorStop(0.52,'#55575a'); g.addColorStop(1,'#26282b'); x.fillStyle=g; x.fillRect(0,0,512,256);
+      x.fillStyle='rgba(255,255,255,0.95)'; for(const [a,b,w,h] of [[60,40,120,22],[300,30,90,18],[430,55,70,16]]) x.fillRect(a,b,w,h);
+      const t=new THREE.CanvasTexture(cv); t.mapping=THREE.EquirectangularReflectionMapping; t.colorSpace=THREE.SRGBColorSpace;
+      const pm=new THREE.PMREMGenerator(renderer); this._emEnvTex=pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose(); }catch(e){ this._emEnvTex=null; } return this._emEnvTex; },
+  _glowTex(){ if(this._glowT) return this._glowT; const cv=document.createElement('canvas'); cv.width=cv.height=64; const x=cv.getContext('2d'), g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.18,'rgba(255,255,255,0.65)'); g.addColorStop(0.5,'rgba(255,255,255,0.14)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return this._glowT=t; },
+  _buildApron(root, sA, sd0, pitAt, ribbon, WHITE, kC, boxFn){ // the paved apron the safety car + medical car stand on, and the angled road they drive out of / back into the pit lane by
+    try{ const T=this, tex=T._apronTex||(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=256; const x=cv.getContext('2d'); x.fillStyle='#34363a'; x.fillRect(0,0,256,256);
+        for(let k=0;k<5200;k++){ const v=40+Math.random()*34|0; x.fillStyle='rgba('+v+','+v+','+(v+3)+',0.55)'; x.fillRect(Math.random()*256,Math.random()*256,1+Math.random()*2,1+Math.random()*2); }
+        for(let k=0;k<7;k++){ x.strokeStyle='rgba(18,18,20,0.35)'; x.lineWidth=1; x.beginPath(); let px=Math.random()*256, py=Math.random()*256; x.moveTo(px,py); for(let q=0;q<6;q++){ px+=Math.random()*40-20; py+=Math.random()*40-20; x.lineTo(px,py); } x.stroke(); }
+        const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return T._apronTex=t; })();
+      const pos=[], uv=[], idx=[]; let vi=0;
+      const strip=(sa,sb,fa,fb)=>{ const n=Math.max(1,Math.ceil((sb-sa)/3)); for(let i=0;i<=n;i++){ const s=sa+(sb-sa)*i/n, k0=fa(s), k1=fb(s), a=pitAt(s,k0), b=pitAt(s,k1);
+          pos.push(a.x,a.y+0.035,a.z, b.x,b.y+0.035,b.z); uv.push((s-sa)/6,k0/6, (s-sa)/6,k1/6); if(i<n){ const q=vi+i*2; idx.push(q,q+1,q+2, q+1,q+3,q+2); } } vi+=(n+1)*2; };
+      const lerp=(a,b,u)=>a+(b-a)*Math.max(0,Math.min(1,u));
+      const sA0=sA-16, sA1=sA+6, sB1=sA+28; // apron then the link road
+      strip(sA0,sA1,()=>11.5,()=>22.5);
+      strip(sA0-44,sA0,s=>lerp(2.6,11.5,(s-(sA0-44))/44),s=>lerp(12.0,22.5,(s-(sA0-44))/44)); // owner Nov 12 2026 'make a road for pilot and ambulance car not to go in grass': the same angled road leads IN to the apron from behind, so the pilot car arrives on asphalt
+      { // owner Nov 12 2026 'enter one end and get back on track through the other end': the pilot car leaves the TRACK 170-110 m before its bay and crosses to the pit-exit lane - that crossing was grass. Paved exactly under its path (it slides from the track's middle to the lane over those 60 m), 6.8 m wide
+        const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }, pD=s=>T.pitDAt(((s%T.length)+T.length)%T.length), kP=s=>(sm((s-(sA-170))/60)-1)*pD(s);
+        const kEdge=s=>T.width/2-0.3-pD(s), kL=s=>Math.max(kP(s)-3.4,kEdge(s)); strip(sA-176, sA-56, kL, s=>Math.max(kL(s),kP(s)+3.4)); } // never painted over the race track itself
+      const kLo=s=>lerp(11.5,2.6,(s-sA1)/(sB1-sA1)), kHi=s=>lerp(22.5,12.0,(s-sA1)/(sB1-sA1));
+      strip(sA1,sB1,kLo,kHi);
+      const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals();
+      const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2})); m.name='emergencyApron'; root.add(m); T._apronMesh=m;
+      const YEL=0xf2c300, F=f=>typeof f==='function'?f:()=>f, ln=(sa,sb,fa,fb,hex)=>ribbon(sa,sb,s=>T.pitDAt(s)+sd0*F(fa)(s),s=>T.pitDAt(s)+sd0*F(fb)(s),0.075,hex);
+      // painted: white edge lines (apron back + link road both sides), a white box round each car, a yellow dashed guide down the link road
+      ln(sA0,sA1,22.1,22.35,WHITE); ln(sA0,sA1,11.9,12.15,WHITE); ln(sA0-0.2,sA0+0.05,11.9,22.35,WHITE); ln(sA0-44,sA0,s=>lerp(2.6,11.5,(s-(sA0-44))/44)+0.15,s=>lerp(2.6,11.5,(s-(sA0-44))/44)+0.4,WHITE); ln(sA0-44,sA0,s=>lerp(12.0,22.5,(s-(sA0-44))/44)-0.4,s=>lerp(12.0,22.5,(s-(sA0-44))/44)-0.15,WHITE);
+      ln(sA1,sB1,s=>kHi(s)-0.4,s=>kHi(s)-0.15,WHITE); ln(sA1,sB1,s=>kLo(s)+0.15,s=>kLo(s)+0.4,WHITE);
+      for(const c of [sA-9,sA]){ const p=pitAt(c,kC), nx=-sd0*p.nx, nz=-sd0*p.nz, bx=(a,b,lx,lz)=>{ const X=p.x+p.tx*a+nx*b, Z=p.z+p.tz*a+nz*b; boxFn(X,p.y+0.07,Z,p.tx,p.tz,lx,0.02,lz,WHITE); }; bx(0,-1.7,6.0,0.12); bx(0,1.7,6.0,0.12); bx(-3.0,0,0.12,3.4); bx(3.0,0,0.12,3.4); } // each car's bay: a straight painted rectangle in the car's own frame
+      for(let s=sA1+1; s<sB1-3; s+=3.2) ln(s,s+1.6,s2=>(kLo(s2)+kHi(s2))/2-0.1,s2=>(kLo(s2)+kHi(s2))/2+0.1,YEL);
+    }catch(e){ console.warn('emergency apron',e); } },
+  _loadEmergency(root, A, B){ // owner Nov 11 2026: parked safety car (Han66st, CC-BY 4.0, 'Generic Sport Car Low Poly', the orange car cut out) and medical car (calebcram, CC-BY 4.0); each is measured, scaled to its real length, stood on the ground, given clear-coat paint + dark glass, head / tail lamps and a real LED light bar with glow
+    const T=this, rec=this.furniture; if(!rec||!rec.emergency) return;
+    const parts=[ {key:'safety', P:A, file:'models/fetched/f1-safety-car-orange.glb', len:6.95, bl:4.5, bw:1.9, bh:1.2, axis:'x', rot:0, kind:'safety'}, {key:'medical', P:B, file:'models/fetched/ambulance-low-poly-c38293.glb', len:5.2, axis:'z', rot:Math.PI/2, kind:'medical'} ];
+    T._emCache=T._emCache||{}; const lights=[], env=T._emEnv(), gtex=T._glowTex();
+    const glow=(parent,x,y,z,sz,hex,op)=>{ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:gtex,color:hex,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending})); sp.position.set(x,y,z); sp.scale.setScalar(sz); parent.add(sp); return sp; };
+    const finish=(gl,key)=>{ if(gl._emFin) return; gl._emFin=true; const names=[]; // paint -> clear coat, glass -> dark and shiny, tyres -> rubber
+      gl.scene.traverse(o=>{ if(!o.isMesh||!o.material) return; const arr=Array.isArray(o.material)?o.material:[o.material]; arr.forEach((m,mi)=>{ if(m._emDone) return; m._emDone=true; const nm=(m.name||o.name||'').toLowerCase(), c=m.color?m.color.clone():new THREE.Color(0x888888), hsl={}; c.getHSL(hsl); names.push(nm+':'+c.getHexString());
+          const isGlass=/glass|window|windshield|windscreen|lens|visor/.test(nm)||m.transparent&&(m.opacity||1)<0.95, isTyre=/tyre|tire|rubber/.test(nm)||(hsl.l<0.07&&/wheel|whl/.test(nm+(o.name||'').toLowerCase())), isChrome=/chrome|metal|rim|steel|alloy/.test(nm);
+          const P=new THREE.MeshPhysicalMaterial({ color:c, map:m.map||null, roughness:0.5, metalness:0.0, envMap:env, envMapIntensity:1.0, side:m.side });
+          if(isGlass){ P.color.setHex(0x0a1118); P.roughness=0.04; P.metalness=0.85; P.envMapIntensity=1.5; P.transparent=true; P.opacity=0.88; }
+          else if(isTyre){ P.color.setHex(0x111214); P.roughness=0.92; P.envMapIntensity=0.15; }
+          else if(isChrome){ P.metalness=0.95; P.roughness=0.22; P.envMapIntensity=1.2; }
+          else if(hsl.l>0.12){ P.roughness=0.32; P.metalness=0.22; P.clearcoat=1; P.clearcoatRoughness=0.06; P.envMapIntensity=1.15; }
+          else { P.roughness=0.7; P.envMapIntensity=0.3; } // black trim, bumpers, seals
+          if(Array.isArray(o.material)) o.material[mi]=P; else o.material=P; }); });
+      rec.emergency[key+'Mats']=names; };
+    const run=async()=>{ const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
+      for(const it of parts){ try{
+        let gl=T._emCache[it.file]; if(!gl){ const buf=await fetch(it.file).then(r=>{ if(!r.ok) throw new Error(it.file+' '+r.status); return r.arrayBuffer(); }); gl=T._emCache[it.file]=await new GLTFLoader().parseAsync(buf,''); try{ texShrink(gl.scene,512); }catch(e){} } /* owner Nov 12 2026: parked cars seen from afar - 512 pictures (the ambulance carried a 1024) */
+        if(!root.parent) return; // the circuit was rebuilt while this loaded
+        finish(gl,it.key);
+        const car=gl.scene.clone(true); car.updateMatrixWorld(true);
+        const all=new THREE.Box3().setFromObject(car,true), bb=new THREE.Box3(); // the car's true body: flat stray pieces in the file (shadow planes, ground cut-outs) are left out of the measure, they pushed the lamps off the car
+        car.traverse(o=>{ if(o.isMesh&&o.geometry){ const b=new THREE.Box3().setFromObject(o,true), h=b.max.y-b.min.y; if(h>0.12*(all.max.y-all.min.y)) bb.union(b); } }); if(bb.isEmpty()) bb.copy(all);
+        const sz=bb.getSize(new THREE.Vector3()), ctr=bb.getCenter(new THREE.Vector3());
+        const ln=it.axis==='x'?sz.x:sz.z, k=it.len/ln; // real length along the model's own long axis (named per model: the safety car file carries stray flat pieces that make its other axis look longer)
+        const hold=new THREE.Group(); const inner=new THREE.Group(); inner.add(car); car.position.set(-ctr.x,-bb.min.y,-ctr.z); inner.scale.setScalar(k); hold.add(inner);
+        inner.rotation.y=it.rot; // turns the model's nose to +X (the direction of travel)
+        const P=it.P, yaw=Math.atan2(-P.tz,P.tx); // forward = the direction of travel along the lap (the way the cars leave the pits)
+        hold.rotation.y=yaw; hold.position.set(P.x,P.y+0.04,P.z); hold.name='emergency-'+it.key;
+        const med=it.key==='medical', hh=it.bh||sz.y*k, wd=it.bw||(it.axis==='x'?sz.z:sz.x)*k, half=(it.bl||it.len)/2, bodyL=it.bl||it.len; // the safety car's file carries invisible stray pieces that inflate its measured box, so its real body size is stated (3.0 x 1.3 m rendered at the old scale)
+        // contact shadow
+        { const cv=document.createElement('canvas'); cv.width=cv.height=64; const x=cv.getContext('2d'), g=x.createRadialGradient(32,32,4,32,32,32); g.addColorStop(0,'rgba(0,0,0,0.62)'); g.addColorStop(0.7,'rgba(0,0,0,0.28)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
+          const sh=new THREE.Mesh(new THREE.PlaneGeometry(bodyL*1.22,wd*1.45),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3})); sh.rotation.x=-Math.PI/2; sh.position.y=0.012; hold.add(sh); }
+        // head + tail lamps (lit, dim) and brake-light red
+        for(const sd of [-1,1]){
+          const hx=half-(med?0.06:0.1), hy=hh*(med?0.30:0.30), hz=sd*wd*(med?0.34:0.33);
+          const hl=new THREE.Mesh(new THREE.BoxGeometry(0.05,med?0.13:0.09,med?0.2:0.26),new THREE.MeshBasicMaterial({color:0xfff6dc})); hl.position.set(hx,hy,hz); hold.add(hl); glow(hold,hx+0.12,hy,hz,0.7,0xfff0c8,0.35);
+          const tx=-half+(med?0.05:0.1), ty=hh*(med?0.34:0.34), tz=sd*wd*(med?0.40:0.36);
+          const tl=new THREE.Mesh(new THREE.BoxGeometry(0.05,med?0.2:0.1,med?0.1:0.3),new THREE.MeshBasicMaterial({color:0xc20c0c})); tl.position.set(tx,ty,tz); hold.add(tl); glow(hold,tx-0.1,ty,tz,0.55,0xff2020,0.28); }
+        // number plates
+        for(const [px,rotY] of [[half+0.012,Math.PI/2],[-half-0.012,-Math.PI/2]]){ const pl=new THREE.Mesh(new THREE.PlaneGeometry(0.46,0.12),new THREE.MeshBasicMaterial({color:0xf1f1ea})); pl.position.set(px,hh*0.2,0); pl.rotation.y=rotY; hold.add(pl); }
+        // the LED light bar: dark housing, clear dome, 2 x 5 LED modules, glow, and a pool of colour on the ground
+        const barY=hh+(med?0.0:-0.02), lw=Math.min(med?1.45:1.15,wd*(med?0.72:0.62)), n=5, segs=[[],[]], cols=med?[0x2b6bff,0x2b6bff]:[0xffa000,0xffa000];
+        const hs=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.055,lw+0.1),new THREE.MeshStandardMaterial({color:0x14161a,roughness:0.4,metalness:0.5})); hs.position.set(med?-0.15:-0.1,barY+0.035,0); hold.add(hs);
+        for(const fz of [-lw*0.45,lw*0.45]){ const ft=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.04,0.1),hs.material); ft.position.set(hs.position.x,barY+0.01,fz); hold.add(ft); }
+        const mats=[[],[]];
+        for(let side=0;side<2;side++) for(let i=0;i<n;i++){ const m=new THREE.MeshBasicMaterial({color:cols[side]}); const w=lw/(2*n), z=(side?1:-1)*(w*(i+0.5)); const seg=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.05,w*0.86),m); seg.position.set(hs.position.x,barY+0.072,z); hold.add(seg); mats[side].push(m); }
+        const dome=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.075,lw+0.04),new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:0.2,roughness:0.05,metalness:0,envMap:env,envMapIntensity:1.3,depthWrite:false})); dome.position.set(hs.position.x,barY+0.09,0); hold.add(dome);
+        const gA=[0,1].map(side=>glow(hold,hs.position.x,barY+0.14,(side?1:-1)*lw*0.25,med?1.7:1.5,cols[side]===0x2b6bff?0x4d86ff:0xffa43a,0));
+        // grille / windscreen strobes (front) and rear flashers
+        const strobe=(x,y,z,hex)=>{ const m=new THREE.MeshBasicMaterial({color:hex}); const b=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,0.2),m); b.position.set(x,y,z); hold.add(b); const g=glow(hold,x+(x>0?0.1:-0.1),y,z,0.55,hex===0xff2a2a?0xff4040:(hex===0xffa000?0xffb050:0x5a90ff),0); return {m,g,hex}; };
+        const st=[ strobe(half-0.03,hh*(med?0.46:0.38),-wd*0.18,cols[0]), strobe(half-0.03,hh*(med?0.46:0.38), wd*0.18,med?0xff2a2a:cols[1]), strobe(-half+0.03,hh*(med?0.72:0.5),-wd*0.3,0xffa000), strobe(-half+0.03,hh*(med?0.72:0.5),wd*0.3,0xffa000) ];
+        const pool=new THREE.Mesh(new THREE.PlaneGeometry(bodyL*2.4,wd*2.6),new THREE.MeshBasicMaterial({map:gtex,color:cols[0]===0x2b6bff?0x2a5cff:0xff8a00,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4})); pool.rotation.x=-Math.PI/2; pool.position.y=0.02; hold.add(pool);
+        lights.push({mats,gA,st,pool,t:Math.random()*0.6,base:cols,med});
+        root.add(hold); rec.emergency[it.key+'Size']=[+(sz.x*k).toFixed(2),+(sz.y*k).toFixed(2),+(sz.z*k).toFixed(2)]; rec.emergency.loaded++;
+        T._emGroups=(T._emGroups||[]); T._emGroups.push(hold);
+      }catch(e){ console.warn('emergency car',it.key,e); rec.emergency[it.key+'Error']=String(e&&e.message||e); } }
+      T._emLights=lights; };
+    run();
+  },
+  tickEmergency(dt){ const L=this._emLights; if(!L||!L.length) return; // a real emergency pattern: each side of the bar flashes twice, then the other side does, a second-long cycle; LEDs fade a hair, they do not blink like bulbs
+    for(const o of L){ o.t=(o.t+dt)%1.0; const t=o.t, on=(a)=>(t>=a&&t<a+0.085)||(t>=a+0.15&&t<a+0.235), iA=on(0)?1:0, iB=on(0.5)?1:0, I=[iA,iB]; o.i=o.i||[0,0]; o.i[0]+=(iA-o.i[0])*Math.min(1,dt*30); o.i[1]+=(iB-o.i[1])*Math.min(1,dt*30);
+      for(let sd=0;sd<2;sd++){ const v=o.i[sd], c=o.base[sd], r=((c>>16)&255)/255, g=((c>>8)&255)/255, b=(c&255)/255, f=0.06+0.94*v; for(const m of o.mats[sd]) m.color.setRGB(r*f,g*f,b*f); o.gA[sd].material.opacity=0.9*v; }
+      const sv=[o.i[0],o.i[1],o.i[1],o.i[0]]; o.st.forEach((q,i)=>{ const v=sv[i], c=q.hex, f=0.12+0.88*v; q.m.color.setRGB(((c>>16)&255)/255*f,((c>>8)&255)/255*f,(c&255)/255*f); q.g.material.opacity=0.85*v; });
+      o.pool.material.opacity=0.34*Math.max(o.i[0],o.i[1]); } },
+  updatePitBoard(dt){ const B=this._pitBoard, p=(typeof Race!=='undefined')&&Race.player; if(!B||!p||!p.team) return;
+    B.t+=dt; if(B.t<0.25) return; B.t=0;
+    const L=this.length, nrm=s=>((s%L)+L)%L, idx=Math.max(0,TEAMS.indexOf(p.team))%10, sd=this.pitSide||1;
+    if(B.placed!==idx){ const sB=nrm(this.cfg.pitIn*L+30+idx*(170/9)+5), wd=sd*(this.width/2-0.42), w=this.posAt(sB,wd), q=this.posAt(sB,wd-sd*0.75), f=q.f, yB=q.y+2.95;
+      B.grp.position.set(q.x,yB,q.z); B.grp.lookAt(q.x-f.tx*10-f.nx*sd*4, yB, q.z-f.tz*10-f.nz*sd*4); // faces the oncoming cars, turned a little toward the racing line
+      B.pole.scale.set(1,2.2,1); B.pole.position.set(w.x,w.y+1.0+1.1,w.z); B.pole.visible=true; B.grp.visible=true; B.sB=sB; B.placed=idx; B.key=''; B.snap=null; }
+    const to=nrm(B.sB-nrm(p.s)); // metres until he reaches the board
+    if(B.snap && p.lap<B.snap.lap) B.snap=null; // a new race on the same circuit: write the board afresh
+    if(to>=700) B.armed=true;
+    if(!B.snap || (B.armed && to<700)){ B.armed=false; let ahead=null; try{ ahead=Race.positions()[p.position-2]||null; }catch(e){}
+      B.snap={ pos:p.position, gap:(p.position>1 && p._gapF1!=null)? '+'+p._gapF1.toFixed(1) : (p.position>1? (ahead?ahead.name:'') : 'LEAD'), lap:Math.min(p.lap,Race.laps||p.lap), laps:Race.laps||0 }; }
+    const S=B.snap; if(!S) return;
+    const box=!!(p.pitIntent && !p.inPits), quali=Race.mode==='quali', key=[S.pos,S.gap,S.lap,S.laps,box?1:0,quali?1:0].join('|'); if(key===B.key) return; B.key=key;
+    const c=B.cv.getContext('2d'), w=256, h=320; c.fillStyle='#0c0f14'; c.fillRect(0,0,w,h); c.strokeStyle='#f5d90a'; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8);
+    c.textAlign='center'; c.textBaseline='middle'; c.font='900 104px Arial Black, Arial, sans-serif'; c.fillStyle='#f5d90a'; c.fillText('P'+S.pos,w/2,70);
+    if(box){ c.fillStyle='#d21f26'; c.fillRect(14,128,w-28,84); c.font='900 76px Arial Black, Arial, sans-serif'; c.fillStyle='#fff'; c.fillText('BOX',w/2,173); }
+    else { c.font='900 '+(String(S.gap).length>5?46:60)+'px Arial Black, Arial, sans-serif'; c.fillStyle='#fff'; c.fillText(String(S.gap),w/2,170); }
+    c.font='900 54px Arial Black, Arial, sans-serif'; c.fillStyle='#9fd8ff'; c.fillText(quali? 'QUALI' : ('L'+S.lap+(S.laps?'/'+S.laps:'')), w/2, 262);
+    B.tex.needsUpdate=true; },
+  clearPaddock(){ // owner Nov 10 2026: nothing from the random scenery (street trees, spectators, barricades, poles) may stand on the pit pad, the podium / parc ferme strip or the motorhome paddock - an instanced piece that landed there is sunk out of sight (the same trick as the street poles on the pit lane). Only the scenery meshes added straight to the track group are looked at: the pit complex, the furniture and the grandstands' own crowds are never touched.
+    const F=this.furniture, g=this.group; if(!F||!g) return; const L=this.length, s0=this.cfg.pitIn*L, sd=this.pitSide||1, fr=[];
+    for(let ds=10; ds<=290; ds+=3){ const s=((s0+ds)%L+L)%L, f=this.frameAt(s); fr.push({ds, x:f.x, z:f.z, tx:f.tx, tz:f.tz, nx:f.nx, nz:f.nz, pd:this.pitDAt(s)*sd}); }
+    const inside=(x,z)=>{ let best=null, bd=1e18; for(const f of fr){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if(d<bd){ bd=d; best=f; } } if(!best||bd>75*75) return false; const dx=x-best.x, dz=z-best.z; if(Math.abs(dx*best.tx+dz*best.tz)>6) return false; const lat=(dx*best.nx+dz*best.nz)*sd-best.pd; return lat<=41 && lat>=(best.ds>=218?2.8:7); };
+    const m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0; g.updateMatrixWorld(true);
+    for(const o of g.children){ if(!o.isInstancedMesh) continue; let ch=false; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y<-100) continue; v.applyMatrix4(o.matrixWorld); if(inside(v.x,v.z)){ m.elements[13]-=500; o.setMatrixAt(i,m); ch=true; n++; } } if(ch) o.instanceMatrix.needsUpdate=true; }
+    F.cleared=n; },
+  updateLineSigns(){ // owner Nov 12 2026: START only at the beginning, FINISH only on the last lap
+    try{ const R=Race, inRace=R.mode==='race', last=inRace&&R.lap>=R.laps;
+      if(this._startSign) this._startSign.visible=!inRace||(R.raceT<6&&R.lap<=1);
+      if(this._finishSign) this._finishSign.visible=!!last; }catch(e){} },
   setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
     // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
@@ -1547,7 +2010,7 @@ function cmSoften(m){ // keeps the model's colours but makes printed brand words
 }
 function cmTyre(m){ // repaints the model's own tyre picture: no smudges, our name on the sidewall in yellow
   const img=m.map&&m.map.image; if(!img||!img.width) return m; const name=m.name||'';
-  const W=2048, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
+  const W=1536, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); /* owner Nov 12 2026: 2048 -> 1536 (two tyre sheets were 45 MB of the phone's picture memory); the name stays readable */ // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
   const YEL='#f4d21c', FONT=(px)=>'900 '+px+'px Arial Black, Arial, sans-serif';
   const mirror=(fn)=>{ x.save(); x.translate(W,0); x.scale(-1,1); fn(); x.restore(); }; // the model's tyre picture is stored mirrored
   if(/Meshpart6/i.test(name)){ // modern car: a round sidewall picture with the rim in the middle
@@ -1580,6 +2043,8 @@ function CMBoot(){
       const buf = await fetch(M.file).then(r=>r.arrayBuffer());
       const gltf = await new GLTFLoader().parseAsync(buf, '');
       const root = gltf.scene; root.updateMatrixWorld(true);
+      try{ const keep=new Set(); root.traverse(o=>{ if(o.isMesh&&o.material&&M.body.test(o.material.name||'')&&o.material.map) keep.add(o.material.map); }); const done=new Set(); // owner Nov 12 2026 (picture memory under the 300 MB phone line): the car's small parts (wheels, driver, wings, cockpit) carried 1024 pictures - the classic car alone had 13 of them (73 MB). Everything but the body paint is drawn at 512 (a car on the phone screen never shows more); the body paint stays full size
+        root.traverse(o=>{ if(!o.isMesh||!o.material) return; for(const m of (Array.isArray(o.material)?o.material:[o.material])) for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap']){ const t=m[k], im=t&&t.image; if(!im||keep.has(t)||done.has(t)||!im.width||Math.max(im.width,im.height)<=512) continue; done.add(t); try{ const c=texCap(im,512); if(c!==im){ t.image=c; t.needsUpdate=true; } }catch(e){} } }); }catch(e){}
       // drop the model's own wheels + driver, find the tyres' size and axle positions from the wheel meshes first
       const wheels = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'') && /Wheel|Meshpart2Mtl|Meshpart6Mtl/.test(o.material.name||'')) wheels.push(o); });
       const wb = new THREE.Box3(); for(const w of wheels) wb.expandByObject(w);
@@ -1652,8 +2117,9 @@ const MECH = { ready:false, src:null, scale:2.63/1.863, worldScale:(2.63/1.863)*
 const MECH_KITS=[ // [main, trim] per TEAMS index - each team's own colours, brightened to read in shade
   [[232,35,26],[245,245,245]], [[38,96,255],[245,245,245]], [[0,190,80],[245,245,245]],
   [[158,70,230],[245,245,245]], [[255,116,0],[245,245,245]], [[255,40,140],[245,245,245]],
-  [[0,190,235],[10,35,70]], [[255,205,0],[18,18,18]], [[225,55,90],[245,245,245]], [[130,195,230],[245,245,245]] ];
-function mechKitCanvas(img, kit, isTop){
+  [[0,190,235],[10,35,70]], [[255,205,0],[18,18,18]], [[225,55,90],[245,245,245]], [[130,195,230],[245,245,245]],
+  [[255,106,0],[245,245,245]] ]; // index 10 (owner Nov 10 2026 missing-list item 2): the MARSHAL kit - international orange overalls with white trim; not a team, it dresses the men at the marshal posts (Track.buildMarshals)
+function mechKitCanvas(img, kit, isTop, plainBack){
   const cnv=document.createElement('canvas'); cnv.width=img.width; cnv.height=img.height;
   const x=cnv.getContext('2d'); x.drawImage(img,0,0);
   const id=x.getImageData(0,0,cnv.width,cnv.height), d=id.data, M=kit[0], T=kit[1];
@@ -1673,8 +2139,9 @@ function mechKitCanvas(img, kit, isTop){
     d[i]=R; d[i+1]=G; d[i+2]=B;
   }
   x.putImageData(id,0,0);
-  if(isTop){ // shirt back (unchanged from the fit): navy name-tape over the old atlas text, then APEX / ARCADE / CREW
-    x.fillStyle='#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
+  if(isTop){ // shirt back (unchanged from the fit): navy name-tape over the old atlas text, then APEX / ARCADE / CREW. MARSHAL kit (plainBack): the tape patch alone, no lettering - marshals are circuit staff, not pit crew
+    x.fillStyle=plainBack?'#23262b':'#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
+    if(plainBack) return cnv;
     x.save(); x.translate(670,745); x.scale(1,-1); x.textAlign='center'; x.textBaseline='middle';
     x.font='900 54px Arial, sans-serif'; x.lineWidth=9; x.strokeStyle='#0c1118';
     for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.strokeText(t,0,ly);
@@ -1685,11 +2152,11 @@ function mechKitCanvas(img, kit, isTop){
   return cnv;
 }
 function mechKitMats(idx){
-  idx=((idx%10)+10)%10;
+  idx=((idx%MECH_KITS.length)+MECH_KITS.length)%MECH_KITS.length; // wraps over every kit incl. the marshal kit at index 10 (was %10 when only the ten team kits existed)
   if(MECH._kits[idx]) return MECH._kits[idx];
   if(!MECH.topMat||!MECH.topImg) return null;
   const mk=(srcMat,img,isTop)=>{ if(!srcMat||!img) return srcMat||null;
-    const tex=new THREE.CanvasTexture(mechKitCanvas(img, MECH_KITS[idx], isTop));
+    const tex=new THREE.CanvasTexture(texCap(mechKitCanvas(img, MECH_KITS[idx], isTop, idx===10), isTop?512:256)); // idx 10 = the marshal kit: plain back, no crew lettering // owner Nov 10 2026 'kicks me out': per-team copies kept at 512 so iPhone Safari keeps the page
     tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
     const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.5; m.needsUpdate=true; return m; };
   const km={ top:mk(MECH.topMat,MECH.topImg,true), bot:mk(MECH.botMat,MECH.botImg,false) };
@@ -1759,7 +2226,7 @@ function mechVarMats(v){
   if(MECH._vars[v]) return MECH._vars[v];
   if(!MECH.skinMat||!MECH.skinImg) return null;
   const mk=(srcMat,img,isBody)=>{ if(!srcMat||!img) return srcMat||null;
-    const tex=new THREE.CanvasTexture(mechSkinCanvas(img, MECH_VARS[v], isBody));
+    const tex=new THREE.CanvasTexture(texCap(mechSkinCanvas(img, MECH_VARS[v], isBody), 256));
     tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
     const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.45; m.needsUpdate=true; return m; };
   const vm={ skin:mk(MECH.skinMat,MECH.skinImg,false), body:mk(MECH.bodyMat,MECH.bodyImg,true) };
@@ -1794,11 +2261,11 @@ function mechHwCanvas(img, target){ // target null = keep the black cloth (the p
   x.putImageData(id,0,0); return cnv;
 }
 function mechHwMats(kit, style){
-  const k10=((kit%10)+10)%10, key=style===0?('k'+k10):('s'+style);
+  const k10=((kit%MECH_KITS.length)+MECH_KITS.length)%MECH_KITS.length, key=style===0?('k'+k10):('s'+style); // kit 10 (marshal) resolves to its own orange for the style-0 beanie, like any team
   if(MECH._hw[key]) return MECH._hw[key];
   if(!MECH.hwMat||!MECH.hwImg) return null;
   const target= style===0? MECH_KITS[k10][0] : style===1? [52,55,63] : null;
-  const tex=new THREE.CanvasTexture(mechHwCanvas(MECH.hwImg, target));
+  const tex=new THREE.CanvasTexture(texCap(mechHwCanvas(MECH.hwImg, target), 256)); // owner Nov 10 2026: car paint stays sharp, crew clothing copies slimmed for the phone
   tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
   const m=MECH.hwMat.clone(); m.map=tex;
   if(style<2){ m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.4; } // coloured cloth lifts itself in shade, like the kits
@@ -1899,6 +2366,7 @@ function BoothBoot(){
     dg.scene.traverse(o=>{ if(o.isMesh && o.material){ if(!BOOTH._palBase && o.material.map) BOOTH._palBase = o.material.map.image; if(!BOOTH._palEmis && o.material.emissiveMap) BOOTH._palEmis = o.material.emissiveMap.image; } }); // the palette originals - every team repaint is painted from these
     const dw = wrap(dg.scene); BOOTH.deskScale = 2.0/dw.sz.x; dw.g.scale.setScalar(BOOTH.deskScale); BOOTH.deskSrc = dw.g; // the desk fitted to exactly 2.0 m long (native 2.004)
     const cg = await load('models/fetched/free-drawer-tool-cart-used-da8955.glb');
+    texShrink(cg.scene, 512);
     cg.scene.traverse(o=>{ if(o.isMesh && o.material){ BOOTH.cartMat0 = o.material; if(o.material.map) BOOTH._cartImg = o.material.map.image; } });
     const cw = wrap(cg.scene); BOOTH.cartScale = 1.05/cw.sz.y; cw.g.scale.setScalar(BOOTH.cartScale); BOOTH.cartSrc = cw.g; // the cart fitted to stand 1.05 m tall (native 40.53 of its own units)
     const pg = new THREE.PlaneGeometry(0.72, 0.34, 24, 1), pa = pg.attributes.position, R = 2.02; // the timing screen, bent to the monitor's own measured curve (2000R)
@@ -1946,7 +2414,7 @@ function boothCartMat(i){
   i = ((i%10)+10)%10;
   if(BOOTH._cm[i]) return BOOTH._cm[i];
   if(!BOOTH._cartImg || !BOOTH.cartMat0) return null;
-  const tex = new THREE.CanvasTexture(boothCartCanvas(BOOTH._cartImg, i)); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
+  const tex = new THREE.CanvasTexture(texCap(boothCartCanvas(BOOTH._cartImg, i), 256)); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
   const m = BOOTH.cartMat0.clone(); m.map = tex; m.needsUpdate = true; BOOTH._cm[i] = m; return m;
 }
 function boothTimingTex(i){ // our own timing tower on the booth's screen: a team-colour header, the standings, this box's team highlighted
@@ -1967,7 +2435,7 @@ function boothTimingTex(i){ // our own timing tower on the booth's screen: a tea
     x.fillStyle = own ? '#ffffff' : '#9fb6cc'; x.fillText(t2.name, 64, y);
     x.textAlign = 'right'; x.fillText(r2 === 0 ? 'LEADER' : '+' + (r2*1.7 + ((r2*137 + i*89) % 90)/100).toFixed(3), 496, y); x.textAlign = 'left'; }
   x.fillStyle = '#57b6ff'; x.font = '700 14px Arial, sans-serif'; x.fillText('LAP 12/18', 16, 288);
-  x.fillStyle = '#ffd76a'; x.fillText('TYRES', 292, 288); x.fillRect(344, 281, 56, 7);
+  x.fillStyle = '#ffd76a'; x.fillText('TIRES', 292, 288); x.fillRect(344, 281, 56, 7);
   x.fillStyle = '#37d67a'; x.fillText('FUEL', 412, 288); x.fillRect(452, 281, 52, 7);
   const tex = new THREE.CanvasTexture(cnv); tex.colorSpace = THREE.SRGBColorSpace;
   BOOTH._tt[i] = tex; return tex;
@@ -2035,6 +2503,13 @@ function mechRig(root){
 // one mechanic: a clone of the fetched model (geometry/materials shared), rigged, real size.
 // scale: every pit figure is built at MECH.scale (2.63 standing against the 8.47 drawn car). BOOTH ROUND: the station and lane-row men used MECH.worldScale (3.73 - the car's 1.416 double-counted) until this round; that constant survives in MECH only as a legacy value, no figure is built with it any more.
 // Falls back to null if the model has not landed - the caller keeps the old blocky figure, the stop never breaks on a load.
+// owner Nov 10 2026 5:10 PM 'every time I play F1 it kicks me out' (iPhone Safari: 'A problem repeatedly occurred'): the per-team repaints were full 1024x1024 copies
+// (crew kits x20, skins x6, carts x10) = ~550 MB of textures. texCap draws a canvas into a smaller one (same picture, same UVs) before it becomes a texture.
+function texShrink(root, max){ // owner Nov 10 2026: a fetched crew/prop model's own pictures shrunk once at load (shapes, colours and UVs unchanged); never used on the cars
+  const done=new Set(); root.traverse(o=>{ if(!o.isMesh||!o.material) return; for(const m of (Array.isArray(o.material)?o.material:[o.material])) for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','specularMap']){
+    const t=m[k], im=t&&t.image; if(!im||done.has(t)||!im.width||Math.max(im.width,im.height)<=max) continue; done.add(t);
+    try{ const c=texCap(im, max); if(c!==im){ t.image=c; t.needsUpdate=true; } }catch(e){} } }); }
+function texCap(cv, max){ try{ const w=cv.width, h=cv.height, k=Math.min(1, max/Math.max(w,h)); if(k>=1) return cv; const o=document.createElement('canvas'); o.width=Math.max(1,Math.round(w*k)); o.height=Math.max(1,Math.round(h*k)); o.getContext('2d').drawImage(cv,0,0,o.width,o.height); return o; }catch(e){ return cv; } }
 function mechMan(scale, kit, variant){
   if(!MECH.ready || !MECH.src) return null;
   try{
@@ -2082,7 +2557,7 @@ function apexWordTex(){ // the lettering lives on its own sheet so the car only 
 }
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
-  const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
+  const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: 0.1 }); /* owner Nov 12 2026 'all the car colors on track are dark': the race scene has no reflection map, and a metal surface with nothing to reflect only shows 40% of its paint - team paint is now glossy, not metal, so the color shows */
   // owner Nov 6 2026 'colours not working': a wrap now takes the picked team colour (the wrap's own pattern stays, tinted toward the team) instead of ignoring it
   if(wrap && wrap!=='team'){ const tc=new THREE.Color(color), mx=Math.max(tc.r,tc.g,tc.b,0.001); tc.multiplyScalar(1/mx); m.color.set(0xffffff).lerp(tc,0.6); }
   m.customProgramCacheKey = ()=>'apexLivery';
@@ -2106,7 +2581,7 @@ function liveryMaterial(M, color, accent, wrap){
 }
 function cmBody(kind, color, accent, wrap){
   const M = CM[kind]; if(!M || !M.ready) return null;
-  const paint = M.bmin ? liveryMaterial(M, color, accent, wrap) : new THREE.MeshStandardMaterial({ color, roughness:0.22, metalness:0.7 });
+  const paint = M.bmin ? liveryMaterial(M, color, accent, wrap) : new THREE.MeshStandardMaterial({ color, roughness:0.22, metalness:0.1 });
   const dark = new THREE.MeshStandardMaterial({ color:0x15171c, roughness:0.5, metalness:0.5 });
   const glass = new THREE.MeshStandardMaterial({ color:0x0b1020, roughness:0.05, metalness:0.9, transparent:true, opacity:0.85 });
   const b = M.body3d.clone(true);
@@ -2723,7 +3198,7 @@ const PitCrew = {
     const seat=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.06,0.5),seatM); seat.position.set(0,top-0.02,0.02); sub.add(seat);
     // the monitor: a stand in front of him and a timing screen facing him
     const mpole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.02,6),pedM); mpole.position.set(0,0.51,0.62); sub.add(mpole);
-    const scrC=document.createElement('canvas'); scrC.width=256; scrC.height=160; { const x=scrC.getContext('2d'); x.fillStyle='#0a141f'; x.fillRect(0,0,256,160); x.fillStyle='#37d67a'; x.font='900 26px Arial'; x.fillText('PIT',14,34); x.fillStyle='#e8f2ff'; x.font='900 20px Arial'; x.fillText('APEX',176,34); x.fillStyle='#ffd76a'; x.font='700 16px Arial'; x.fillText('TYRES   FUEL',14,64); x.fillStyle='#57b6ff'; for(let i=0;i<4;i++) x.fillRect(14,84+i*17,140+((i*53)%70),8); }
+    const scrC=document.createElement('canvas'); scrC.width=256; scrC.height=160; { const x=scrC.getContext('2d'); x.fillStyle='#0a141f'; x.fillRect(0,0,256,160); x.fillStyle='#37d67a'; x.font='900 26px Arial'; x.fillText('PIT',14,34); x.fillStyle='#e8f2ff'; x.font='900 20px Arial'; x.fillText('APEX',176,34); x.fillStyle='#ffd76a'; x.font='700 16px Arial'; x.fillText('TIRES   FUEL',14,64); x.fillStyle='#57b6ff'; for(let i=0;i<4;i++) x.fillRect(14,84+i*17,140+((i*53)%70),8); }
     const scrT=new THREE.CanvasTexture(scrC); scrT.colorSpace=THREE.SRGBColorSpace;
     const scrB=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.46,0.03),pedM); scrB.position.set(0,1.12,0.615); sub.add(scrB);
     const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.66,0.42),new THREE.MeshBasicMaterial({map:scrT})); scr.position.set(0,1.12,0.598); scr.rotation.x=-0.16; scr.rotation.y=Math.PI; sub.add(scr); // the screen faces HIM, not the lane
@@ -2783,7 +3258,7 @@ class Car {
     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'), isPlayer ? (localStorage.getItem('f1_wrap')||'team') : 'team');
     this.mesh.scale.setScalar(1.416*(this.mesh.userData.sizeK||1)); // G-73 (x sizeK, Nov 4 2026: every car the same length): the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
-    this.tire='SOFT'; this.wear=0; this.tireAge=0;
+    this.tire='SOFT'; this.wear=0; this.tireAge=0; this.damage=0; this.retired=false;
     this.fuel=100; this._fuelAtStop=100; // owner Nov 8 2026: fuel is real - it burns per lap, the HUD shows it, the crew fills it during the stop
     this.ers=100; this.drsOpen=false; this.drsCount=0;
     this.lap=1; this.lastLapS=0; this.lapTimes=[]; this.bestLap=Infinity; this.totalTime=0;
@@ -2799,7 +3274,7 @@ class Car {
     const wearF=Math.max(0.55, 1-this.wear*0.5);
     const wx=Race.weather.grip; // 1 dry .. 0.55 heavy
     let g=t.pace>=0?1:1; // pace handled separately
-    let grip=wearF*wx;
+    let grip=wearF*wx*(1-0.35*(this.damage||0));
     if(wx<0.95 && !t.wet) grip*= (wx<0.75?0.55:0.75); // slicks in rain = ice
     if(wx>=0.95 && t.wet) grip*=0.8; // wets on dry overheat
     return grip;
@@ -2808,6 +3283,7 @@ class Car {
     const t=TIRES[this.tire];
     let p=t.pace + this.team.pace + (this.skill-0.75)*1.2;
     p+=Math.max(0,(this.wear-0.55))*2.2; // cliff
+    p+=(this.damage||0)*3.0; // owner Nov 11 2026: a damaged car is slower
     return p;
   }
   update(dt){
@@ -2817,7 +3293,7 @@ class Car {
     const pitInS=Track.cfg.pitIn*Track.length, pitOutS=Track.cfg.pitOut*Track.length;
     if(this.pitIntent && !this.inPits && !this.finished){
       const sN=((this.s%Track.length)+Track.length)%Track.length;
-      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
+      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this._pitFree=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
         if(this.isPlayer) $('pitMenu').classList.add('hidden'); }
     }
     if(this.inPits){
@@ -2827,13 +3303,25 @@ class Car {
         this.pitTimer-=dt; this.v=0;
         if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); PitCrew.end(this); }
       } else {
-        this.v += clamp(targetV-this.v, -30*dt, 12*dt);
+        if(this.isPlayer && (this.throttle>0.05||this.brake>0.05||this._pitFree)){ // owner Nov 12 2026 'no control going into pit or going out': gas and brake are yours in the lane - gas up to the limiter, brake slows or stops you (let go and the lane auto-drives again)
+          this.v=clamp(this.v+(this.throttle*12-this.brake*30)*dt,0,targetV); }
+        else this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
       { const L0=Track.length, sM=((this.s%L0)+L0)%L0, toBox=((this.pitBoxS-sM+L0*1.5)%L0)-L0/2; // passing lane 3.5 m nearer the track, the car swings into its own box only to stop (Nov 4 2026: cars no longer drive through a stopped car)
         const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
         let pitTgt=Track.pitDAt(this.s)-lane;
         if(!Track.gp){ const toOut=((pitOutS-sM+L0)%L0); if(toOut<140) pitTgt*=clamp(toOut/140,0,1); } // owner Nov 8 2026: blend back onto the road over the last 140 m before the pit exit - the car used to be let go at the full pit offset (14 m out, on the grass)
-        this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5)); }
+        const d0=this.d;
+        const fromIn=((sM-pitInS+L0)%L0), pastCrew=this.pitStopDone && !this.pitHold && toBox<-8; // past his own box and its crew
+        if(this.isPlayer && pastCrew){ // owner Nov 12 2026 'coming out it's all the player's control to get back on track as soon as the last crew is passed': released and past the crew = he steers. The pit wall still stands until 215 m into the lane (box 10 + 15 m), after that he may cross straight onto the track
+          this._pitFree=true; const wallEnd=fromIn<215, minD=wallEnd?(W/2+1.2):0, maxD=Track.pitDAt(this.s)+2.8;
+          if(Math.abs(this.steer)>0.05) this.d+=this.steer*Math.max(6,this.v)*0.42*dt; else this.d=lerp(this.d,pitTgt,Math.min(1,dt*0.8));
+          this.d=clamp(this.d,minD,maxD);
+          if(!wallEnd && this.d<W/2-0.3){ // back on the track: the race is his again
+            this.inPits=false; this.pitIntent=false; this._pitFree=false; if(this.crew) this.crew.visible=false; if(this._station) this._station.visible=false; if(this._gear) this._gear.visible=false; if(this._laneRow) this._laneRow.visible=false; if(this._chief) this._chief.visible=false; }
+        } else if(this.isPlayer && !this.pitStopDone && Math.abs(toBox)>25){ const want=Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0; this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); this.d=lerp(this.d, pitTgt+this._pitOff, Math.min(1,dt*2.5)); }
+        else this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5));
+        { const hd=(this.d-d0)/Math.max(dt,1e-3); this.headAngle=this.v>2? Math.asin(clamp(hd/this.v,-0.5,0.5)) : 0; } } // owner Nov 12 2026 'it stays gliding sideways': the nose turns the way the car moves across the lane
       this.s+=this.v*dt;
       const sN=((this.s%Track.length)+Track.length)%Track.length;
       if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
@@ -2852,6 +3340,10 @@ class Car {
     const throttle=this.throttle, brake=this.brake;
     const engineA=26*(1-Math.max(0,this.v-60)/80); // fade at high speed (G-27: much faster)
     let acc=throttle*Math.max(6,engineA)-brake*38-0.00005*this.v*this.v*60*(this.slip?0.82:1);
+    if(this.isPlayer && Race.cars){ // owner Nov 12 2026 'my car is slow, everybody leaves me behind': (1) corner-exit push - full throttle below 85% of the corner's limit pulls 18% harder, (2) catch-up - the further you are behind the car ahead of you, the more power and top speed you get (up to +7%, like Mario Kart / Forza's rubber band for the player), never when you are in front
+      if(throttle>0.8 && this.v<topV*0.85) acc*=1.18;
+      let gapB=0; for(const o of Race.cars){ if(o===this||o.finished) continue; const g=o.raceDist-this.raceDist; if(g>0&&(gapB===0||g<gapB)) gapB=g; }
+      const cu=Math.min(0.07, Math.max(0, gapB-60)*0.00006)*(Race.cheatLevel>0?1:0); if(cu>0){ acc*=1+cu*1.5; topV*=1+cu; } this._catchUp=cu; }
     if(this.ersUse && this.ers>0){ acc+=9; this.ers=Math.max(0,this.ers-14*dt); }
     else { this.ers=Math.min(100,this.ers+(brake>0.3?10:2.2)*dt); }
     // cornering: if too fast for corner, scrub + push wide
@@ -2878,6 +3370,16 @@ class Car {
       } else { // stick centered: NO autopilot - the world heading holds, so the road curves away under the car and the driver must steer it back. The old law measured the heading against the road itself, so gas alone lapped hands-free (measured: 2,192 m in 60 s, dead centre the whole way)
         let rel=this._yawW-tanYaw; this.headAngle=Math.atan2(Math.sin(rel),Math.cos(rel));
       }
+      // STEERING ASSIST (owner Nov 12 2026 'taking turns you lose control and go all over grass'; method = Mario Kart Smart Steering / Real Racing 3 auto-steer: it does NOTHING while you are on the road and steering, it only acts when the nose points off the road and you are not steering back, and it turns harder than your own limit). On by default and automatic: it never acts on the road, so the no-autopilot rule above stays the base.
+      if(Car.assist && !this.inPits && this.v>8){
+        const e0=W/2, sg=this.d<0?-1:1, out=(Math.abs(this.d)-e0*0.45)/(e0*0.55); // 0 at 45% of the half-width, 1 at the road edge
+        const outward=this.headAngle*sg, inwardStick=this.steer*sg<-0.12;
+        if(out>0 && outward>-0.03 && !inwardStick){
+          const k=Math.min(1.3,0.35+out*1.2), aim=-0.08*sg;
+          this.headAngle+=clamp(aim-this.headAngle,-3.2*k*dt,3.2*k*dt); this._yawW=tanYaw+this.headAngle; this._assistT=0.25;
+        }
+      }
+      if(this._assistT>0) this._assistT-=dt;
       this.headAngle=clamp(this.headAngle,-1.15,1.15); // a held heading may drift past the steering cap on a long corner; the mesh still has to render it
       this._lastHead=this.headAngle;
       if(this._shoveT>0) this._shoveT-=dt;
@@ -2924,6 +3426,7 @@ class Car {
     if(this.isPlayer){ this.tire=this.pitTireChoice||this.tire; }
     else { this.tire=this.pitChoice||'MEDIUM'; }
     this.wear=0; this.tireAge=0; this.pitted=true;
+    this.damage=0; // owner Nov 11 2026: the pit crew repairs the car too
     this.fuel=100; // owner Nov 8 2026: filled during the stop (it rises live in PitCrew.update) - this is the final top-off
   }
   placeMesh(dt){
@@ -2961,12 +3464,13 @@ class Car {
     const lt=this.lapTimes[this.lapTimes.length-1];
     if(lt<this.bestLap&&lt>0) this.bestLap=lt;
     this.lap++; this.tireAge++;
-    this.wear=Math.min(1,this.wear+TIRES[this.tire].deg*(Race.weather.wet>0.4?0.7:1));
+    this.wear=Math.min(1,this.wear+wearPerLap(this.tire,Race.laps,Race.weather.wet));
     if(Race.mode==='race') this.fuel=Math.max(0,this.fuel-88/(Race.laps+2)); // owner Nov 8 2026: a lap of fuel - a full tank lasts the race with a small margin
   }
 }
 
 /* ================= INPUT ================= */
+Car.assist=true; try{ Car.assist=localStorage.getItem('f1_assist')!=='0'; }catch(e){} // ON by default (owner Nov 12 2026: he does not want to switch it by hand) - it only acts when the car is heading off the road
 const Input={ left:false,right:false,gas:false,brake:false,ers:false,steer:0,reverse:false };
 function bindHold(el,down,up){
   const on=e=>{e.preventDefault(); el.classList.add('on'); down();};
@@ -2976,6 +3480,7 @@ function bindHold(el,down,up){
   el.addEventListener('touchcancel',off,{passive:false});
   el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',()=>{el.classList.remove('on'); if(up)up();});
 }
+function bindTap(el,fn){ if(!el) return; let last=0; const go=e=>{ const n=performance.now(); if(n-last<700) return; last=n; if(e){ e.preventDefault(); e.stopPropagation(); } fn(); }; el.addEventListener('touchstart',go,{passive:false}); el.addEventListener('pointerdown',go); el.addEventListener('mousedown',go); el.addEventListener('click',go); } // owner Nov 9 2026 pit-button fix: one physical tap must equal one action on whichever event the phone's browser actually delivers (touchstart on most engines, pointerdown or click in some browsers/webviews) - repeats of the same tap inside 700 ms are the same tap, not a second press (on a toggle like PIT, a leaked second event used to arm the stop and cancel it in the same touch)
 function initInput(){
   bindHold($('btnGas'),()=>Input.gas=true,()=>Input.gas=false);
   bindHold($('btnBrake'),()=>Input.brake=true,()=>Input.brake=false);
@@ -3021,11 +3526,10 @@ function initInput(){
   $('btnDRS').addEventListener('touchstart',e=>{e.preventDefault();Race.toggleDRS();},{passive:false});
   $('btnDRS').addEventListener('mousedown',e=>{e.preventDefault();Race.toggleDRS();});
   { const tb=$('tirebox'); const open=e=>{ e.preventDefault(); e.stopPropagation(); Race.openTyreChoice(); }; tb.addEventListener('touchstart',open,{passive:false}); tb.addEventListener('mousedown',open); } // owner Nov 4 2026: tap the tyre box to choose the compound for the next stop
-  $('btnPit').addEventListener('touchstart',e=>{e.preventDefault();Race.wantPit();},{passive:false});
-  $('btnPit').addEventListener('mousedown',e=>{e.preventDefault();Race.wantPit();});
+  bindTap($('btnPit'),()=>Race.wantPit()); // owner Nov 9 2026 pit-button fix: was touchstart+mousedown only - a phone browser that delivers the tap as pointer/click events left PIT dead (owner: "fix Pit button cause it does not working")
   $('btnCam').addEventListener('touchstart',e=>{e.preventDefault();Race.cycleCam();},{passive:false});
   $('btnCam').addEventListener('mousedown',e=>{e.preventDefault();Race.cycleCam();});
-  { const sk=$('pitSkip'); if(sk){ const go=e=>{ e.preventDefault(); e.stopPropagation(); skipPitStop(); }; sk.addEventListener('touchstart',go,{passive:false}); sk.addEventListener('mousedown',go); } } // owner Nov 9 2026: the SKIP STOP button - the HUD shows it only while the car is in the pits (toggled with the pit panel)
+  bindTap($('pitSkip'),()=>skipPitStop()); // owner Nov 9 2026: the SKIP STOP button - the HUD shows it only while the car is in the pits (toggled with the pit panel). Nov 9 2026 pit-button fix: same every-engine tap binding as PIT (was touchstart+mousedown only)
 }
 function readInput(car){
   const k=Input.keys||{};
@@ -3046,15 +3550,16 @@ function aiDrive(car, dt){
   let cheat=1;
   if(Race.player && !Race.player.finished && !car.finished){
     const gapS = Race.player.raceDist - car.raceDist; // + means player ahead
-    if(gapS>0) cheat = 1 + Math.min(0.045, gapS*0.00004) * Race.cheatLevel;      // hunt you down
-    else cheat = 1 - Math.min(0.02, -gapS*0.00002) * Race.cheatLevel;           // back off when clear
+    if(gapS>0) cheat = 1 + Math.min(0.02, gapS*0.00004) * Race.cheatLevel;      // hunt you down
+    else cheat = 1 - Math.min(0.05, -gapS*0.00004) * Race.cheatLevel;           // back off when clear (owner Nov 12 2026: was 2% max - a player who fell behind never saw the field wait)
   }
   // lookahead target speed
   const lookS=car.s+car.v*0.5+18;
   let vt=Track.maxSpeedAt(lookS,grip)*cheat; // corner speeds stay on the game's own physics (the kit's speed table is tuned for its preview cars and would leave our AI far behind the player)
   vt*= (1.005+car.skill*0.02); // G-66: target the game's real corner speeds - the old 0.90 base cruised the AI well under the player's pace
   vt+=car.paceNow()*0.7; // G-66: tire/team/skill pace still counts, but at 0.7 weight - at 2.5 it alone cost the field ~1.5 m/s everywhere
-  vt=Math.min(vt,97);
+  if(car.paceK===undefined) car.paceK=1.02-Math.random()*0.065; /* owner Nov 12 2026 'every body is maxed out same speed, tight track': each rival gets its own pace (about 6% from fastest to slowest, picked once per race) so the field strings out instead of one tangled pack */
+  vt*=car.paceK; vt=Math.min(vt,97);
   // pack fix: traffic - a car right ahead in the lane sets the speed early, so
   // arrivals inside the contact box happen matched instead of at full closing speed
   if(!car.inPits){ let vCap=Infinity;
@@ -3112,20 +3617,32 @@ function aiPit(car, dt){
   if(needWet) return;
   // planned stop: wear cliff or max age, but only after lap 2 and not last 2 laps
   if(Race.lap>2 && Race.lap<Race.laps-1 && !car.pitted){
-    if(car.wear>0.62 || car.tireAge>=t.maxAge*0.8){
+    if(car.wear>0.55 || car.damage>0.4 || car.tireAge>=t.maxAge*0.8){
       // don't stack with a car already pitting right ahead
       car.pitIntent=true; car.pitChoice=Race.baseTire(car,true); car.pitted=true;
     }
   }
 }
 // car-vs-car contact: push apart, scrub speed
-function carContact(cars, dt){
+function solidPair(a,b,ds){ // owner Nov 12 2026 'cars go through each other still': a HARD rule after the soft pushes - two bodies (5.4 m long, 2.4 m wide) never overlap. Whichever way they are less buried in each other is undone at once: side by side they are put apart sideways, nose into tail the car behind is put back behind the one ahead and cannot be faster than it
+        const CL=5.4, CW=2.4, pd=CW-Math.abs(a.d-b.d), ps=CL-Math.abs(ds);
+        if(pd>0 && ps>0 && !a.inPits && !b.inPits){
+          const sN2=((a.s%Track.length)+Track.length)%Track.length, nearLine=!(sN2>30 && sN2<Track.length-30);
+          if(pd<=ps || nearLine){ const sg=Math.sign(a.d-b.d)||1; a.d+=sg*pd/2; b.d-=sg*pd/2; const lim2=Track.width/2-0.8; for(const c of [a,b]){ const ex=Math.abs(c.d)-lim2; if(ex>0){ const k=Math.sign(c.d)*ex; a.d-=k; b.d-=k; } } }
+          else { const ahead=ds>0?a:b, behind=ds>0?b:a; behind.s-=ps; if(behind.v>ahead.v) behind.v=ahead.v; }
+          window.__f1solid=(window.__f1solid||0)+1;
+        } }
+function solidPass(cars){ const L=Track.length; for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){ const a=cars[i], b=cars[j]; if(a.retired||b.retired||a._free>0||b._free>0||(a.finished&&b.finished)) continue; let ds=(a.s-b.s)%L; if(ds>L/2)ds-=L; if(ds<-L/2)ds+=L; solidPair(a,b,ds); } } // a pack resolves in passes: pushing a car out of one neighbour can push it into another
+function carContact(cars, dt, graceOnly){
+  try{ for(let it=0;it<2;it++) solidPass(cars); }catch(e){}
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
+    if(a.retired||b.retired) continue; // a wrecked car is out of the race
     if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
+    if(graceOnly){ solidPair(a,b,ds); continue; } // start grace: no shoves, spins or damage - but still no driving through each other (owner Nov 12 2026)
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
@@ -3142,6 +3659,7 @@ function carContact(cars, dt){
         // owner Nov 4 2026 6:23 PM 'cars are still hanging onto each other fighting': only a car truly BEHIND (nose to tail, not alongside) is held back; side by side nobody is slowed, the lateral push does the separating
         if(Math.abs(ds)>4.6 && Math.abs(dd)<2.0 && behind.v>ahead.v) behind.v=Math.max(ahead.v,behind.v-60*dt); // no rear-ending into the car ahead
       }
+      solidPair(a,b,ds);
       const avg=(a.v+b.v)/2*0.985;
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
       if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
@@ -3153,9 +3671,23 @@ function carContact(cars, dt){
         const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
         a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
       }
+      { const rel=Math.abs(a.v-b.v); const hardAI=!(a.isPlayer||b.isPlayer);
+        if(!hardAI || rel>hitLine){ hitDamage(a,rel,dt,(hardAI?0.5:1)*(a.isPlayer?0.6:1),ds>0?0.7:1.3); hitDamage(b,rel,dt,(hardAI?0.5:1)*(b.isPlayer?0.6:1),ds>0?1.3:0.7); } } // owner Nov 11 2026: crashes break the car
       if(a.isPlayer||b.isPlayer){ Race.shake=Math.min(1,(Race.shake||0)+0.5); Aud.cheer(false); }
     }
   }
+}
+// owner Nov 11 2026: DAMAGE. A hit above 4 m/s of speed difference adds damage (per second of contact); the car behind takes more. 100% = the car is out of the race (last place). The pit crew repairs it.
+function hitDamage(car, rel, dt, k, share){
+  if(!car||car.retired||car.finished||rel<=4) return 0;
+  car.damage=Math.min(1,(car.damage||0)+(rel-4)*0.08*dt*(k||1)*(share||1));
+  if(car.damage>=1) retireCar(car);
+  return car.damage;
+}
+function retireCar(car){
+  if(car.retired) return; car.retired=true; car.damage=1;
+  car.finished=true; car.finishTime=Race.raceT+9000; // retired cars sort behind everyone who finished
+  if(car.isPlayer){ banner('RETIRED','Your car is too damaged - race over',2600,'#ff5a5a'); Race.onPlayerRetire(); }
 }
 /* ================= RACE DIRECTOR ================= */
 // G-119: height of the road nearest a point - the camera's floor reference
@@ -3235,7 +3767,7 @@ const Race = {
       if(c.crew) c.crew.visible=false; if(c._crewHideT){ clearTimeout(c._crewHideT); c._crewHideT=null; }
       for(const w of (c.mesh.userData.wheels||[])) w.visible=true; // a stop cut short by the grid must not leave a wheel hidden
       c.fuel=100; if(c._station) c._station.visible=false; if(c._gear) c._gear.visible=false; if(c._laneRow) c._laneRow.visible=false; { const pp=$('pitPanel'); if(pp) pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); } // owner Nov 8 2026: fresh tank on the grid; no station crew or pit panel left behind
-      c.wear=0; c.tireAge=0; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
+      c.wear=0; c.tireAge=0; c.damage=0; c.retired=false; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
       // G-55: a placed car starts with a clean heading - no leftover steering angle
       // from its last lap, and its nose snapped onto the track direction (a single
       // placeMesh step used to leave it most of the way toward wherever it last faced)
@@ -3266,12 +3798,43 @@ const Race = {
       for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
       this._ltT=setTimeout(()=>$('lights').classList.add('hidden'),600);
       this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
+      try{ this.startPace(); }catch(e){ this.pace=null; }
       this._lampN=0; GPSetLights(0); GPPlay('lights_out_go',1);
       banner('LIGHTS OUT!','',900,'#37d67a'); Aud.beep(880,0.25,0.3);
       Aud.cheer(true);
     }
   },
-  beginRace(){ this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); }catch(e){}
+  pilotOn(){ return window.__pilotForce!==undefined ? !!window.__pilotForce : !navigator.webdriver; }, // the robot drives straight off the line unless a test asks for the pilot car
+  pilotGroup(){ return (Track._emGroups||[]).find(h=>h.name==='emergency-safety')||null; },
+  pilotRestore(){ const P=this._pilotHome, g=this.pilotGroup(); if(P&&g){ g.position.copy(P.pos); g.rotation.y=P.yaw; } this.pace=null; },
+  startPace(){ // owner Nov 11 2026 'pilot car leads the race then gets out of the way': the safety car leaves the apron for the grid, leads the field at a fixed pace down the straight, then peels off through the pit lane onto its apron; every car holds its place behind it until the GREEN FLAG
+    const em=Track.furniture&&Track.furniture.emergency, g=this.pilotGroup(); this.pace=null;
+    if(!this.pilotOn()||!em||em.parkS==null||!g) return;
+    const L=Track.length, nrm=x=>((x%L)+L)%L; let best=-1e9; for(const c of this.cars){ const r=((c.s-(L-300))%L+L)%L; if(r>best) best=r; }
+    const poleS=nrm(L-300+best), sStart=nrm(poleS+30), parkS=em.parkS; let run=nrm(parkS-sStart); if(run<200||run>1200){ return; }
+    if(!this._pilotHome) this._pilotHome={ pos:g.position.clone(), yaw:g.rotation.y };
+    this.pace={ s:sStart, run, done:0, v:0, released:false, parkS, home:this._pilotHome, g };
+    banner('PACE CAR LEADS','Hold your place behind it',1800,'#ffd54a');
+  },
+  updatePace(dt){
+    const P=this.pace; if(!P) return; const L=Track.length, sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+    this.contactGrace=Math.max(this.contactGrace,2);
+    const left=P.run-P.done; // metres still to drive to the parking spot
+    const vMax=36; let vT=left>110?vMax:left>60?vMax*0.7:Math.max(4,vMax*0.7*(left/60));
+    P.v+=Math.sign(vT-P.v)*Math.min(Math.abs(vT-P.v),(vT>P.v?9:14)*dt); P.done=Math.min(P.run,P.done+P.v*dt);
+    const s=P.s+P.done, nrm=x=>((x%L)+L)%L, q=Track.posAt(nrm(s),0), lane=Track.posAt(nrm(s),Track.pitDAt(nrm(s)));
+    const w1=sm((P.done-(P.run-170))/60), road=P.done-(P.run-60); // 170-110 m out: cross to the pit lane; last 60 m: along the paved entry road onto the apron (never over grass)
+    let x=q.x+(lane.x-q.x)*w1, z=q.z+(lane.z-q.z)*w1, y=q.y+(lane.y-q.y)*w1;
+    const f=Track.frameAt(nrm(s)); let yaw=Math.atan2(-f.tz,f.tx), u=0;
+    if(road>0){ const em=Track.furniture&&Track.furniture.emergency, sd0=Track.pitSide||1, kH=em&&em.k!=null?em.k:17, t=sm(road/44); u=sm((road-44)/16);
+      const kk=(7.3+(kH-7.3)*t), pr=Track.posAt(nrm(s),Track.pitDAt(nrm(s))+sd0*kk); x=pr.x; z=pr.z; y=pr.y;
+      if(u>0){ x+=(P.home.pos.x-x)*u; z+=(P.home.pos.z-z)*u; y+=(P.home.pos.y-y)*u; let dy=P.home.yaw-yaw; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); yaw+=dy*u; } }
+    P.g.position.set(x,y+0.04*(1-u),z); P.g.rotation.y=yaw;
+    if(!P.released && left<110){ P.released=true; banner('GREEN FLAG','Race!',1100,'#37d67a'); Aud.beep(880,0.2,0.25); }
+    if(!P.released){ const cap=Math.max(3,P.v-1.5); for(const c of this.cars){ if(c.v>cap) c.v=cap; } }
+    if(P.done>=P.run-0.01){ P.g.position.copy(P.home.pos); P.g.rotation.y=P.home.yaw; this.pace=null; }
+  },
+  beginRace(){ this.pilotRestore(); this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); Track.updateLineSigns(); }catch(e){}
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -3289,7 +3852,7 @@ const Race = {
     // owner Nov 6 2026 'there is no pit': PIT works from anywhere on the lap - it arms the stop and tells you how far the pit entry sign is
     if(p.pitIntent){ p.pitIntent=false; banner('PIT CANCELLED','',800,'#8fa8c8'); return; }
     const L=Track.length, sN=((p.s%L)+L)%L, pitInS=Track.cfg.pitIn*L, dist=Math.round(((pitInS-sN)%L+L)%L);
-    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tyres',1400,'#9fd8ff');
+    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tires',1400,'#9fd8ff');
     this.showPitMenu();
   },
   openTyreChoice(){ if(!this.player||!(this.mode==='race'||this.mode==='quali')||this.player.inPits) return; this.showPitMenu(); },
@@ -3300,7 +3863,7 @@ const Race = {
       const d=document.createElement('div'); d.className='tirepick'+(t===this.player.pitTireChoice?' sel':'');
       d.innerHTML=`<span style="color:${TIRES[t].color}">●</span> ${t}`;
       d.onclick=()=>{ this.player.pitTireChoice=t;
-        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); const n=$('tireNext'); if(n){ n.textContent='NEXT STOP: '+t; n.style.color=TIRES[t].color; } banner('NEXT STOP: '+t,'Tyres change when you pit',1100,TIRES[t].color);
+        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); const n=$('tireNext'); if(n){ n.textContent='NEXT STOP: '+t; n.style.color=TIRES[t].color; } banner('NEXT STOP: '+t,'Tires change when you pit',1100,TIRES[t].color);
         setTimeout(()=>$('pitMenu').classList.add('hidden'),350); };
       box.appendChild(d);
     }
@@ -3383,7 +3946,8 @@ const Race = {
     if(!this.drsEnabled && this.lap>=2){ this.drsEnabled=true; banner('DRS ENABLED','','1000','#37d67a'); }
     this.updateWeather(dt);
     this.updateCars(dt,false);
-    if(this.contactGrace>0) this.contactGrace-=dt; else carContact(this.cars,dt);
+    try{ this.updatePace(dt); }catch(e){ this.pace=null; } try{ Track.updateLineSigns(); }catch(e){}
+    if(this.contactGrace>0){ this.contactGrace-=dt; carContact(this.cars,dt,true); } else carContact(this.cars,dt);
     const order=this.positions();
     // lap crossing + finish
     for(const c of this.cars){
@@ -3439,6 +4003,7 @@ const Race = {
       c.update(dt);
     }
   },
+  onPlayerRetire(){ setTimeout(()=>{ if(this.mode==='menu') return; for(const c of this.cars) if(!c.finished){ c.finished=true; c.finishTime=this.raceT+rand(2,25)+c.penalty; } this.finishRace(); }, 3000); },
   onPlayerFinish(order){
     Aud.cheer(true); Track.crowd.excite=1;
     const p=this.player;
@@ -3474,11 +4039,11 @@ const Race = {
       const L0=Track.length, sN=((p.s%L0)+L0)%L0, toBox=((p.pitBoxS-sN+L0*1.5)%L0)-L0/2;
       if(p.pitHold || (!p.pitStopDone && toBox<7 && toBox>-3)){
         const fv=new THREE.Vector3(1,0,0).applyQuaternion(m.quaternion), rv=new THREE.Vector3(0,0,1).applyQuaternion(m.quaternion);
-        const cp2=new THREE.Vector3(m.position.x+fv.x*8.0-rv.x*8.0, m.position.y+3.8, m.position.z+fv.z*8.0-rv.z*8.0); // owner Nov 8 2026 round 4: the real-size crew (2.63 m) stands taller than the old 1.2 m figures - the camera rides higher and further out so they frame the car instead of hiding it (9 m left the car small in a lot of empty lane; 7 m hid it behind the near-side men)
+        const cp2=new THREE.Vector3(m.position.x+fv.x*7.0-rv.x*5.2, m.position.y+3.6, m.position.z+fv.z*7.0-rv.z*5.2); // owner Nov 12 2026 'why can't I see' (photo: fence + black pit board filling the screen): the lane moved 3 m back, so the old 8 m side offset put the camera in the pit wall fence - 5.2 m keeps it on the lane side of the wall // owner Nov 8 2026 round 4: the real-size crew (2.63 m) stands taller than the old 1.2 m figures - the camera rides higher and further out so they frame the car instead of hiding it (9 m left the car small in a lot of empty lane; 7 m hid it behind the near-side men)
         const minY=Math.max(m.position.y, trackGroundY(cp2.x,cp2.z))+1.1; if(cp2.y<minY) cp2.y=minY;
         camera.position.lerp(cp2, 1-Math.exp(-dt/0.10));
         camera.lookAt(m.position.x, m.position.y+1.1, m.position.z);
-        if(camera.fov!==48){ camera.fov=48; camera.updateProjectionMatrix(); }
+        if(camera.fov!==58){ camera.fov=58; camera.updateProjectionMatrix(); }
         if(scene.userData.skyDome) scene.userData.skyDome.position.copy(camera.position);
         return;
       }
@@ -3588,15 +4153,16 @@ const HUD={
     const t=TIRES[p.tire];
     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
+    { const bd=Math.max(0,Math.round(100-(p.damage||0)*100)); $('bodyFill').style.width=bd+'%'; const bp=$('bodyPct'); bp.textContent='BODY '+bd+'%'; bp.style.color=bd<30?'#ff5a5a':'#8fa8c8'; bp.style.fontWeight=bd<30?'900':''; } // owner Nov 11 2026: a body damage bar beside the tire bar
     $('fuelFill').style.width=Math.max(0,Math.min(100,p.fuel))+'%'; $('fuelPct').textContent=Math.round(p.fuel)+'%'; $('fuelPct').style.color=p.fuel<25?'#ff5a5a':'#9fd8ff'; // owner Nov 8 2026: live fuel gauge next to the tyre box
     { const pp=$('pitPanel'), ppl=$('pitPlace');
       if(p.inPits && !p._pitWasIn){ p._pitPlaceIn=p.position; p._pitPlaceOut=0; } // owner Nov 9 2026 PLACE MARKER: the place he came in at, read from the game's OWN standings (Race.positions() sets car.position - the same number the HUD place box and the results use; no second ranking is invented)
       if(!p.inPits && p._pitWasIn && p._pitPlaceIn){ p._pitPlaceOut=p.position; p._pitPlaceUntil=performance.now()+6000; } // released and rejoined (pit exit complete): the new place from the same standings - the pair then stays up 6 s so he sees what the stop cost or gained
       p._pitWasIn=p.inPits;
-      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
+      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.toggle('hidden', !!p.pitStopDone); /* owner Nov 12 2026 'skip stop doesn't work': after release there is nothing to skip - the button goes away */ const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TIRES OFF':u<0.75?'FRESH TIRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
       else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
-    $('tireAge').textContent=p.tireAge+' laps';
+    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TIRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps'); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
     document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
     $('ersFill').style.width=p.ers+'%';
@@ -3699,13 +4265,13 @@ function showResults(R){
     Save.save(career);
     const rows=Object.entries(career.table).sort((a,b)=>b[1]-a[1]).slice(0,10);
     champHtml='<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map(([k,v])=>`<tr${k===me?' class="me"':''}><td>${k}</td><td>${v}</td></tr>`).join('');
-    const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
+    const fc=friendCode(); if(fc) $('myCode').textContent=fc;
   } else {
     const rows=order.slice(0,10);
     champHtml='<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map((c,i)=>`<tr${c.isPlayer?' class="me"':''}><td>${c.name}</td><td>${pts[c.name]||0}</td></tr>`).join('');
     // quick-race still earns a code via temp career-ish record
     if(!career){ newCareer(sessionCfg.driver||'YOU', sessionCfg.team.id); }
-    const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
+    const fc=friendCode(); if(fc) $('myCode').textContent=fc;
   }
   $('champTable').innerHTML=champHtml+(fl?`<div style="margin-top:6px;font-size:12px;color:#9fd8ff">⚡ Fastest lap: ${fl.name} ${fmtTime(fl.bestLap)}</div>`:'');
   // tournament: accumulate points across the 3 races
@@ -3800,6 +4366,14 @@ function initMenus(){
     d.innerHTML=`<div class="t">${label}</div><div class="s">${sub}</div>`;
     d.onclick=()=>{ selDiff=id; try{ localStorage.setItem('f1_diff',id); }catch(e){} [...dr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carSavedFlash(); };
     dr.appendChild(d);
+  }
+  // steering assist: OFF = you steer everything; ON = the car steers you back when it heads off the road
+  const ar=$('assistRow'); ar.innerHTML='';
+  for(const [id,label,sub] of [['1','AUTO','Steers you back from the grass'],['0','OFF','You steer everything']]){
+    const d=document.createElement('div'); d.className='pick'+((id==='1')===!!Car.assist?' sel':''); d.dataset.assist=id;
+    d.innerHTML=`<div class="t">${label}</div><div class="s">${sub}</div>`;
+    d.onclick=()=>{ Car.assist=(id==='1'); try{ localStorage.setItem('f1_assist',id); }catch(e){} [...ar.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carSavedFlash(); };
+    ar.appendChild(d);
   }
   updateForecast();
   $('quickBtn').onclick=()=>{ pendingFriend=null; sessionCfg={career:false}; show('trackMenu'); };
@@ -3898,7 +4472,7 @@ function updateForecast(){
   $('wxForecast').textContent = wr? `🌧 Changeable — rain possible mid-race` : `☀ Dry expected all race`;
   $('wxForecast').title=t.tag;
 }
-function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc; }
+function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent=fc; }
 function renderHub(){
   const t=TRACKS[career.round%TRACKS.length], team=TEAMS.find(x=>x.id===career.team)||TEAMS[0];
   selTeam=team; // the hub shows YOUR car
@@ -4167,11 +4741,23 @@ GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
   pitClutter: (r) => { r=r||4; const P=Track._pitPts||[], m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0, near=[]; const g=Track.group; if(!g||!P.length) return {pts:P.length,n:-1}; // owner Nov 7 2026: fence posts / lamp poles standing on the pit lane
-    g.traverse(o=>{ if(!o.isInstancedMesh) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
+    const own=new Set(); for(const rt of [Track._pitEnvRoot,Track._furnRoot]) if(rt) rt.traverse(o=>own.add(o)); // Nov 10 2026: the pit complex's own pieces (gantry posts, the wall's fence posts) and the race furniture BELONG at the lane - this probe counts the trackside scenery that strays onto it
+    g.traverse(o=>{ if(!o.isInstancedMesh||own.has(o)) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
     return {pts:P.length,n,near}; },
+  signs: (o) => { if(o){ if(o.lap!=null) Race.lap=o.lap; if(o.raceT!=null) Race.raceT=o.raceT; if(o.mode) Race.mode=o.mode; } Track.updateLineSigns(); return { start:!!(Track._startSign&&Track._startSign.visible), finish:!!(Track._finishSign&&Track._finishSign.visible), lap:Race.lap, laps:Race.laps, mode:Race.mode }; }, // robot: which line signs show
+  assistRun: (on, d0, h0, secs) => { const p = Race.player; if(!p) return null; const was=Car.assist; Car.assist=!!on; p.d=d0; p.headAngle=h0; p._yawW=undefined; p.v=60; p.inPits=false; p.throttle=1; Input.gas=true; Input.brake=false; Input.steer=0; let maxD=0, hit=0, off=0; const n=Math.round(secs*60); for(let i=0;i<n;i++){ p.steer=0; p.throttle=1; p.update(1/60); p.v=Math.max(p.v,40); maxD=Math.max(maxD,Math.abs(p.d)); if(p.hitWall) hit++; if(Math.abs(p.d)>Track.width/2+1.6) off++; } Input.gas=false; Car.assist=was; return { maxD:+maxD.toFixed(2), half:+(Track.width/2).toFixed(2), hit, off, d:+p.d.toFixed(2), head:+p.headAngle.toFixed(3) }; }, // STEERING ASSIST proof: drop the car near the edge pointing outward, gas only, no stick, run N seconds
+  setAssist: (on) => { Car.assist=!!on; },
+  paceStep: (n) => { for(let i=0;i<n&&Race.pace;i++) Race.updatePace(1/30); return window.__test.paceProbe(); }, // robot: run the pilot car's own clock ahead (a slow robot browser would take minutes of real time)
+  surfaceAt: (x, z) => { const R=new THREE.Raycaster(new THREE.Vector3(x,300,z), new THREE.Vector3(0,-1,0)); const all=[]; scene.traverseVisible(o=>{ if(!o.isMesh) return; try{ o.raycast(R, all); }catch(e){} }); all.sort((p,q)=>p.distance-q.distance); const hits=all.filter(h=>{ if(!h.object.isMesh||h.object.isSprite) return false; let o=h.object; while(o){ if(o.name&&o.name.startsWith('emergency-')) return false; if(o===(Race.player&&Race.player.mesh)) return false; o=o.parent; } for(const c of Race.cars) { let q=h.object; while(q){ if(q===c.mesh) return false; q=q.parent; } } const m=h.object.material; return !(m&&m.transparent&&m.opacity<0.9); }); const h=hits[0]; if(!h) return { none:true }; const m=Array.isArray(h.object.material)?h.object.material[0]:h.object.material, c=m&&m.color?m.color:null; const green=!!(c && !m.map && c.g>c.r*1.15 && c.g>c.b*1.05 && c.g<0.62); /* grass/ground greens; the bright green kerb paint is not grass */ return { name:h.object.name||'', color:c?c.getHexString():'', map:!!(m&&m.map), green }; }, // owner Nov 12 2026: what the ground under a point is (the pilot car's road proof)
+  paceProbe: () => { const P=Race.pace, g=Race.pilotGroup(), L=Track.length; if(!g) return { noCar:true }; let vmax=0; for(const c of Race.cars) if(c.v>vmax) vmax=c.v; const h=Race._pilotHome; return { active:!!P, released:P?P.released:null, pv:P?+P.v.toFixed(1):0, done:P?+P.done.toFixed(0):0, run:P?+P.run.toFixed(0):0, vmax:+vmax.toFixed(1), home:h?Math.hypot(g.position.x-h.pos.x,g.position.z-h.pos.z):null, pos:[g.position.x,g.position.z] }; }, // Nov 11 2026: pilot car state for the robot
   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
   pitSpot: (i) => { const sp=(Track._pitEnv&&Track._pitEnv.spots)||[]; return sp[i||0]||null; }, // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
   pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), chief:cnt((BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs && Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]) ? Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10].grp : p._chief), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), booths:(Track._pitEnv&&Track._pitEnv.booths)?Track._pitEnv.booths.length:0, drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; },
+  pitWall: () => { const w=Track._pitEnv&&Track._pitEnv.wall; if(!w) return null; const L=Track.length, st=w.stations, nrm=s=>((s%L)+L)%L; let len=0, maxGap=0; for(let i=0;i<st.length-1;i++){ const gg=nrm(st[i+1][0]-st[i][0]); len+=gg; if(gg>maxGap) maxGap=gg; } const box0=nrm(Track.cfg.pitIn*L+30); let minClear=1e9; for(let i=0;i<st.length;i++){ const tgt=Track.pitDAt(st[i][0])-(Track.gp?0:3.5); const cl=Math.abs(tgt)-1.52-(Math.abs(st[i][1])+w.t/2); if(cl<minClear) minClear=cl; } return { h:w.h, t:w.t, len:+len.toFixed(1), stations:st.length, maxGap:+maxGap.toFixed(2), coverBefore:+nrm(box0-st[0][0]).toFixed(1), coverAfter:+nrm(st[st.length-1][0]-nrm(box0+170)).toFixed(1), minLaneClear:+minClear.toFixed(3), dCentre:st[0][1], W:Track.width }; }, // owner Nov 9 2026 missing-list item 1: the continuous pit wall, measured at the road edge
+  garageDoors: () => { const gd=Track._pitEnv&&Track._pitEnv.garages; if(!gd) return null; const L=Track.length, nrm=s=>((s%L)+L)%L; const box0=nrm(Track.cfg.pitIn*L+30), step=170/9; let maxOff=0; for(let i=0;i<gd.doors.length;i++){ const off=Math.abs(((gd.doors[i].s-nrm(box0+i*step)+L*1.5)%L)-L/2); if(off>maxOff) maxOff=off; } let inScene=false, n=gd.mesh; while(n){ if(n===scene){ inScene=true; break; } n=n.parent; } const st0=gd.stations&&gd.stations[0]; return { doors:gd.doors.length, maxOff:+maxOff.toFixed(3), faceOff:st0?+(st0[1]-Track.pitDAt(st0[0])).toFixed(2):gd.faceOff, h:gd.h, hasMap:!!(gd.mesh.material&&gd.mesh.material.map), inScene }; }, // owner Nov 10 2026 missing-list item 3: the garage doors on the pit building face, one per box, measured against the box centres
+  emView: (key, off) => { const g=(Track._emGroups||[]).find(h=>h.name==='emergency-'+key); if(!g) return null; const w=new THREE.Vector3(); g.getWorldPosition(w); const fwd=new THREE.Vector3(1,0,0).applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), side=new THREE.Vector3(0,1,0).cross(fwd), up=new THREE.Vector3(0,1,0); camera.position.copy(w).addScaledVector(fwd,off[0]).addScaledVector(up,off[1]).addScaledVector(side,off[2]); camera.lookAt(w.x,w.y+0.9,w.z); camera.updateMatrixWorld(true); renderer.render(scene,camera); return renderer.domElement.toDataURL('image/png'); }, // Nov 11 2026: a picture of a parked emergency car from beside it (for the robot's picture and the fit checks)
+  furniture: () => { const F=Track.furniture; if(!F) return null; const B=Track._pitBoard; let inScene=false, n=Track._furnRoot; while(n){ if(n===scene){ inScene=true; break; } n=n.parent; } const cnt=m=>m&&m.geometry&&m.geometry.index?m.geometry.index.count/3:0; return { track:Track.cfg&&Track.cfg.id, gp:!!Track.gp, zones:F.zones, brake:F.brake, drs:F.drs, sector:F.sector, pitSigns:F.pitSigns, lines:F.lines, limit:F.limit, podium:F.podium, parc:F.parc, motorhomes:F.motorhomes, emergency:F.emergency||null, cleared:F.cleared, minOff:(()=>{ let m=1e9; for(const q of [...F.brake,...F.drs,...F.sector]){ const d=Track.distToLoop(q.x,q.z)-Track.width/2; if(d<m) m=d; } return +m.toFixed(2); })(), drsZones:(Track.cfg.drs||[]).length, tris:{solids:cnt(F.solids), signs:cnt(F.signs)}, board:B?{ visible:B.grp.visible, key:B.key, pos:[+B.grp.position.x.toFixed(1),+B.grp.position.y.toFixed(1),+B.grp.position.z.toFixed(1)], sB:B.sB }:null, frame:(s,d)=>{ const q=Track.posAt(((s%Track.length)+Track.length)%Track.length,d||0); return [q.x,q.y,q.z,q.f.tx,q.f.tz,q.f.nx,q.f.nz]; }, pitD:(s)=>Track.pitDAt(((s%Track.length)+Track.length)%Track.length), pitIn:Track.cfg.pitIn*Track.length, L:Track.length, W:Track.width, side:Track.pitSide||1, inScene }; }, // owner Nov 10 2026 9:29 PM: the race furniture (braking / DRS / sector boards, pit limit signs + lines, podium, parc ferme, motorhomes, pit board)
+  marshals: () => { const ps=Track.marshalPosts||[], fs=Track._marshalFigs||[]; if(!ps.length||!fs.length) return null; const v=new THREE.Vector3(); let worst=0, covered=0; for(const P of ps){ let best=1e9; for(const f of fs){ f.getWorldPosition(v); const d=Math.hypot(v.x-P.x, v.z-P.z); if(d<best) best=d; } if(best<=3) covered++; if(best>worst) worst=best; } let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { posts:ps.length, marshals:fs.length, covered, worstOff:+worst.toFixed(2), stand:fs.length?+(fs[0].scale.x*MECH.height).toFixed(2):0, posts0:ps.slice(0,6).map(P=>[+P.x.toFixed(1),+P.y.toFixed(1),+P.z.toFixed(1)]), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; }, // owner Nov 10 2026 missing-list item 2: a marshal at every marshal post, measured against the post record buildTrackside keeps
   chiefPos: () => { const p=Race.player; if(!p) return null; let fig=null, drop=null, seatTop=null, vis=true; // BOOTH FIT ROUND: the player's chief is the booth chief when booths are live
     if(BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs){ const bc=Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]; if(bc&&bc.fig){ fig=bc.fig; drop=BOOTH.chiefDrop; seatTop=BOOTH.seatTop; } }
     if(!fig){ if(!p._chief) return null; p._chief.traverse(o=>{ if(o.userData&&o.userData.isFig) fig=o; }); if(!fig) return null; const ch2=p._chief.userData.chief; drop=ch2?ch2.drop:null; seatTop=ch2?ch2.seatTop:null; vis=p._chief.visible; }
@@ -4191,6 +4777,9 @@ window.__test = {
     finished: c.finished, isPlayer: c.isPlayer,
     throttle: c.throttle, brake: c.brake
   })),
+  wearPerLap: (tire, laps) => wearPerLap(tire, laps, 0),
+  damageProbe: (rel, secs) => { const p=Race.player||(Race.cars||[]).find(c=>c.isPlayer); if(!p) return null; const before=p.damage||0; for(let i=0;i<Math.round(secs*60);i++) hitDamage(p, rel, 1/60, 1, 1); return { before, after:p.damage, retired:p.retired, finished:p.finished }; },
+  repairProbe: () => { const p=Race.player||(Race.cars||[]).find(c=>c.isPlayer); if(!p) return null; p.damage=0.6; p.applyPitStop(); return p.damage; },
   race: () => ({
     mode: Race.mode, lap: Race.lap, laps: Race.laps,
     hasResults: !!Race.results,

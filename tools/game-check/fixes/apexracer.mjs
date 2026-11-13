@@ -1902,19 +1902,25 @@ export default [
         const inv = root.matrixWorld.clone().invert().elements;
         const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
         const apply = (v, e) => [e[0] * v[0] + e[4] * v[1] + e[8] * v[2] + e[12], e[1] * v[0] + e[5] * v[1] + e[9] * v[2] + e[13], e[2] * v[0] + e[6] * v[1] + e[10] * v[2] + e[14]];
+        const bmn = [Infinity, Infinity, Infinity], bmx = [-Infinity, -Infinity, -Infinity];
         root.traverse((q) => {
           const g = q.geometry;
           if (!g) return;
+          const mt = q.material || {};
+          if (mt.isMeshBasicMaterial && mt.transparent && mt.depthWrite === false) return; // the ground shadow blob is not the car
+          const wheel = /wheel|tire|tyre/i.test((q.name || '') + ' ' + (mt.name || ''));
           if (!g.boundingBox) g.computeBoundingBox();
           const b = g.boundingBox, mw = q.matrixWorld.elements;
           for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
             const l = apply(apply([x, y, z], mw), inv);
             for (let i = 0; i < 3; i++) { if (l[i] < mn[i]) mn[i] = l[i]; if (l[i] > mx[i]) mx[i] = l[i]; }
+            if (!wheel) for (let i = 0; i < 3; i++) { if (l[i] < bmn[i]) bmn[i] = l[i]; if (l[i] > bmx[i]) bmx[i] = l[i]; }
           }
         });
-        return JSON.stringify({ width: +(mx[0] - mn[0]).toFixed(4), height: +(mx[1] - mn[1]).toFixed(4), length: +(mx[2] - mn[2]).toFixed(4) });
+        return JSON.stringify({ width: +(bmx[0] - bmn[0]).toFixed(4), height: +(mx[1] - mn[1]).toFixed(4), length: +(mx[2] - mn[2]).toFixed(4) });
       };
-      const bands = { length: [3.825, 5.52], width: [1.6575, 2.2425], height: [0.935, 1.61] };
+      // owner Nov 10 2026 6:31 PM 'Leave goblin as is': every car wears his +20% (G-01), so the REALITY.md bands are x1.2; width is the BODY width (no wheels, no shadow) like a real car's listed width
+      const G01 = 1.2, bands = { length: [3.825 * G01, 5.52 * G01], width: [1.6575 * G01, 2.2425 * G01], height: [0.935 * G01, 1.61 * G01] };
       const check = (where, raw) => {
         let d = null;
         try { d = JSON.parse(raw); } catch (e) { return String(raw); }
@@ -2703,6 +2709,97 @@ export default [
       if (times[i] < times[i - 1] - 0.005) bad.push('row ' + (i + 1) + ' ' + times[i].toFixed(2) + 's is faster than row ' + i + ' ' + times[i - 1].toFixed(2) + 's');
     }
     if (bad.length) return 'auditor-a613 FAIL: sprint results times out of order: ' + bad.join('; ') + ' (rows: ' + times.map((t) => t.toFixed(2)).join(', ') + ')';
+    return true;
+  },
+},
+{
+  id: 'play-startup-fast',
+  ask: "Owner Nov 12 2026: the game is 'so delayed showing and getting started' - on opening, the menu must show WITHOUT waiting for all nine car models (19 MB) to download and parse first, and starting a race must reach the grid promptly with the models that race fields loaded (no stand-in cars)",
+  parts: ['menu'],
+  async test(page, h) {
+    const slow = await h.eval(() => window.__slow || 1).catch(() => 1);
+    const url = page.url();
+    const t0 = Date.now();
+    await page.goto(url, { waitUntil: 'commit', timeout: 60000 });
+    const menuOk = await h.poll(() => h.eval(() => { const m = document.getElementById('menu'); return !!(m && getComputedStyle(m).display !== 'none' && window.__erc); }), (v) => !!v, Math.round(15000 * slow), 150);
+    const tMenu = Date.now() - t0;
+    if (!menuOk) return 'startup FAIL: the menu never showed after a fresh load';
+    if (tMenu > 6000 * slow) return 'startup FAIL: the menu took ' + tMenu + ' ms to show on a fresh load (budget ' + Math.round(6000 * slow) + ' ms at runner slow x' + slow + ') - booting is still gated on heavy work';
+    const landed = await h.eval(() => { const names = ['goblin-', 'patriot-', 'tokii-', 'shc-', 'le-mans', 'phoenix-', 'hover-car', 'futuristic-muscle', 'duke-69']; return performance.getEntriesByType('resource').filter((e) => names.some((n) => e.name.includes(n))).length; });
+    if (landed >= 9) return 'startup FAIL: the menu waited for all 9 car models before showing - ' + landed + ' car model files were already fully fetched when the menu appeared';
+    const t1 = Date.now();
+    await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 8); return true; });
+    const gridOk = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P); }), (v) => !!v, Math.round(22000 * slow), 200);
+    const tRace = Date.now() - t1;
+    if (!gridOk) return 'startup FAIL: the race never reached the grid after startRace';
+    if (tRace > 22000 * slow) return 'startup FAIL: the race took ' + tRace + ' ms to reach the grid (budget ' + Math.round(22000 * slow) + ' ms at runner slow x' + slow + ')';
+    return true;
+  },
+},
+{
+  id: 'play-no-standin-car',
+  ask: "Owner Nov 12 2026: 'I never want to see those ugly cars glitch in ever' - while a car's real model is still downloading, the menu stage and the garage must show NO car at all (never the procedural stand-in, never a swapped-in wrong car that pops out later); when the model lands, the real car appears",
+  parts: ['garage'],
+  async test(page, h) {
+    const slow = await h.eval(() => window.__slow || 1).catch(() => 1);
+    let hold = true; const waiters = [];
+    const onRoute = async (route) => { if (hold) await new Promise((res) => waiters.push(res)); try { await route.continue(); } catch (e) {} };
+    await page.route('**/*.glb', onRoute);
+    const probe = () => h.eval(() => { const R = window.__reality; if (!R) return { err: 'no __reality hook' }; const root = R.player; if (!root) return { present: false, named: 0, meshes: 0 }; let named = 0, meshes = 0; root.traverse((q) => { if (q.isMesh) { meshes++; if (q.name) named++; } }); return { present: true, named, meshes }; }).catch(() => ({ err: 'stage probe threw' }));
+    try {
+      const url = page.url();
+      await page.goto(url, { waitUntil: 'commit', timeout: 60000 });
+      const menuOk = await h.poll(() => h.eval(() => { const m = document.getElementById('menu'); return !!(m && getComputedStyle(m).display !== 'none' && window.__erc); }), (v) => !!v, Math.round(20000 * slow), 150);
+      if (!menuOk) return 'no-standin FAIL: the menu never showed while model downloads were held';
+      for (let i = 0; i < 4; i++) {
+        const p = await probe();
+        if (p.err) return 'no-standin FAIL: ' + p.err + ' (menu, during download hold)';
+        if (p.present) return 'no-standin FAIL: a car is visible on the menu stage while its real model is still downloading (stage meshes ' + p.meshes + ', model-named meshes ' + p.named + ') - that visible placeholder is the glitch the owner banned';
+        await h.wait(700);
+      }
+      await h.eval(() => { window.__erc.openGarage(); return true; });
+      await h.wait(600);
+      const cards = await h.eval(() => [...document.querySelectorAll('[data-car]')].map((b) => b.dataset.car)).catch(() => []);
+      if (!cards.length) return 'no-standin FAIL: no garage car cards found to page through';
+      for (const c of cards.slice(0, 4)) {
+        await h.eval((car) => { const b = document.querySelector('[data-car="' + car + '"]'); if (b) b.click(); }, c);
+        await h.wait(500);
+        const p = await probe();
+        if (p.err) return 'no-standin FAIL: ' + p.err + ' (garage, during download hold)';
+        if (p.present) return 'no-standin FAIL: paging to ' + c + ' in the garage shows a car while its real model is still downloading (stage meshes ' + p.meshes + ', model-named meshes ' + p.named + ') - stand-in shown in the garage';
+      }
+      hold = false; waiters.splice(0).forEach((res) => res());
+      const realOk = await h.poll(probe, (p) => !!(p && p.present && p.named > 0), Math.round(90000 * slow), 500);
+      if (!realOk) { const p = await probe(); return 'no-standin FAIL: after the downloads were released, the real car never appeared on the stage (last probe ' + JSON.stringify(p) + ')'; }
+      return true;
+    } finally {
+      hold = false; waiters.splice(0).forEach((res) => res());
+      await page.unroute('**/*.glb', onRoute).catch(() => {});
+    }
+  },
+},
+{
+  id: 'play-stick-lost-lift',
+  ask: "Owner Nov 12 2026: 'I slammed brakes to let everyone pass me and the joystick got stuck forward, had to exit app' - when the phone loses a finger's lift (several touches at once), the next touch on the stick must take over and letting go must leave the stick at zero, never stuck forward",
+  parts: ['controls'],
+  async test(page, h) {
+    await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 8); return true; });
+    const ok = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P && !E.R.paused); }), (v) => !!v, 30000, 200);
+    if (!ok) return 'stick FAIL: the race never started';
+    const r = await h.eval(() => {
+      const z = document.getElementById('apcZone'); if (!z) return { err: 'no thumb stick zone' };
+      const rd = () => window.__controls.read();
+      const ev = (type, id, x, y) => z.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      const b = z.getBoundingClientRect(), cx = b.left + 120, cy = b.bottom - 120;
+      ev('pointerdown', 11, cx, cy); ev('pointermove', 11, cx, cy - 50);
+      const held = rd().y;
+      /* the lift of finger 11 never arrives (lost); a new finger touches and lets go */
+      ev('pointerdown', 12, cx, cy); ev('pointermove', 12, cx, cy - 40); ev('pointerup', 12, cx, cy - 40);
+      return { held, after: rd().y };
+    });
+    if (r.err) return 'stick FAIL: ' + r.err;
+    if (!(r.held < -0.5)) return 'stick FAIL: the stick did not read forward when pushed (' + r.held + ')';
+    if (r.after !== 0) return 'stick FAIL: after a lost lift and a new touch + let go the stick still reads ' + r.after + ' (stuck forward)';
     return true;
   },
 },

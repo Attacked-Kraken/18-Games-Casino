@@ -565,7 +565,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077
 - license: CC-BY 4.0
 - downloaded: 2026-11-09 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "BELAZ" on its credits screen)
+- used in: apexf1.html (credits screen names BELAZ)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/gamer-setup-pack-49aa58.glb
@@ -598,3 +598,30 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-09 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "TampaJoey" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/ambulance-low-poly-c38293.glb
+- title: Ambulance - Low Poly
+- maker: calebcram
+- source: https://sketchfab.com/3d-models/ambulance-low-poly-c38293926711435d868dde2c389e748b
+- license: CC-BY 4.0
+- downloaded: 2026-11-11 by the Sketchfab fetch robot
+- used in: apexf1.html (credits screen names "calebcram")
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/generic-sport-car-low-poly-7ad3bf.glb
+- title: Generic Sport Car Low Poly
+- maker: Han66st
+- source: https://sketchfab.com/3d-models/generic-sport-car-low-poly-7ad3bfb2bd7449c19698fc7d0592a601
+- license: CC-BY 4.0
+- downloaded: 2026-11-11 by the Sketchfab fetch robot
+- used in: apexf1.html (credits screen names "Han66st")
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/f1-safety-car-orange.glb
+- title: Generic Sport Car Low Poly (the orange car cut out of the three-car file)
+- maker: Han66st
+- source: https://sketchfab.com/3d-models/generic-sport-car-low-poly-7ad3bfb2bd7449c19698fc7d0592a601
+- license: CC-BY 4.0
+- downloaded: 2026-11-11 (cut from models/fetched/generic-sport-car-low-poly-7ad3bf.glb by Claude: only the orange car's meshes and wheels kept, no change to the artist's shapes or colours)
+- used in: apexf1.html (credits screen names "Han66st")
+- changes: two other cars removed

@@ -1,0 +1,27 @@
+{
+ "file": "models/fetched/generic-sport-car-low-poly-7ad3bf.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 10,
+  "tris": 7638,
+  "size": [
+   3.805,
+   1.908,
+   4.5
+  ],
+  "mainSize": [
+   3.805,
+   0.863,
+   4.5
+  ],
+  "stray": 1,
+  "bytes": 199476
+ },
+ "pictures": null,
+ "asked": {
+  "kind": "length",
+  "m": 4.5
+ },
+ "at": "2026-11-11T16:30:24.806Z"
+}

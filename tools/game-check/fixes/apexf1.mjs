@@ -985,6 +985,7 @@ export default [
       for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
       if (!quali) return 'weekend never reached qualifying';
       const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setAssist(false)`); // the assist (on by default) only rescues a car heading off the road; this test proves the base rule, so it is switched off here
       await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
       let left = false, dist = 0, lastS = null;
       for (let i = 0; i < 40 && !left; i++) {
@@ -2038,6 +2039,353 @@ export default [
         if (!r.spot) bad.push(tr + ': pit spot 0 is not dressed');
       }
       return bad.length ? 'F1 ALL-TRACKS PIT: ' + bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'fix-f1-pit-button-taps', mode: 'race',
+    ask: 'The pit buttons answer a real tap on the phone (owner Nov 9 2026: "fix Pit button cause it does not working"): PIT and SKIP STOP must be the top element at their own centre (nothing eats the tap), must answer a pointer-event tap the way some phone browsers and webviews deliver taps (they used to listen only for touchstart/mousedown), and SKIP STOP must sit above the touch-controls layer, clear of the phone home indicator (it used to live inside the lower HUD layer with no safe-area inset)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid&track=capital'; }).catch(() => {});
+      await h.wait(1500);
+      let booted = false;
+      for (let i = 0; i < 60; i++) { const ok = await h.eval(() => !!document.getElementById('raceBtn')).catch(() => false); if (ok) { booted = true; break; } await h.wait(300); }
+      if (!booted) return 'the grid menu never appeared at ?test=grid&track=capital';
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'the race never started';
+      const pitTop = await h.eval(() => { const e = document.getElementById('btnPit'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return t ? (t.id || t.tagName) : 'none'; });
+      if (pitTop !== 'btnPit') return 'the PIT button is covered at its centre by ' + pitTop + ' - a real thumb tap lands on that instead';
+      await h.eval(() => { const e = document.getElementById('btnPit'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || e; t.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch' })); });
+      let armed = false;
+      for (let i = 0; i < 16; i++) { const a = await h.eval(() => window.__test.pitProbe().armed).catch(() => false); if (a) { armed = true; break; } await h.wait(250); }
+      if (!armed) return 'the PIT button did not arm the stop when tapped - on the owner phone this button is dead';
+      await h.eval(() => { const b = document.querySelector('#pitTires .tirepick'); if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true })); }).catch(() => {});
+      await h.wait(600);
+      await h.eval(() => { window.__driver = setInterval(() => { try { const T = window.__test; const sp = T.steerProbe(); if (!sp) return; const steer = Math.max(-1, Math.min(1, (sp.line - sp.d) * 0.5 - sp.headAngle * 1.1)); T.setInput({ steer, gas: sp.v < sp.maxV * 1.05, brake: sp.v > sp.maxV * 1.18, reverse: false, ers: false }); } catch (e) {} }, 40); }).catch(() => {});
+      await h.eval(() => window.__test.pitNow()).catch(() => {});
+      let held = false;
+      for (let i = 0; i < 60; i++) { const hd = await h.eval(() => window.__test.pitProbe().hold).catch(() => false); if (hd) { held = true; break; } await h.wait(300); }
+      if (!held) { await h.eval(() => clearInterval(window.__driver)).catch(() => {}); return 'the car never reached its box for the button tap test'; }
+      const skipTop = await h.eval(() => { const e = document.getElementById('pitSkip'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return t ? (t.id || t.tagName) : 'none'; });
+      if (skipTop !== 'pitSkip') { await h.eval(() => clearInterval(window.__driver)).catch(() => {}); return 'SKIP STOP is covered at its centre by ' + skipTop + ' during the stop - a real thumb tap lands on that instead'; }
+      const clockAtTap = await h.eval(() => parseFloat(document.getElementById('pitClock').textContent));
+      await h.eval(() => { const e = document.getElementById('pitSkip'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || e; t.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch' })); });
+      let doneAt = -1;
+      for (let i = 0; i < 40; i++) { const st = await h.eval(() => ({ done: window.__test.pitProbe().done, clock: parseFloat(document.getElementById('pitClock').textContent) })).catch(() => ({ done: 0, clock: 0 })); if (st.done >= 1) { doneAt = st.clock; break; } await h.wait(250); }
+      const gauges = await h.eval(() => { const f = document.getElementById('fuelPct'); const w = document.getElementById('wearFill'); return { fuel: f ? parseFloat(f.textContent) : 0, wear: w ? parseFloat(w.style.width) : 0 }; }).catch(() => ({ fuel: 0, wear: 0 }));
+      await h.eval(() => { clearInterval(window.__driver); window.__test.setInput({ gas: false, steer: 0 }); }).catch(() => {});
+      if (doneAt < 0) return 'the stop never completed after the SKIP tap';
+      if (doneAt - clockAtTap > 2.5) return 'SKIP STOP did not answer its tap - the stop ran on to ' + doneAt.toFixed(1) + 's after a tap at ' + clockAtTap.toFixed(1) + 's instead of releasing at once (owner phone: this button is dead)';
+      if (gauges.fuel < 99) return 'the skipped stop left the tank at ' + gauges.fuel + '%';
+      if (gauges.wear < 99) return 'the skipped stop left the tyres at ' + gauges.wear + '% wear-bar';
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return true;
+    },
+  },
+  {
+    id: 'fix-f1-pit-wall-all-tracks', mode: 'race',
+    ask: 'A continuous pit wall stands between the pit lane and the race track on EVERY circuit in the menu: about 1 m of concrete running the whole box stretch (15 m before the first box to 15 m past the last), tight against the road edge on the pit side, clear of the pit driving line - the audit found only low barrier panels at the box boundaries and no wall anywhere (owner Nov 9 2026 missing-list item 1)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.pitWall) return null; return T.pitWall(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no pit wall was built'); continue; }
+        if (r.h < 0.9 || r.h > 1.1) bad.push(tr + ': wall height ' + r.h + ' m (a real pit wall is about 1 m)');
+        if (r.len < 195) bad.push(tr + ': wall runs only ' + r.len + ' m of the 200 m box stretch');
+        if (r.coverBefore < 10 || r.coverAfter < 10) bad.push(tr + ': wall does not cover the box stretch (starts ' + r.coverBefore + ' m before box 1, ends ' + r.coverAfter + ' m after box 10)');
+        if (r.stations < 40 || r.maxGap > 6) bad.push(tr + ': wall is not continuous (' + r.stations + ' stations, worst gap ' + r.maxGap + ' m)');
+        if (r.minLaneClear < 0.1) bad.push(tr + ': wall crowds the pit driving line (worst clearance ' + r.minLaneClear + ' m)');
+        if (Math.abs(r.dCentre) < r.W / 2 - 1.0) bad.push(tr + ': wall stands ' + Math.abs(r.dCentre) + ' m from the centre line - not up against the road edge (' + (r.W / 2) + ' m)');
+      }
+      return bad.length ? 'F1 PIT WALL: ' + bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'fix-f1-garage-doors-all-tracks', mode: 'race',
+    ask: 'Every pit box has its own garage door on the pit building face behind the boxes on EVERY circuit in the menu: ten roller-shutter doors aligned to the ten box centres, each in its team colour with its box number, a window band and an APEX ARCADE sign band above - the measured audit found no doors at all: the only pit building is a blank dark slab standing by the pit entry, and nothing stands behind the boxes but the booths (owner Nov 10 2026 missing-list item 3)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.garageDoors) return null; return T.garageDoors(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no garage face was built'); continue; }
+        if (r.doors !== 10) bad.push(tr + ': only ' + r.doors + ' of 10 garage doors');
+        if (r.maxOff > 1.0) bad.push(tr + ': a garage door stands ' + r.maxOff + ' m from its box centre');
+        if (r.faceOff < 5.5 || r.faceOff > 7.5) bad.push(tr + ': garage face stands ' + r.faceOff + ' m behind the box line (the booths end at about 5.4)');
+        if (r.h < 7.5 || r.h > 8.5) bad.push(tr + ': garage face is ' + r.h + ' m tall (the pit building face is 8)');
+        if (!r.hasMap) bad.push(tr + ': garage face has no painted finish (no texture - a blank slab again)');
+        if (!r.inScene) bad.push(tr + ': garage face is not in the scene');
+      }
+      return bad.length ? 'F1 GARAGE DOORS: ' + bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'fix-f1-marshals-all-tracks', mode: 'race',
+    ask: 'A marshal stands at EVERY marshal post on EVERY circuit in the menu: the fetched crew figure at the pit crews\' real size (2.63 m standing) in orange marshal overalls, beside the post\'s orange hut facing the track, poses varying post to post with some holding a flag in the post\'s own flag colour - the audit found the posts (an orange hut, a pole and a flag every ~130 m on all tracks) standing completely empty, with no people at them at all (owner Nov 10 2026 missing-list item 2)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.marshals) return null; return T.marshals(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no marshals were built'); continue; }
+        if (r.posts < 20) bad.push(tr + ': only ' + r.posts + ' marshal posts on the lap (the posts ring every circuit every ~130 m)');
+        if (r.marshals !== r.posts) bad.push(tr + ': ' + r.marshals + ' marshals for ' + r.posts + ' posts');
+        if (r.covered !== r.posts) bad.push(tr + ': only ' + r.covered + ' of ' + r.posts + ' posts have their marshal beside them');
+        if (r.worstOff > 3) bad.push(tr + ': a marshal stands ' + r.worstOff + ' m from his post');
+        if (r.stand < 2.5 || r.stand > 2.76) bad.push(tr + ': a marshal stands ' + r.stand + ' m tall (the crews\' real size is 2.63 m against the 8.47 m car)');
+      }
+      return bad.length ? 'F1 MARSHALS: ' + bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'fix-f1-race-furniture-all-tracks', mode: 'race',
+    ask: 'Owner Nov 10 2026 9:29 PM "Yes do all them complete 1-6": EVERY circuit in the menu carries the race furniture, placed from its own track - braking boards 150 / 100 / 50 before each real braking zone, a DRS board where each DRS zone opens, a pair of sector boards for sectors 1, 2 and 3, the pit limit sign (80, the limiter\'s own speed) where the limit starts and the struck-out one where it ends with a white line across the lane at both (and on the built-in circuits the solid entry and exit lines), a podium and a parc ferme with three bays, the ten team motorhomes, and the pit board at the pit wall. No board stands on the road.',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.furniture) return null; const f = T.furniture(); return f ? JSON.parse(JSON.stringify(f)) : null; }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no race furniture was built'); continue; }
+        if (!r.inScene) bad.push(tr + ': the furniture is not in the scene');
+        if (r.brake.length < 3) bad.push(tr + ': only ' + r.brake.length + ' braking boards (every circuit has at least one braking zone = 150, 100, 50)');
+        if (r.brake.some(b => ![150, 100, 50].includes(b.n))) bad.push(tr + ': a braking board carries a number that is not 150 / 100 / 50');
+        if (r.drs.length !== r.drsZones) bad.push(tr + ': ' + r.drs.length + ' DRS boards for ' + r.drsZones + ' DRS zones');
+        for (const n of [1, 2, 3]) if (!r.sector.some(q => q.n === n)) bad.push(tr + ': no board for sector ' + n);
+        if (!r.pitSigns.some(q => q.kind === 'start')) bad.push(tr + ': no pit limit sign where the limit starts');
+        if (!r.pitSigns.some(q => q.kind === 'end')) bad.push(tr + ': no end-of-limit sign at the pit exit');
+        if (r.limit !== 80) bad.push(tr + ': the pit limit sign says ' + r.limit + ' (the limiter holds 22 m/s = 80)');
+        for (const k of (r.gp ? ['limitStart', 'limitEnd'] : ['limitStart', 'limitEnd', 'entryLine', 'exitLine'])) if (!r.lines.some(l => l.kind === k)) bad.push(tr + ': the painted ' + k + ' is missing');
+        if (!r.podium) bad.push(tr + ': no podium');
+        if (!r.parc) bad.push(tr + ': no parc ferme'); else if (r.parc.bays !== 3) bad.push(tr + ': parc ferme has ' + r.parc.bays + ' bays, not 3');
+        if (r.motorhomes.length < 8) bad.push(tr + ': only ' + r.motorhomes.length + ' of the ten team motorhomes');
+        if (!r.board) bad.push(tr + ': no pit board at the pit wall');
+        if (!r.emergency) bad.push(tr + ': no parked safety car + medical car (no clear spot found beside the pit exit)');
+        else { for (let i = 0; i < 80 && r.emergency.loaded < 2 && !r.emergency.safetyError && !r.emergency.medicalError; i++) { await h.wait(500); r.emergency = await h.eval(() => { const q = window.__test.furniture(); return q && q.emergency ? JSON.parse(JSON.stringify(q.emergency)) : null; }).catch(() => r.emergency) || r.emergency; }
+          if (!r.emergency.apron || !(r.emergency.apron.len > 30)) bad.push(tr + ': no asphalt apron for the emergency cars to drive out of and into');
+          if (r.emergency.loaded < 2) bad.push(tr + ': the emergency cars did not load (' + (r.emergency.safetyError || r.emergency.medicalError || 'timed out') + ')');
+          else { const sz = r.emergency.safetySize, mz = r.emergency.medicalSize; if (!(sz[0] > 3.5 && sz[0] < 5.5)) bad.push(tr + ': the safety car is ' + sz[0] + ' m long (a sports car is about 4.6 m)'); if (!(mz[2] > 4.5 && mz[2] < 6)) bad.push(tr + ': the medical car is ' + mz[2] + ' m long (about 5.2 m)'); } }
+        if (r.minOff < 1.5) bad.push(tr + ': a board stands ' + r.minOff + ' m from the road edge (nothing may stand on the road; boards keep 1.5 m off it)');
+        if (!(r.tris.signs > 0 && r.tris.solids > 0)) bad.push(tr + ': the furniture has no geometry');
+      }
+      return bad.length ? 'F1 RACE FURNITURE: ' + bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'play-tyre-wear-scaled-to-race-length',
+    ask: 'Laps are short, so tyre wear is scaled to the race length: on a 5-lap race a Soft set must reach the wear cliff (60%) by lap 3 and a Hard set must not run out; the tyre box shows TYRES N%',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid'; }).catch(() => {});
+      let w = null;
+      for (let i = 0; i < 80 && !w; i++) { await h.wait(500); w = await h.eval(() => { const T = window.__test; if (!T || !T.wearPerLap) return null; return { soft5: T.wearPerLap('SOFT', 5) * 3, hard5: T.wearPerLap('HARD', 5) * 5, soft20: T.wearPerLap('SOFT', 20) * 3, txt: (document.getElementById('tireAge') || {}).textContent || '' }; }).catch(() => null); }
+      if (!w) return 'no wear probe on the test hook';
+      if (w.soft5 < 0.6) return 'a Soft set after 3 laps of a 5-lap race is only ' + Math.round(w.soft5 * 100) + '% worn (should be past the 60% cliff)';
+      if (w.hard5 > 0.7) return 'a Hard set is ' + Math.round(w.hard5 * 100) + '% worn after a whole 5-lap race (should last)';
+      if (w.soft20 > 0.3) return 'a long race got the short-race wear scale (Soft after 3 of 20 laps: ' + Math.round(w.soft20 * 100) + '%)';
+      return true;
+    },
+  },
+  {
+    id: 'play-damage-and-retirement', mode: 'race',
+    ask: 'Crashes damage the car: a hit adds damage, the pit stop repairs it, and 100% damage retires the car (it finishes last and the race is lost)',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 120; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) { await h.press('#raceBtn').catch(() => {}); for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); } }
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      let a = null;
+      for (let i = 0; i < 10 && !a; i++) { await h.wait(300); a = await h.eval(() => { const T = window.__test; if (!T || !T.damageProbe) return null; const rep = T.repairProbe(); const small = T.damageProbe(12, 0.5); const big = T.damageProbe(30, 5); return { rep, small, big }; }).catch(() => null); }
+      if (!a) return 'no damage probe on the test hook';
+      if (a.rep !== 0) return 'the pit stop did not repair the damage (damage ' + a.rep + ' after the stop)';
+      if (!(a.small.after > 0.02 && a.small.after < 0.5)) return 'a light 12 m/s hit should add some damage but not wreck the car (damage ' + a.small.after + ')';
+      if (!a.big.retired || a.big.after < 1) return 'a long 30 m/s crash did not retire the car (damage ' + a.big.after + ')';
+      return true;
+    },
+  },
+  {
+    id: 'play-tire-and-body-bars', mode: 'race',
+    ask: 'The HUD says TIRE (American spelling, never TYRE) and shows two bars: tires and body, each with a percent; body drops when the car is damaged',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 120; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) { await h.press('#raceBtn').catch(() => {}); for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); } }
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      await h.wait(800);
+      const r = await h.eval(() => { const g = id => (document.getElementById(id) || {}); const before = g('bodyPct').textContent; window.__test.damageProbe(14, 0.6); return new Promise(res => setTimeout(() => res({ box: (document.getElementById('tirebox') || {}).innerText || '', tire: g('tireAge').textContent, before, after: g('bodyPct').textContent, w: g('bodyFill').style.width }), 400)); }).catch(() => null);
+      if (!r) return 'could not read the tire box';
+      if (/TYRE/i.test(r.box)) return 'the HUD still spells it TYRE: ' + r.box.replace(/\s+/g, ' ');
+      if (!/TIRES \d+%/.test(r.tire)) return 'no TIRES N% line in the tire box (' + r.tire + ')';
+      if (!/BODY \d+%/.test(r.after)) return 'no BODY N% bar in the tire box (' + r.after + ')';
+      if (!(parseInt(r.after.replace(/\D/g, '')) < parseInt(r.before.replace(/\D/g, '')))) return 'the body bar did not drop after a hit (' + r.before + ' -> ' + r.after + ')';
+      return true;
+    },
+  },
+  {
+    id: 'play-pilot-car-leads-then-leaves',
+    ask: 'The pilot car should lead the field off the start, hold every car behind it, then peel off onto its apron and park, and the green flag should free the race.',
+    mode: 'race',
+    async test(page, h) {
+      const grid = await h.eval(() => !!(window.__test && window.__test.race)).catch(() => false);
+      if (!grid) return 'no test hook';
+      await h.eval(() => { window.__pilotForce = true; });
+      let loaded = false;
+      for (let i = 0; i < 80 && !loaded; i++) { loaded = await h.eval(() => { const q = window.__test.paceProbe(); return !!q && !q.noCar; }).catch(() => false); if (!loaded) await h.wait(250); }
+      if (!loaded) return 'the safety car model never loaded';
+      for (let p = 0; p < 3; p++) { await h.press('#raceBtn').catch(() => {}); await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => '?'); if (md === 'lights' || md === 'race') break; }
+      let seen = null, was = false, ended = false, capBroken = null, released = false;
+      for (let i = 0; i < 160 && !was; i++) { await h.wait(250); const q = await h.eval(() => window.__test.paceProbe()).catch(() => null); if (q && q.active) { was = true; seen = q; } }
+      for (let i = 0; i < 60 && was && !ended; i++) {
+        const q = await h.eval(() => window.__test.paceStep(30)).catch(() => null);
+        if (!q) continue;
+        if (q.active) { seen = q; if (q.released) released = true; if (!q.released && q.vmax > q.pv + 0.1) capBroken = 'a car ran at ' + q.vmax + ' m/s while the pilot car did ' + q.pv; }
+        else ended = true, seen = q;
+      }
+      if (!was) return 'the pilot car never led the race (pace never started)';
+      if (capBroken) return capBroken;
+      if (!released) return 'the green flag never came';
+      if (!ended) return 'the pilot car never left the track (still leading after 60 s of its own clock)';
+      if (!(seen.home < 0.6)) return 'the pilot car did not park back on its apron (' + seen.home + ' m away)';
+      return true;
+    },
+  },
+  {
+    id: 'play-line-signs-start-finish',
+    ask: 'The START sign should show only at the beginning of the race and the FINISH sign only on the last lap.',
+    mode: 'race',
+    async test(page, h) {
+      const ok = await h.eval(() => !!(window.__test && window.__test.signs)).catch(() => false);
+      if (!ok) return 'no test hook';
+      const a = await h.eval(() => window.__test.signs());
+      if (a.mode === 'race' && a.finish && a.lap < a.laps) return 'FINISH showed on lap ' + a.lap + ' of ' + a.laps;
+      const b = await h.eval(() => { return window.__test.signs({ lap: 99, raceT: 30, mode: 'race' }); });
+      if (!b.finish) return 'FINISH did not show on the last lap';
+      if (b.start) return 'START still showed late in the race';
+      const c = await h.eval(() => { return window.__test.signs({ lap: 2, raceT: 60, mode: 'race' }); });
+      if (c.finish) return 'FINISH showed on lap 2';
+      return true;
+    },
+  },
+  {
+    id: 'play-steering-assist-keeps-car-on-road',
+    ask: 'Steering assist (owner Nov 12 2026, cornering): with the assist ON a car pointing off the road with no stick is steered back and never reaches the grass; with it OFF the same start leaves the road (so the assist is really what holds it)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const off = await h.eval(`window.__test.assistRun(false, 3.5, 0.18, 4)`).catch(() => null);
+      const on = await h.eval(`window.__test.assistRun(true, 3.5, 0.18, 4)`).catch(() => null);
+      if (!off || !on) return 'no assistRun hook result';
+      if (!(off.off > 0 || off.maxD > off.half + 1.6)) return 'control failed: with the assist OFF the car never left the road (maxD ' + off.maxD + ' of ' + off.half + ') so this test proves nothing';
+      if (on.off > 0 || on.maxD > on.half + 0.3) return 'assist ON still reached the grass: maxD ' + on.maxD + ' m of half-width ' + on.half + ' (off-road steps ' + on.off + ')';
+      return true;
+    },
+  },
+  // owner Nov 12 2026 'cars go through each other still'
+  {
+    id: 'play-cars-never-overlap', mode: 'race',
+    ask: 'Two F1 cars never sit inside each other: over 60 s of racing with the whole pack no pair of cars on track overlaps (4.8 m nose to tail and 1.9 m side by side) - owner Nov 12 2026',
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      const r = await h.eval(() => {
+        const T = window.__test, L = T.trackLength ? T.trackLength() : 0; let worst = null, bad = 0;
+        for (let i = 0; i < 1200; i++) { T.simStep(0.05, { skill: 'good' });
+          const cs = T.cars();
+          for (let a = 0; a < cs.length; a++) for (let b = a + 1; b < cs.length; b++) { const A = cs[a], B = cs[b]; if (A.finished || B.finished) continue;
+            let ds = A.s - B.s; if (L) { ds %= L; if (ds > L / 2) ds -= L; if (ds < -L / 2) ds += L; }
+            const dd = Math.abs(A.d - B.d); if (Math.abs(A.d) > 9 || Math.abs(B.d) > 9) continue; // pit lane / off the racing road
+            if (Math.abs(ds) < 4.8 && dd < 1.9) { bad++; if (!worst) worst = A.name + ' inside ' + B.name + ' (' + ds.toFixed(1) + ' m apart, ' + dd.toFixed(1) + ' m side by side) at step ' + i; } } }
+        return { bad, worst, solid: window.__f1solid || 0 };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.bad > 0) return 'F1: cars drove through each other ' + r.bad + ' times - first: ' + r.worst;
+      return true;
+    },
+  },
+  // owner Nov 12 2026 'no control of the car in the pit or coming out - it stays gliding sideways ... coming out it's all the player's control to get back on track as soon as the last crew is passed'
+  {
+    id: 'play-pit-exit-player-steers', mode: 'race',
+    ask: 'After the stop, once past his crew, the player steers out of the pits himself: holding steer toward the track puts him back on the track before the automatic pit exit, and the car points the way it moves (not sliding sideways) - owner Nov 12 2026',
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      const r = await h.eval(() => {
+        const T = window.__test;
+        for (let i = 0; i < 200; i++) T.simStep(0.05, { skill: 'good' });
+        T.pitNow(); let held = false, i = 0;
+        for (; i < 900; i++) { T.simStep(0.05, { skill: 'good' }); const q = T.pitProbe(); if (q.hold) held = true; if (held && !q.hold) break; }
+        if (!held) return { inc: 'never stopped in the box' };
+        for (let k = 0; k < 40; k++) T.simStep(0.05, { skill: 'good' }); // roll past the crew
+        const f = T.furniture(), L = f.L, pitIn = f.pitIn; let maxSlide = 0, left = null;
+        const man = { skill: 'good' }; Object.defineProperty(man, 'st', { get: () => -1, set: () => {} }); // a driver holding full steer toward the track and full gas
+        for (let k = 0; k < 600; k++) { T.simStep(0.05, man);
+          const c = T.cars().find(x => x.isPlayer), q = T.pitProbe(), from = ((c.s - pitIn) % L + L) % L;
+          if (!q.inPits) { left = { from: Math.round(from), d: +c.d.toFixed(1) }; break; } }
+        return { left, W: f.W };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.inc) return { inconclusive: r.inc };
+      if (!r.left) return 'F1 PIT EXIT: held steer toward the track for 30 s after the stop and the car never left the pit lane';
+      if (r.left.from > 320) return 'F1 PIT EXIT: steering toward the track only got him out ' + r.left.from + ' m into the pit lane - the lane still drove him to the end';
+      if (Math.abs(r.left.d) > r.W / 2) return 'F1 PIT EXIT: left the pits at ' + r.left.d + ' m from the middle - not on the track';
+      return true;
+    },
+  },
+  // owner Nov 12 2026 'make a road for the pilot and ambulance car ... enter one end and get back on track through the other end'
+  {
+    id: 'play-pilot-car-never-on-grass', mode: 'race',
+    ask: 'The pilot car drives only on paved ground (track, pit lane, its own road and apron) from the start until it parks - never over grass (Harbour, where it crossed 45 m of grass) - owner Nov 12 2026',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let up = null; for (let i = 0; i < 60 && !up; i++) { await h.wait(500); up = await h.eval(() => !!(window.__test && window.__test.paceProbe)).catch(() => null); }
+      if (!up) return { inconclusive: 'game did not load' };
+      await h.eval(() => { window.__pilotForce = true; });
+      let loaded = false; for (let i = 0; i < 80 && !loaded; i++) { loaded = await h.eval(() => { const q = window.__test.paceProbe(); return !!q && !q.noCar; }).catch(() => false); if (!loaded) await h.wait(250); }
+      if (!loaded) return { inconclusive: 'the safety car model never loaded' };
+      for (let p = 0; p < 3; p++) { await h.press('#raceBtn').catch(() => {}); await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => '?'); if (md === 'lights' || md === 'race') break; }
+      let was = false; for (let i = 0; i < 160 && !was; i++) { await h.wait(250); was = await h.eval(() => window.__test.paceProbe().active).catch(() => false); }
+      if (!was) return { inconclusive: 'the pace lap never started' };
+      const r = await h.eval(() => { const T = window.__test; let bad = 0, first = null, n = 0;
+        for (let i = 0; i < 4000; i++) { const q = T.paceStep(1); if (!q.active) break; n++; const g = T.surfaceAt(q.pos[0], q.pos[1]); if (g.green || g.none) { bad++; if (!first) first = q.done + ' of ' + q.run + ' m (' + (g.none ? 'nothing under it' : 'grass ' + g.color) + ')'; } }
+        return { bad, first, n }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.n < 50) return { inconclusive: 'the pace lap ended too soon to check' };
+      if (r.bad > 0) return 'F1 PILOT CAR: drove over grass ' + r.bad + ' of ' + r.n + ' steps - first at ' + r.first;
+      return true;
+    },
+  },
+  // owner Nov 12 2026 'players still tangled up, every body maxed out same speed' - the rivals have their own pace, so after 90 s the pack is strung out
+  {
+    id: 'play-field-strings-out', mode: 'race',
+    ask: 'The F1 rivals do not all drive the same speed: after 90 s of racing the five rivals are spread over at least 60 m from first to last along the road - owner Nov 12 2026',
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      const r = await h.eval(() => { const T = window.__test; for (let i = 0; i < 1800; i++) T.simStep(0.05, { skill: 'good' });
+        const cs = T.cars().filter((c) => !c.isPlayer && !c.retired); const d = cs.map((c) => c.raceDist !== undefined ? c.raceDist : c.s); return { n: cs.length, spread: Math.max(...d) - Math.min(...d) }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.n < 4) return { inconclusive: 'fewer than 4 rivals left' };
+      if (r.spread < 60) return 'F1: after 90 s the rivals are only ' + r.spread.toFixed(0) + ' m apart - they still drive as one pack';
+      return true;
     },
   },
 ];

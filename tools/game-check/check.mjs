@@ -58,6 +58,11 @@ const STUDIO_PROBE = () => {
       Object.defineProperty(this, 'isCamera', { value: v, writable: true, enumerable: true, configurable: true });
       try { if (v && window.__cams.length < 40) window.__cams.push(this); } catch (e) {}
     } });
+    window.__texs = new Set(); // owner Nov 10 2026: picture (texture) memory per game - F1 reached ~547 MB and iPhone Safari threw the page out
+    Object.defineProperty(Object.prototype, 'isTexture', { configurable: true, set(v) {
+      Object.defineProperty(this, 'isTexture', { value: v, writable: true, enumerable: true, configurable: true });
+      try { if (v && window.__texs.size < 5000) window.__texs.add(this); } catch (e) {}
+    } });
     window.__renderers = [];
     Object.defineProperty(Object.prototype, 'isWebGLRenderer', { configurable: true, set(v) {
       Object.defineProperty(this, 'isWebGLRenderer', { value: v, writable: true, enumerable: true, configurable: true });
@@ -461,6 +466,9 @@ for (const g of games) {
     if (g.people && !st.skinned) r.fail.push('Players are not real 3D bodies (no rigged/skinned model was drawn) - blob or box people break STUDIO-STANDARD.md; use characters/base-human-v2 + the athlete kit (gear.js)');
     const dpf = r.studio.drawsPerFrame;
     if (dpf > (g.maxDraws || 450)) r.check.push(`Heavy for phones: about ${dpf} draw calls per frame (aim under ${g.maxDraws || 450}; merge meshes - see STUDIO-STANDARD.md "Phone budget")`); }
+  // owner Nov 10 2026 6:38 PM 'the heaviness will be your job ... the right setup for multiplayer games': picture memory budget for phones (Nov 8 F1 that played fine = ~263 MB; 547 MB crashed iPhone Safari)
+  try { const tm = await page.evaluate(() => { const by = {}; let mb = 0, n = 0; for (const t of (window.__texs || [])) { const im = t.image; const w = im && (im.width || im.videoWidth), h = im && im.height; if (!w || !h) continue; n++; const m = w * h * 4 * 1.33 / 1e6; mb += m; const k = w + 'x' + h; by[k] = (by[k] || 0) + m; } return { mb: Math.round(mb), n, top: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + ' ' + Math.round(v) + ' MB') }; }).catch(() => null);
+    if (tm) { r.texMB = tm.mb; const cap = g.maxTexMB || 300; if (tm.mb > cap) r.check.push(`Heavy for phones: about ${tm.mb} MB of pictures (textures, ${tm.n} made; aim under ${cap} MB - iPhone Safari closes the page past ~500 MB) - biggest: ${tm.top.join(', ')}; shrink per-team / per-object copies (texCap) or share one picture`); } } catch (e) {}
   if (bytes > 60e6) r.check.push(`Big download: about ${Math.round(bytes / 1e6)} MB before play (aim under 60 MB)`);
   // WHERE THINGS ARE (owner Oct 21 2026 "faster builders"): every game's look board starts with a short map of the
   // game file (what lives where, with line numbers) so a builder finds the spot in seconds. Missing = a yellow line.
