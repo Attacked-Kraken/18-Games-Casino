@@ -56,7 +56,9 @@
       home(); addEventListener('resize', home);
       const set = (x, y) => { if (side === 'right') { st.rx = x; st.ry = y; } else { st.jx = x; st.jy = y; } knob.style.transform = 'translate(' + (x * R) + 'px,' + (y * R) + 'px)'; };
       zone.addEventListener('pointerdown', e => {
-        if (pid != null || paused()) return; e.preventDefault(); firstTouch(); pid = e.pointerId; try { zone.setPointerCapture(pid); } catch (er) {}
+        if (paused()) return; e.preventDefault(); firstTouch();
+        if (pid != null && pid !== e.pointerId) { try { zone.releasePointerCapture(pid); } catch (er) {} } /* a finger whose lift never arrived (iOS drops it with 3+ touches or a system swipe) must not block the next touch: the NEW finger takes over */
+        pid = e.pointerId; try { zone.setPointerCapture(pid); } catch (er) {}
         const r = zone.getBoundingClientRect(); ox = e.clientX; oy = e.clientY;
         const lx = rotated() ? oy - r.top : ox - r.left, ly = rotated() ? r.right - ox : oy - r.top;
         joy.style.left = lx + 'px'; joy.style.top = ly + 'px'; joy.classList.add('on');
@@ -70,6 +72,11 @@
       });
       const end = e => { if (e && e.pointerId != null && e.pointerId !== pid) return; pid = null; set(0, 0); joy.classList.remove('on'); home(); };
       zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end); zone.addEventListener('lostpointercapture', end);
+      /* the lift can be lost at the zone: also listen on the whole window, and when no finger is left on the screen at all, let go */
+      const winEnd = e => { if (pid != null && e.pointerId === pid) end(e); };
+      addEventListener('pointerup', winEnd, true); addEventListener('pointercancel', winEnd, true);
+      const noTouch = e => { if (!e.touches || e.touches.length === 0) end(null); };
+      addEventListener('touchend', noTouch, true); addEventListener('touchcancel', noTouch, true);
       sticks.push({ zone, end });
     }
     if (D && opts.stick !== false) makeStick('left');
