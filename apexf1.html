@@ -2557,7 +2557,7 @@ function apexWordTex(){ // the lettering lives on its own sheet so the car only 
 }
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
-  const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
+  const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: 0.1 }); /* owner Nov 12 2026 'all the car colors on track are dark': the race scene has no reflection map, and a metal surface with nothing to reflect only shows 40% of its paint - team paint is now glossy, not metal, so the color shows */
   // owner Nov 6 2026 'colours not working': a wrap now takes the picked team colour (the wrap's own pattern stays, tinted toward the team) instead of ignoring it
   if(wrap && wrap!=='team'){ const tc=new THREE.Color(color), mx=Math.max(tc.r,tc.g,tc.b,0.001); tc.multiplyScalar(1/mx); m.color.set(0xffffff).lerp(tc,0.6); }
   m.customProgramCacheKey = ()=>'apexLivery';
@@ -2581,7 +2581,7 @@ function liveryMaterial(M, color, accent, wrap){
 }
 function cmBody(kind, color, accent, wrap){
   const M = CM[kind]; if(!M || !M.ready) return null;
-  const paint = M.bmin ? liveryMaterial(M, color, accent, wrap) : new THREE.MeshStandardMaterial({ color, roughness:0.22, metalness:0.7 });
+  const paint = M.bmin ? liveryMaterial(M, color, accent, wrap) : new THREE.MeshStandardMaterial({ color, roughness:0.22, metalness:0.1 });
   const dark = new THREE.MeshStandardMaterial({ color:0x15171c, roughness:0.5, metalness:0.5 });
   const glass = new THREE.MeshStandardMaterial({ color:0x0b1020, roughness:0.05, metalness:0.9, transparent:true, opacity:0.85 });
   const b = M.body3d.clone(true);
