@@ -2350,4 +2350,27 @@ export default [
       return true;
     },
   },
+  // owner Nov 12 2026 'make a road for the pilot and ambulance car ... enter one end and get back on track through the other end'
+  {
+    id: 'play-pilot-car-never-on-grass', mode: 'race',
+    ask: 'The pilot car drives only on paved ground (track, pit lane, its own road and apron) from the start until it parks - never over grass (Harbour, where it crossed 45 m of grass) - owner Nov 12 2026',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let up = null; for (let i = 0; i < 60 && !up; i++) { await h.wait(500); up = await h.eval(() => !!(window.__test && window.__test.paceProbe)).catch(() => null); }
+      if (!up) return { inconclusive: 'game did not load' };
+      await h.eval(() => { window.__pilotForce = true; });
+      let loaded = false; for (let i = 0; i < 80 && !loaded; i++) { loaded = await h.eval(() => { const q = window.__test.paceProbe(); return !!q && !q.noCar; }).catch(() => false); if (!loaded) await h.wait(250); }
+      if (!loaded) return { inconclusive: 'the safety car model never loaded' };
+      for (let p = 0; p < 3; p++) { await h.press('#raceBtn').catch(() => {}); await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => '?'); if (md === 'lights' || md === 'race') break; }
+      let was = false; for (let i = 0; i < 160 && !was; i++) { await h.wait(250); was = await h.eval(() => window.__test.paceProbe().active).catch(() => false); }
+      if (!was) return { inconclusive: 'the pace lap never started' };
+      const r = await h.eval(() => { const T = window.__test; let bad = 0, first = null, n = 0;
+        for (let i = 0; i < 4000; i++) { const q = T.paceStep(1); if (!q.active) break; n++; const g = T.surfaceAt(q.pos[0], q.pos[1]); if (g.green || g.none) { bad++; if (!first) first = q.done + ' of ' + q.run + ' m (' + (g.none ? 'nothing under it' : 'grass ' + g.color) + ')'; } }
+        return { bad, first, n }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.n < 50) return { inconclusive: 'the pace lap ended too soon to check' };
+      if (r.bad > 0) return 'F1 PILOT CAR: drove over grass ' + r.bad + ' of ' + r.n + ' steps - first at ' + r.first;
+      return true;
+    },
+  },
 ];
