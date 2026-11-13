@@ -2373,4 +2373,19 @@ export default [
       return true;
     },
   },
+  // owner Nov 12 2026 'players still tangled up, every body maxed out same speed' - the rivals have their own pace, so after 90 s the pack is strung out
+  {
+    id: 'play-field-strings-out', mode: 'race',
+    ask: 'The F1 rivals do not all drive the same speed: after 90 s of racing the five rivals are spread over at least 60 m from first to last along the road - owner Nov 12 2026',
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      const r = await h.eval(() => { const T = window.__test; for (let i = 0; i < 1800; i++) T.simStep(0.05, { skill: 'good' });
+        const cs = T.cars().filter((c) => !c.isPlayer && !c.retired); const d = cs.map((c) => c.raceDist !== undefined ? c.raceDist : c.s); return { n: cs.length, spread: Math.max(...d) - Math.min(...d) }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (r.n < 4) return { inconclusive: 'fewer than 4 rivals left' };
+      if (r.spread < 60) return 'F1: after 90 s the rivals are only ' + r.spread.toFixed(0) + ' m apart - they still drive as one pack';
+      return true;
+    },
+  },
 ];
