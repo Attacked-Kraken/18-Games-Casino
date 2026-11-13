@@ -47,6 +47,14 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     .overlay .bigbtn { margin:4px auto; padding:7px 12px; font-size:14px; border-radius:9px; }
     #raceBtn { min-height:44px; box-sizing:border-box; } #gridMenu .card { padding-top:4px; padding-bottom:4px; } #gridMenu table.stand td, #gridMenu table.stand th { padding:1px 5px; } /* G-224: LIGHTS OUT is a full 44px tap target; the grid rows give back the fit headroom it spends (the stack sat at exactly 390) */
     .overlay table.stand { margin-top:2px; }
+    /* owner Nov 12 2026 'the part that shows after is too big, everything needs to fit in frame': the results screen on a sideways phone is one compact block - title on top, the two tables side by side, the two buttons in one row, nothing scrolls */
+    #resultMenu { display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; column-gap:8px; row-gap:0; align-content:start; justify-items:stretch; padding:4px 10px; overflow:hidden; }
+    #resultMenu .title { grid-column:1 / -1; font-size:16px !important; margin:0 0 2px; text-align:center; }
+    #resultMenu .card { width:auto !important; margin:0; padding:4px 6px; min-width:0; }
+    #resultMenu .card h3 { font-size:10px; margin:0 0 2px; }
+    #resultMenu table.stand { font-size:10px; margin:0; }
+    #resultMenu table.stand td, #resultMenu table.stand th { padding:0 4px; line-height:1.25; }
+    #resultMenu .bigbtn { margin:4px 0 0; padding:6px 8px; font-size:13px; min-height:38px; width:auto; }
     .overlay table.stand td, .overlay table.stand th { padding:2px 6px; }
     #menu { flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:flex-start; }
     #menu .title, #menu .menuSub, #menu .card { flex:0 0 100%; }
@@ -328,7 +336,7 @@ setTimeout(function(){
   <button class="bigbtn alt" id="friendBtn">👥 PLAY WITH FRIENDS</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
-  <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 13px ui-monospace,Menlo,monospace;color:#9fd8ff">Finish a race to earn your code</div>
+  <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 12px ui-monospace,Menlo,monospace;color:#9fd8ff;word-break:break-all;overflow-wrap:anywhere;line-height:1.35;user-select:all;-webkit-user-select:all">Finish a race to earn your code</div>
   <div style="font-size:12px;color:#8fa8c8;margin-top:6px">Share it — friends paste it to race your driver, AI-driven at your rating.</div></div>
 </div>
 
@@ -1831,7 +1839,7 @@ const Track = {
       rec.emergency[key+'Mats']=names; };
     const run=async()=>{ const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
       for(const it of parts){ try{
-        let gl=T._emCache[it.file]; if(!gl){ const buf=await fetch(it.file).then(r=>{ if(!r.ok) throw new Error(it.file+' '+r.status); return r.arrayBuffer(); }); gl=T._emCache[it.file]=await new GLTFLoader().parseAsync(buf,''); }
+        let gl=T._emCache[it.file]; if(!gl){ const buf=await fetch(it.file).then(r=>{ if(!r.ok) throw new Error(it.file+' '+r.status); return r.arrayBuffer(); }); gl=T._emCache[it.file]=await new GLTFLoader().parseAsync(buf,''); try{ texShrink(gl.scene,512); }catch(e){} } /* owner Nov 12 2026: parked cars seen from afar - 512 pictures (the ambulance carried a 1024) */
         if(!root.parent) return; // the circuit was rebuilt while this loaded
         finish(gl,it.key);
         const car=gl.scene.clone(true); car.updateMatrixWorld(true);
@@ -2002,7 +2010,7 @@ function cmSoften(m){ // keeps the model's colours but makes printed brand words
 }
 function cmTyre(m){ // repaints the model's own tyre picture: no smudges, our name on the sidewall in yellow
   const img=m.map&&m.map.image; if(!img||!img.width) return m; const name=m.name||'';
-  const W=2048, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
+  const W=1536, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); /* owner Nov 12 2026: 2048 -> 1536 (two tyre sheets were 45 MB of the phone's picture memory); the name stays readable */ // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
   const YEL='#f4d21c', FONT=(px)=>'900 '+px+'px Arial Black, Arial, sans-serif';
   const mirror=(fn)=>{ x.save(); x.translate(W,0); x.scale(-1,1); fn(); x.restore(); }; // the model's tyre picture is stored mirrored
   if(/Meshpart6/i.test(name)){ // modern car: a round sidewall picture with the rim in the middle
@@ -2035,6 +2043,8 @@ function CMBoot(){
       const buf = await fetch(M.file).then(r=>r.arrayBuffer());
       const gltf = await new GLTFLoader().parseAsync(buf, '');
       const root = gltf.scene; root.updateMatrixWorld(true);
+      try{ const keep=new Set(); root.traverse(o=>{ if(o.isMesh&&o.material&&M.body.test(o.material.name||'')&&o.material.map) keep.add(o.material.map); }); const done=new Set(); // owner Nov 12 2026 (picture memory under the 300 MB phone line): the car's small parts (wheels, driver, wings, cockpit) carried 1024 pictures - the classic car alone had 13 of them (73 MB). Everything but the body paint is drawn at 512 (a car on the phone screen never shows more); the body paint stays full size
+        root.traverse(o=>{ if(!o.isMesh||!o.material) return; for(const m of (Array.isArray(o.material)?o.material:[o.material])) for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap']){ const t=m[k], im=t&&t.image; if(!im||keep.has(t)||done.has(t)||!im.width||Math.max(im.width,im.height)<=512) continue; done.add(t); try{ const c=texCap(im,512); if(c!==im){ t.image=c; t.needsUpdate=true; } }catch(e){} } }); }catch(e){}
       // drop the model's own wheels + driver, find the tyres' size and axle positions from the wheel meshes first
       const wheels = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'') && /Wheel|Meshpart2Mtl|Meshpart6Mtl/.test(o.material.name||'')) wheels.push(o); });
       const wb = new THREE.Box3(); for(const w of wheels) wb.expandByObject(w);
@@ -4254,13 +4264,13 @@ function showResults(R){
     Save.save(career);
     const rows=Object.entries(career.table).sort((a,b)=>b[1]-a[1]).slice(0,10);
     champHtml='<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map(([k,v])=>`<tr${k===me?' class="me"':''}><td>${k}</td><td>${v}</td></tr>`).join('');
-    const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
+    const fc=friendCode(); if(fc) $('myCode').textContent=fc;
   } else {
     const rows=order.slice(0,10);
     champHtml='<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map((c,i)=>`<tr${c.isPlayer?' class="me"':''}><td>${c.name}</td><td>${pts[c.name]||0}</td></tr>`).join('');
     // quick-race still earns a code via temp career-ish record
     if(!career){ newCareer(sessionCfg.driver||'YOU', sessionCfg.team.id); }
-    const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
+    const fc=friendCode(); if(fc) $('myCode').textContent=fc;
   }
   $('champTable').innerHTML=champHtml+(fl?`<div style="margin-top:6px;font-size:12px;color:#9fd8ff">⚡ Fastest lap: ${fl.name} ${fmtTime(fl.bestLap)}</div>`:'');
   // tournament: accumulate points across the 3 races
@@ -4461,7 +4471,7 @@ function updateForecast(){
   $('wxForecast').textContent = wr? `🌧 Changeable — rain possible mid-race` : `☀ Dry expected all race`;
   $('wxForecast').title=t.tag;
 }
-function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc; }
+function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent=fc; }
 function renderHub(){
   const t=TRACKS[career.round%TRACKS.length], team=TEAMS.find(x=>x.id===career.team)||TEAMS[0];
   selTeam=team; // the hub shows YOUR car
