@@ -3550,7 +3550,7 @@ function aiDrive(car, dt){
   let cheat=1;
   if(Race.player && !Race.player.finished && !car.finished){
     const gapS = Race.player.raceDist - car.raceDist; // + means player ahead
-    if(gapS>0) cheat = 1 + Math.min(0.045, gapS*0.00004) * Race.cheatLevel;      // hunt you down
+    if(gapS>0) cheat = 1 + Math.min(0.02, gapS*0.00004) * Race.cheatLevel;      // hunt you down
     else cheat = 1 - Math.min(0.05, -gapS*0.00004) * Race.cheatLevel;           // back off when clear (owner Nov 12 2026: was 2% max - a player who fell behind never saw the field wait)
   }
   // lookahead target speed
@@ -3558,7 +3558,8 @@ function aiDrive(car, dt){
   let vt=Track.maxSpeedAt(lookS,grip)*cheat; // corner speeds stay on the game's own physics (the kit's speed table is tuned for its preview cars and would leave our AI far behind the player)
   vt*= (1.005+car.skill*0.02); // G-66: target the game's real corner speeds - the old 0.90 base cruised the AI well under the player's pace
   vt+=car.paceNow()*0.7; // G-66: tire/team/skill pace still counts, but at 0.7 weight - at 2.5 it alone cost the field ~1.5 m/s everywhere
-  vt=Math.min(vt,97);
+  if(car.paceK===undefined) car.paceK=1.02-Math.random()*0.065; /* owner Nov 12 2026 'every body is maxed out same speed, tight track': each rival gets its own pace (about 6% from fastest to slowest, picked once per race) so the field strings out instead of one tangled pack */
+  vt*=car.paceK; vt=Math.min(vt,97);
   // pack fix: traffic - a car right ahead in the lane sets the speed early, so
   // arrivals inside the contact box happen matched instead of at full closing speed
   if(!car.inPits){ let vCap=Infinity;
