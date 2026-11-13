@@ -2778,4 +2778,29 @@ export default [
     }
   },
 },
+{
+  id: 'play-stick-lost-lift',
+  ask: "Owner Nov 12 2026: 'I slammed brakes to let everyone pass me and the joystick got stuck forward, had to exit app' - when the phone loses a finger's lift (several touches at once), the next touch on the stick must take over and letting go must leave the stick at zero, never stuck forward",
+  parts: ['controls'],
+  async test(page, h) {
+    await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 8); return true; });
+    const ok = await h.poll(() => h.eval(() => { const E = window.__erc; return !!(E && E.G && E.G.mode === 'race' && E.R && E.R.P && !E.R.paused); }), (v) => !!v, 30000, 200);
+    if (!ok) return 'stick FAIL: the race never started';
+    const r = await h.eval(() => {
+      const z = document.getElementById('apcZone'); if (!z) return { err: 'no thumb stick zone' };
+      const rd = () => window.__controls.read();
+      const ev = (type, id, x, y) => z.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      const b = z.getBoundingClientRect(), cx = b.left + 120, cy = b.bottom - 120;
+      ev('pointerdown', 11, cx, cy); ev('pointermove', 11, cx, cy - 50);
+      const held = rd().y;
+      /* the lift of finger 11 never arrives (lost); a new finger touches and lets go */
+      ev('pointerdown', 12, cx, cy); ev('pointermove', 12, cx, cy - 40); ev('pointerup', 12, cx, cy - 40);
+      return { held, after: rd().y };
+    });
+    if (r.err) return 'stick FAIL: ' + r.err;
+    if (!(r.held < -0.5)) return 'stick FAIL: the stick did not read forward when pushed (' + r.held + ')';
+    if (r.after !== 0) return 'stick FAIL: after a lost lift and a new touch + let go the stick still reads ' + r.after + ' (stuck forward)';
+    return true;
+  },
+},
 ];
