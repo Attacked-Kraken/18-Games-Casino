@@ -2388,4 +2388,17 @@ export default [
       return true;
     },
   },
+  // owner Nov 14 2026 (photo): 'DRS button did nothing, what is DRS for?' - the press must say what DRS is and what is missing
+  {
+    id: 'play-drs-press-explains', mode: 'race',
+    ask: 'Pressing DRS before it can open shows a readable message saying what DRS is and what is missing - owner Nov 14 2026',
+    test: async (page, h) => {
+      for (let i = 0; i < 80; i++) { const m = await h.eval(() => window.__test && window.__test.pitProbe && window.__test.pitProbe() && window.__test.pitProbe().mode).catch(() => null); if (m === 'race') break; await h.wait(500); }
+      await h.eval(() => document.querySelector('#btnDRS').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
+      await h.wait(300);
+      const txt = await h.eval(() => document.body.innerText);
+      if (!/DRS = EXTRA SPEED ON STRAIGHTS/i.test(txt) || !/lap 2/i.test(txt)) return 'pressing DRS on lap 1 shows no explanation (what DRS is and that it opens from lap 2)';
+      return true;
+    },
+  },
 ];
