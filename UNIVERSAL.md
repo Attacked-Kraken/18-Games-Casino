@@ -188,3 +188,9 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - ROBOT LOOK GUARD can flag the menu on a one-number change (#2574 failed once, passed the re-check unchanged). A repeat failure with no real change = fix the robot's picture compare.
 - GRAND PRIX PIT LANE: checked Nov 13 with a picture at the stopped car (crew on the floor, garage behind, no fence). No push-back needed there; the 3 m push-back (#2555) is for the built-in circuits only.
 - A Claude that promises to report back writes a WAKE line first (see WAKE ME above).
+
+## F1 LESSONS Nov 14 2026 (pit block, pit wall end)
+- A zone or barrier check along the track uses a point's OWN distance (`samples[i].s`), never its index: built-in circuits space their points unevenly, so the index check skipped the wrong stretch and left two barriers standing in the Harbour pit entrance (#2612).
+- A car is ~5 m long and turns as it goes: free it from a wall or lane clamp only when its REAR is past the end, not its centre (pit wall end: 215 m -> 223 m, #2614). Measure by logging the car's lateral position every step through the stop before touching code.
+- The pit lane must add to `raceDist` or every stop costs places (#2607). Test rigs: start a race with `__reality.go(true)` after the track builds, never by waiting on the button.
+- Read the real clock before writing any time to the owner.
