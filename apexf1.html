@@ -505,6 +505,8 @@ const Aud = {
       this.kitLoad(); // G-107: the owner's grand_prix engine kit (sounds/engines/grand_prix)
     }catch(e){}
   },
+  mix(k,label){ // owner Nov 14 2026 'so much noise other than the music and engine': hiss beds (crowd, rain, tire squeal) are OFF by default - Studio > Sound mix raises them
+    try{ return window.Studio?Studio.num('mix.'+k,0,{min:0,max:1,step:0.01,label:label,group:'Sound mix (off = only music + engine)'}):0; }catch(e){ return 0; } },
   setMuted(m){ this.muted=m; if(this.master) this.master.gain.value = m?0:0.9; },
   engine(rpm01, throttle){ // rpm01 0..1
     if(!this.ctx||this.muted) return;
@@ -585,12 +587,12 @@ const Aud = {
     if(!this.ctx) return;
     this.crowdExcite=Math.max(excite||0,(this.crowdExcite||0)-dt*0.5);
     const t=this.ctx.currentTime;
-    this.crowdGain.gain.setTargetAtTime(this.muted?0:(0.05+0.30*this.crowdExcite),t,0.3);
+    const cv=this.muted?0:(0.05+0.30*this.crowdExcite)*this.mix('crowd','Crowd noise'); this.crowdGain.gain.setTargetAtTime(cv,t,0.3); (window.__mix=window.__mix||{}).crowd=cv;
   },
   cheer(big){ this.crowdExcite=Math.max(this.crowdExcite||0, big?1:0.6); },
   rainTick(amt){
     if(!this.ctx) return;
-    this.rainGain.gain.setTargetAtTime(this.muted?0:amt*0.12,this.ctx.currentTime,0.8);
+    const rv=this.muted?0:amt*0.12*this.mix('rain','Rain hiss'); this.rainGain.gain.setTargetAtTime(rv,this.ctx.currentTime,0.8); (window.__mix=window.__mix||{}).rain=rv;
   },
   beep(freq,dur,vol){
     if(!this.ctx||this.muted) return;
@@ -605,11 +607,11 @@ const Aud = {
     if(!this.ctx) return;
     const kit=this.kit;
     if(kit && kit.ready && kit.gains.squeal){ // G-107: the kit tire squeal loop replaces the synth noise
-      if(on && !this._skidKit){ this._skidKit=true; kit.gains.squeal.gain.setTargetAtTime(0.14,this.ctx.currentTime,0.05); }
+      if(on && !this._skidKit){ this._skidKit=true; const qv=0.14*this.mix('squeal','Tire squeal'); kit.gains.squeal.gain.setTargetAtTime(qv,this.ctx.currentTime,0.05); (window.__mix=window.__mix||{}).squeal=qv; }
       else if(!on && this._skidKit){ this._skidKit=false; kit.gains.squeal.gain.setTargetAtTime(0.0,this.ctx.currentTime,0.08); }
       return;
     }
-    if(on && !this._skid){
+    if(on && !this._skid && this.mix('squeal','Tire squeal')>0){
       const len=this.ctx.sampleRate, b=this.ctx.createBuffer(1,len,this.ctx.sampleRate), d=b.getChannelData(0);
       for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.5;
       const s=this.ctx.createBufferSource(); s.buffer=b; s.loop=true;
@@ -636,8 +638,6 @@ setInterval(()=>FMus.sync(),250);
 /* owner Nov 4 2026 'put back the sounds from clicking on things': one delegated UI click for every button/card in every menu (never per-screen code, so a screen fix can't drop it) */
 document.addEventListener('click',e=>{ try{ const t=e.target&&e.target.closest&&e.target.closest('button,.bigbtn,.btn,[role=button],.card,.opt,a'); if(!t||!Aud.ctx) return; const back=/exit|back|close/i.test(t.textContent||t.id||''); Aud.beep(back?440:760,0.06,0.16); }catch(x){} },true);
 document.addEventListener('pointerdown',()=>Aud.ensure());
-/* owner Nov 4 2026 'put back the sounds from clicking on things': one delegated UI click for every button/card in every menu (never per-screen code, so a screen fix can't drop it) */
-document.addEventListener('click',e=>{ try{ const t=e.target&&e.target.closest&&e.target.closest('button,.bigbtn,.btn,[role=button],.card,.opt,a'); if(!t||!Aud.ctx) return; const back=/exit|back|close/i.test(t.textContent||t.id||''); Aud.beep(back?440:760,0.06,0.16); }catch(x){} },true);
 
 /* ================= TRACK DATA (real circuits, stylized) =================
    Points are [x, y, z] loops. Builder interpolates, scales to lap length.
