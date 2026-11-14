@@ -334,10 +334,9 @@ setTimeout(function(){
   <button class="bigbtn alt" id="tournBtn">🏁 TOURNAMENT</button>
   <button class="bigbtn alt" id="taBtn">⏱ TIME ATTACK</button>
   <button class="bigbtn alt" id="friendBtn">👥 PLAY WITH FRIENDS</button>
+  <button class="bigbtn alt" id="codeBtn">🔗 MY FRIEND CODE</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
-  <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 12px ui-monospace,Menlo,monospace;color:#9fd8ff;word-break:break-all;overflow-wrap:anywhere;line-height:1.35;user-select:all;-webkit-user-select:all">Finish a race to earn your code</div>
-  <div style="font-size:12px;color:#8fa8c8;margin-top:6px">Share it — friends paste it to race your driver, AI-driven at your rating.</div></div>
 </div>
 
 <!-- TRACK SELECT -->
@@ -402,6 +401,16 @@ setTimeout(function(){
   </div>
   <button class="bigbtn gold" id="hubNext">NEXT RACE →</button>
   <button class="bigbtn alt" id="hubMenu">MAIN MENU</button>
+</div>
+
+<!-- MY CODE (share screen) -->
+<div class="overlay hidden" id="codeOv">
+  <h1 class="title" style="font-size:30px">MY FRIEND CODE</h1>
+  <div class="menuSub">Send this to a friend. They paste it under PLAY WITH FRIENDS and your driver joins their grid.</div>
+  <div class="card"><div id="myCode" style="font:600 12px ui-monospace,Menlo,monospace;color:#9fd8ff;word-break:break-all;overflow-wrap:anywhere;line-height:1.35;user-select:all;-webkit-user-select:all">Finish a race to earn your code</div></div>
+  <button class="bigbtn gold" id="codeCopy">COPY CODE</button>
+  <button class="bigbtn alt" id="codeShare">SHARE…</button>
+  <button class="bigbtn alt" id="codeClose">CLOSE</button>
 </div>
 
 <!-- FRIEND -->
@@ -4307,7 +4316,7 @@ let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
    driver name are saved on every tap and read back at load - the start-menu showroom builds from them */
 try{ const st=localStorage.getItem('f1_team'); const ft=st&&TEAMS.find(t=>t.id===st); if(ft) selTeam=ft; const sd=localStorage.getItem('f1_diff'); if(sd&&['ROOKIE','PRO','CHEAT'].includes(sd)) selDiff=sd; }catch(e){}
 function carSavedFlash(){ const e=document.getElementById('carSaved'); if(!e) return; e.style.opacity=1; clearTimeout(e._t); e._t=setTimeout(()=>{ e.style.opacity=0; },1200); }
-function show(id){ if(id && Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; } /* never leave SKIP QUALI over a menu */ teamPrevShow(id==='teamMenu'); hubPrevShow(id==='hub'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+function show(id){ if(id && Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; } /* never leave SKIP QUALI over a menu */ teamPrevShow(id==='teamMenu'); hubPrevShow(id==='hub'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','codeOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 /* owner Nov 3 2026 8:07 AM: "make track course visible to see it and how long it is" - a map of each circuit on its button */
 let __gpLine=null;
 function trackOutline(t){
@@ -4417,6 +4426,12 @@ function initMenus(){
     show('teamMenu');
   };
   $('friendClose').onclick=()=>show('menu');
+  // owner Nov 14 2026: the main menu printed the whole code; it is one button now that opens the share screen
+  $('codeBtn').onclick=()=>{ if(!career) career=Save.load(); renderMenuCode(); show('codeOv'); };
+  $('codeClose').onclick=()=>show('menu');
+  $('codeCopy').onclick=()=>{ const fc=friendCode(); if(!fc) return; const b=$('codeCopy'); const done=()=>{ b.textContent='COPIED ✓'; setTimeout(()=>{ b.textContent='COPY CODE'; },1500); };
+    try{ navigator.clipboard.writeText(fc).then(done,()=>{ const r=document.createRange(); r.selectNodeContents($('myCode')); const se=getSelection(); se.removeAllRanges(); se.addRange(r); b.textContent='HOLD THE CODE → COPY'; }); }catch(e){ b.textContent='HOLD THE CODE → COPY'; } };
+  $('codeShare').onclick=()=>{ const fc=friendCode(); if(!fc) return; try{ if(navigator.share) navigator.share({ title:'Race my driver in Apex F1', text:fc }).catch(()=>{}); else $('codeCopy').click(); }catch(e){} };
   $('friendGo').onclick=()=>{
     const f=parseFriend($('friendIn').value);
     if(!f){ $('friendErr').textContent='That code does not check out — paste the whole thing, starting with F1APEX-'; return; }

@@ -2389,8 +2389,26 @@ export default [
     },
   },
   {
-    id: 'play-no-hiss-noise-in-race', mode: 'race',
-    ask: 'During a race the crowd hiss, rain hiss and tire-squeal noise beds are silent by default - only the music and the engine play - owner Nov 14 2026',
+    id: 'play-friend-code-is-a-button', mode: 'menu',
+    ask: 'The main menu shows a MY FRIEND CODE button, not the code itself; tapping it opens the share screen with the code and COPY / SHARE / CLOSE - owner Nov 14 2026',
+    async test(page, h) {
+      const r = await h.eval(() => { const m = document.getElementById('menu'), b = document.getElementById('codeBtn'), card = document.getElementById('codeOv');
+        if (!m || !b || !card) return { err: 'menu, MY FRIEND CODE button or share screen is missing' };
+        const code = document.getElementById('myCode'); const onMenu = m.contains(code);
+        b.click(); const shown = !card.classList.contains('hidden'), menuHidden = m.classList.contains('hidden');
+        const btns = ['codeCopy', 'codeShare', 'codeClose'].every((id) => document.getElementById(id));
+        return { onMenu, shown, menuHidden, btns }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return 'F1: ' + r.err;
+      if (r.onMenu) return 'F1: the friend code text is still printed on the main menu';
+      if (!r.shown || !r.menuHidden) return 'F1: tapping MY FRIEND CODE did not open the share screen';
+      if (!r.btns) return 'F1: the share screen has no COPY / SHARE / CLOSE buttons';
+      return true;
+    },
+  },
+  {
+    id: "play-no-hiss-noise-in-race",
+    mode: "race",
+    ask: "During a race the crowd hiss, rain hiss and tire-squeal noise beds are silent by default - only the music and the engine play - owner Nov 14 2026",
     async test(page, h) {
       let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
       if (!ok) return { inconclusive: 'the race did not start' };
