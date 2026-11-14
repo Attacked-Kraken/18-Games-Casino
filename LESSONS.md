@@ -315,3 +315,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-11-13 help desk
 - A HELP line about a PR must be checked against GitHub's merged flag first: #2472 sat as an open HELP line for 3 days after the robot had merged it. Read the PR before writing 'waiting for'.
+
+## 2026-11-14 help desk
+- A HELP line followed directly by another HELP line (an UPDATE) must get its own FIXED/WON'T FIX line, or the Mac counts it open forever (T3-66 sat 'open' 19 h with the answers below it).
