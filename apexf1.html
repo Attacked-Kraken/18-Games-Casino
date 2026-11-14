@@ -3331,7 +3331,7 @@ class Car {
         } else if(this.isPlayer && !this.pitStopDone && Math.abs(toBox)>25){ const want=Math.abs(this.steer)>0.1?clamp(this.steer*2.2,-2.2,2.2):0; this._pitOff=lerp(this._pitOff||0, want, Math.min(1,dt*3)); this.d=lerp(this.d, pitTgt+this._pitOff, Math.min(1,dt*2.5)); }
         else this.d = lerp(this.d, pitTgt, Math.min(1,dt*2.5));
         { const hd=(this.d-d0)/Math.max(dt,1e-3); this.headAngle=this.v>2? Math.asin(clamp(hd/this.v,-0.5,0.5)) : 0; } } // owner Nov 12 2026 'it stays gliding sideways': the nose turns the way the car moves across the lane
-      this.s+=this.v*dt;
+      this.s+=this.v*dt; this.raceDist+=this.v*dt; // owner Nov 14 2026 'says 5th but I'm 2nd': the pit lane used to move the car without counting the distance for the standings, so every stop cost the whole lane length (~500 m) and dropped him places for good
       const sN=((this.s%Track.length)+Track.length)%Track.length;
       if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
         this.pitStopDone=true; this.pitHold=true; this.pitTimer=Race.PIT_TIME; this.pitT0=Race.PIT_TIME; PitCrew.start(this);
