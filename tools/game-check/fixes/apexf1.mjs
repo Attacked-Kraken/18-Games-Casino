@@ -2388,4 +2388,21 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-friend-code-is-a-button', mode: 'menu',
+    ask: 'The main menu shows a MY FRIEND CODE button, not the code itself; tapping it opens the share screen with the code and COPY / SHARE / CLOSE - owner Nov 14 2026',
+    async test(page, h) {
+      const r = await h.eval(() => { const m = document.getElementById('menu'), b = document.getElementById('codeBtn'), card = document.getElementById('codeOv');
+        if (!m || !b || !card) return { err: 'menu, MY FRIEND CODE button or share screen is missing' };
+        const code = document.getElementById('myCode'); const onMenu = m.contains(code);
+        b.click(); const shown = !card.classList.contains('hidden'), menuHidden = m.classList.contains('hidden');
+        const btns = ['codeCopy', 'codeShare', 'codeClose'].every((id) => document.getElementById(id));
+        return { onMenu, shown, menuHidden, btns }; }).catch((e) => ({ err: String(e) }));
+      if (r.err) return 'F1: ' + r.err;
+      if (r.onMenu) return 'F1: the friend code text is still printed on the main menu';
+      if (!r.shown || !r.menuHidden) return 'F1: tapping MY FRIEND CODE did not open the share screen';
+      if (!r.btns) return 'F1: the share screen has no COPY / SHARE / CLOSE buttons';
+      return true;
+    },
+  },
 ];
