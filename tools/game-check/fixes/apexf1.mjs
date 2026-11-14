@@ -2388,16 +2388,22 @@ export default [
       return true;
     },
   },
-  // owner Nov 14 2026 (photo): 'DRS button did nothing, what is DRS for?' - the press must say what DRS is and what is missing
+  // owner Nov 14 2026 (photo): the HUD said 5th while he was 2nd - the pit lane moved the car but never counted that distance for the standings
   {
-    id: 'play-drs-press-explains', mode: 'race',
-    ask: 'Pressing DRS before it can open shows a readable message saying what DRS is and what is missing - owner Nov 14 2026',
+    id: 'play-pit-lane-counts-for-standings', mode: 'race',
+    ask: 'Driving down the pit lane counts toward the race standings (raceDist moves as far as the car does) - owner Nov 14 2026 "says 5th but I am 2nd"',
     test: async (page, h) => {
       for (let i = 0; i < 80; i++) { const m = await h.eval(() => window.__test && window.__test.pitProbe && window.__test.pitProbe() && window.__test.pitProbe().mode).catch(() => null); if (m === 'race') break; await h.wait(500); }
-      await h.eval(() => document.querySelector('#btnDRS').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
-      await h.wait(300);
-      const txt = await h.eval(() => document.body.innerText);
-      if (!/DRS = EXTRA SPEED ON STRAIGHTS/i.test(txt) || !/lap 2/i.test(txt)) return 'pressing DRS on lap 1 shows no explanation (what DRS is and that it opens from lap 2)';
+      await h.eval(() => window.__test.pitNow()).catch(() => {});
+      let a = null;
+      for (let i = 0; i < 60 && !a; i++) { await h.wait(300); a = await h.eval(() => { const p = window.__test.pitProbe(); return p.inPits && !p.hold ? { s: p.s, d: window.__test.simState().dist } : null; }).catch(() => null); }
+      if (!a) return 'the car never rolled into the pit lane after PIT was armed';
+      await h.wait(2500);
+      const b = await h.eval(() => { const p = window.__test.pitProbe(); return { s: p.s, d: window.__test.simState().dist, inPits: p.inPits, hold: p.hold }; });
+      if (b.hold || !b.inPits) return true; // already stopped or out: nothing to compare in this window
+      let ds = b.s - a.s; if (ds < -1000) return true; // lap wrap
+      const dd = b.d - a.d;
+      if (ds > 5 && dd < ds * 0.8) return 'in the pit lane the car moved ' + ds.toFixed(0) + ' m but the standings counted only ' + dd.toFixed(0) + ' m, so every stop drops places';
       return true;
     },
   },
@@ -2430,6 +2436,19 @@ export default [
       if (!m || m.crowd === undefined) return { inconclusive: 'the sound mix was not running (no audio in this browser)' };
       const bad = Object.entries(m).filter(([, v]) => v > 0.001).map(([k, v]) => k + ' ' + v.toFixed(3));
       if (bad.length) return 'F1: noise beds are playing in the race: ' + bad.join(', ') + ' - only music and engine should be heard';
+      return true;
+    },
+  },
+  {
+    id: "play-drs-press-explains",
+    mode: "race",
+    ask: "Pressing DRS before it can open shows a readable message saying what DRS is and what is missing - owner Nov 14 2026",
+    test: async (page, h) => {
+      for (let i = 0; i < 80; i++) { const m = await h.eval(() => window.__test && window.__test.pitProbe && window.__test.pitProbe() && window.__test.pitProbe().mode).catch(() => null); if (m === 'race') break; await h.wait(500); }
+      await h.eval(() => document.querySelector('#btnDRS').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
+      await h.wait(300);
+      const txt = await h.eval(() => document.body.innerText);
+      if (!/DRS = EXTRA SPEED ON STRAIGHTS/i.test(txt) || !/lap 2/i.test(txt)) return 'pressing DRS on lap 1 shows no explanation (what DRS is and that it opens from lap 2)';
       return true;
     },
   },
