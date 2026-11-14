@@ -2405,4 +2405,19 @@ export default [
       return true;
     },
   },
+  {
+    id: "play-no-hiss-noise-in-race",
+    mode: "race",
+    ask: "During a race the crowd hiss, rain hiss and tire-squeal noise beds are silent by default - only the music and the engine play - owner Nov 14 2026",
+    async test(page, h) {
+      let ok = null; for (let i = 0; i < 60 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.race && window.__test.race().mode === 'race').catch(() => null); }
+      if (!ok) return { inconclusive: 'the race did not start' };
+      await h.wait(2500);
+      const m = await h.eval(() => window.__mix || null).catch(() => null);
+      if (!m || m.crowd === undefined) return { inconclusive: 'the sound mix was not running (no audio in this browser)' };
+      const bad = Object.entries(m).filter(([, v]) => v > 0.001).map(([k, v]) => k + ' ' + v.toFixed(3));
+      if (bad.length) return 'F1: noise beds are playing in the race: ' + bad.join(', ') + ' - only music and engine should be heard';
+      return true;
+    },
+  },
 ];
