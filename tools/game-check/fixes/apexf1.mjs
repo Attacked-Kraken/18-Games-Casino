@@ -2389,6 +2389,25 @@ export default [
       return true;
     },
   },
+  // owner Nov 14 2026 (photo): the HUD said 5th while he was 2nd - the pit lane moved the car but never counted that distance for the standings
+  {
+    id: 'play-pit-lane-counts-for-standings', mode: 'race',
+    ask: 'Driving down the pit lane counts toward the race standings (raceDist moves as far as the car does) - owner Nov 14 2026 "says 5th but I am 2nd"',
+    test: async (page, h) => {
+      for (let i = 0; i < 80; i++) { const m = await h.eval(() => window.__test && window.__test.pitProbe && window.__test.pitProbe() && window.__test.pitProbe().mode).catch(() => null); if (m === 'race') break; await h.wait(500); }
+      await h.eval(() => window.__test.pitNow()).catch(() => {});
+      let a = null;
+      for (let i = 0; i < 60 && !a; i++) { await h.wait(300); a = await h.eval(() => { const p = window.__test.pitProbe(); return p.inPits && !p.hold ? { s: p.s, d: window.__test.simState().dist } : null; }).catch(() => null); }
+      if (!a) return 'the car never rolled into the pit lane after PIT was armed';
+      await h.wait(2500);
+      const b = await h.eval(() => { const p = window.__test.pitProbe(); return { s: p.s, d: window.__test.simState().dist, inPits: p.inPits, hold: p.hold }; });
+      if (b.hold || !b.inPits) return true; // already stopped or out: nothing to compare in this window
+      let ds = b.s - a.s; if (ds < -1000) return true; // lap wrap
+      const dd = b.d - a.d;
+      if (ds > 5 && dd < ds * 0.8) return 'in the pit lane the car moved ' + ds.toFixed(0) + ' m but the standings counted only ' + dd.toFixed(0) + ' m, so every stop drops places';
+      return true;
+    },
+  },
   {
     id: 'play-friend-code-is-a-button', mode: 'menu',
     ask: 'The main menu shows a MY FRIEND CODE button, not the code itself; tapping it opens the share screen with the code and COPY / SHARE / CLOSE - owner Nov 14 2026',
