@@ -3329,7 +3329,7 @@ class Car {
         const d0=this.d;
         const fromIn=((sM-pitInS+L0)%L0), pastCrew=this.pitStopDone && !this.pitHold && toBox<-8; // past his own box and its crew
         if(this.isPlayer && pastCrew){ // owner Nov 12 2026 'coming out it's all the player's control to get back on track as soon as the last crew is passed': released and past the crew = he steers. The pit wall still stands until 215 m into the lane (box 10 + 15 m), after that he may cross straight onto the track
-          this._pitFree=true; const wallEnd=fromIn<215, minD=wallEnd?(W/2+1.2):0, maxD=Track.pitDAt(this.s)+2.8;
+          this._pitFree=true; const wallEnd=fromIn<223, minD=wallEnd?(W/2+1.2):0, maxD=Track.pitDAt(this.s)+2.8;
           if(Math.abs(this.steer)>0.05) this.d+=this.steer*Math.max(6,this.v)*0.42*dt; else this.d=lerp(this.d,pitTgt,Math.min(1,dt*0.8));
           this.d=clamp(this.d,minD,maxD);
           if(!wallEnd && this.d<W/2-0.3){ // back on the track: the race is his again

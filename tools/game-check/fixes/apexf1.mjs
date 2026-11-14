@@ -2467,5 +2467,23 @@ export default [
       }
       return bad.length ? 'F1 PIT ENTRY BLOCK: ' + bad.join('; ') : true;
     },
+  },  {
+    id: "play-pit-exit-clears-wall-end",
+    ask: "F1: after a stop the car stays in the pit lane until its whole body is past the end of the pit wall (no clipping through the last wall panel) - owner Nov 14 2026 'goes through the pit wall'",
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let ok = false;
+      for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.barriers && window.__test.barriers().n > 0)).catch(() => false); }
+      if (!ok) return { inconclusive: 'track did not build' };
+      const r = await h.eval(() => {
+        document.querySelector('#raceBtn').click(); window.__reality.go(true);
+        const T = window.__test; for (let i = 0; i < 260; i++) T.simStep(0.05, { skill: 'good' });
+        const F = T.furniture(), L = F.L, W = F.W; T.pitNow(); let worst = 99, saw = false;
+        for (let i = 0; i < 2400; i++) { T.simStep(0.05, { skill: 'good' }); const q = T.pitProbe(); if (q.hold) saw = true; const c = T.cars().find((x) => x.isPlayer || x.player); const sN = (((q.s - F.pitIn) % L) + L) % L; if (q.inPits && saw && sN < 218) worst = Math.min(worst, c.d); }
+        return { saw, worst, lim: W / 2 + 1.2 };
+      }).catch((e) => ({ err: String(e) }));
+      if (!r || r.err || !r.saw) return { inconclusive: 'the stop did not run' };
+      return r.worst >= r.lim - 0.05 ? true : 'F1 PIT WALL CLIP: the car left the lane line (centre ' + r.worst.toFixed(2) + ' m, wall face limit ' + r.lim.toFixed(2) + ' m) before its body passed the wall end';
+    },
   },
 ];
