@@ -1734,6 +1734,7 @@ export default [
         if (r.tyres < 40) bad.push(tr + ': only ' + r.tyres + ' tyres in walls');
         if (r.posts < 100 || r.rails < 100) bad.push(tr + ': catch fence missing (' + r.posts + ' posts)');
         if (r.huts < 5) bad.push(tr + ': only ' + r.huts + ' marshal posts');
+        if (!(r.mesh >= r.posts * 0.9)) bad.push(tr + ': the catch fence has no chain-link wire between its poles (' + (r.mesh || 0) + ' wire panels for ' + r.posts + ' posts) - owner Nov 14 2026');
       }
       return bad.length ? 'F1 TRACKSIDE: ' + bad.join('; ') : true;
     },

@@ -1149,6 +1149,11 @@ const Track = {
     const geoT=new THREE.CylinderGeometry(0.55,0.55,0.5,9), geoP=new THREE.CylinderGeometry(0.06,0.08,1,5), geoR=new THREE.BoxGeometry(1,0.07,0.05);
     geoP.translate(0,0.5,0); const geoHut=new THREE.BoxGeometry(2.2,2.4,2.0); geoHut.translate(0,1.2,0); const geoFlag=new THREE.PlaneGeometry(1.1,0.75);
     const tyres=mk(geoT,new THREE.MeshLambertMaterial({color:0xffffff}),2600), posts=mk(geoP,new THREE.MeshLambertMaterial({color:0x5a6270}),2400), rails=mk(geoR,new THREE.MeshLambertMaterial({color:0x8d96a3}),4400);
+        // owner Nov 14 2026 'the chain-link fence is missing between the poles': the catch fence had posts and two rails but no wire - one alpha-tested chain-link panel per bay (same diamond look as the pit fence)
+    const fcv2=document.createElement('canvas'); fcv2.width=fcv2.height=64; { const x=fcv2.getContext('2d'); x.strokeStyle='rgba(190,196,202,0.95)'; x.lineWidth=2.2; for(let q2=-64;q2<128;q2+=16){ x.beginPath(); x.moveTo(q2,0); x.lineTo(q2+64,64); x.stroke(); x.beginPath(); x.moveTo(q2+64,0); x.lineTo(q2,64); x.stroke(); } }
+    const ftex2=new THREE.CanvasTexture(fcv2); ftex2.colorSpace=THREE.SRGBColorSpace; ftex2.wrapS=ftex2.wrapT=THREE.RepeatWrapping; ftex2.repeat.set(16,9); ftex2.anisotropy=2;
+    const geoMesh=new THREE.PlaneGeometry(8,4.4); geoMesh.translate(0,2.3,0);
+    const meshes=mk(geoMesh,new THREE.MeshBasicMaterial({map:ftex2,alphaTest:0.4,transparent:false,side:THREE.DoubleSide}),2400); cnt.mesh=0;
     const huts=mk(geoHut,new THREE.MeshLambertMaterial({color:0xe8761c}),120), flagM=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}), flags=mk(geoFlag,flagM,120), lampH=mk(new THREE.BoxGeometry(1.6,0.3,0.5),new THREE.MeshBasicMaterial({color:0xfff2c0}),260), lampP=mk(geoP,new THREE.MeshLambertMaterial({color:0x3a4250}),260);
     const cDark=new THREE.Color(0x1b1b1e), cWhite=new THREE.Color(0xf0f0f0), cBlue=new THREE.Color(0x1d4fa8), cRed=new THREE.Color(0xc8222a), cYel=new THREE.Color(0xf5d90a), cGrn=new THREE.Color(0x1fa84a);
     let acc=1e9, accF=1e9, accM=1e9, accL=1e9, k=0;
@@ -1160,7 +1165,8 @@ const Track = {
         if(corner){ const o=at(W/2+5.2,out); if(clear(o.x,o.z,3.6)) for(let L=0;L<3;L++){ const c=(k++%5===0)?(L===1?cBlue:cWhite):((k%7===0)?cRed:cDark); if(put(tyres,o.x,p.y+0.25+L*0.5,o.z,0,1,1,1,c)) cnt.tyres++; } } }
       if(accF>=8){ accF=0; // catch fence on both sides: post + two rails to the next post
         for(const sd of [-1,1]){ const o=at(W/2+7.2,sd); if(!clear(o.x,o.z,5)) continue; if(put(posts,o.x,p.y,o.z,0,1,4.6,1)) cnt.posts++;
-          for(const hh of [2.3,4.4]) if(put(rails,o.x+p.tx*4,p.y+hh,o.z+p.tz*4,rot-Math.PI/2,8,1,1)) cnt.rails++; } }
+          for(const hh of [2.3,4.4]) if(put(rails,o.x+p.tx*4,p.y+hh,o.z+p.tz*4,rot-Math.PI/2,8,1,1)) cnt.rails++;
+          if(put(meshes,o.x+p.tx*4,p.y,o.z+p.tz*4,rot-Math.PI/2,1,1,1)) cnt.mesh++; } }
       if(accM>=130){ accM=0; const sd=(k++%2)?1:-1, o=at(W/2+9.5,sd); if(clear(o.x,o.z,7)){ // marshal post: orange hut, pole, flag (yellow / green / blue by turns)
           const mRec={x:o.x,y:p.y,z:o.z,tx:p.tx,tz:p.tz,nx:p.nx,nz:p.nz,sd,fci:0}; if(put(huts,o.x,p.y,o.z,rot,1,1,1)){ cnt.huts++; mPosts.push(mRec); } if(put(lampP,o.x+p.tx*2.2,p.y,o.z+p.tz*2.2,0,1,5.5,1)) cnt.flags++; const fc=[cYel,cGrn,cBlue][k%3]; mRec.fci=k%3;
           if(put(flags,o.x+p.tx*2.2+p.nx*sd*0.55,p.y+5.1,o.z+p.tz*2.2+p.nz*sd*0.55,rot+Math.PI/2,1,1,1,fc)) cnt.flags++; } }
