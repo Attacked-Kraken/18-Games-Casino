@@ -3842,9 +3842,9 @@ const Race = {
   },
   toggleDRS(){
     const p=this.player; if(!p||this.mode!=='race') return;
-    if(!this.drsEnabled){ banner('DRS NOT ENABLED','Available after lap 2',900,'#8fa8c8'); return; }
-    if(!this.drsZoneAt(p.s)){ banner('NOT A DRS ZONE','',800,'#8fa8c8'); return; }
-    if(p._gapToAhead>1.0){ banner('TOO FAR','Within 1s of car ahead for DRS',900,'#8fa8c8'); return; }
+    if(!this.drsEnabled){ banner('DRS = EXTRA SPEED ON STRAIGHTS','Opens from lap 2. Then press it on a DRS straight, within 1 s of the car ahead',3200,'#8fa8c8'); return; } // owner Nov 14 2026 'DRS button did nothing, what is DRS for?': say what it is and what is missing, long enough to read
+    if(!this.drsZoneAt(p.s)){ banner('NOT IN A DRS ZONE','DRS only works on the marked straights - wait for the DRS board',2600,'#8fa8c8'); return; }
+    if(p._gapToAhead>1.0){ banner('TOO FAR BEHIND','Get within 1 s of the car ahead, then press DRS',2600,'#8fa8c8'); return; }
     p.drsOpen=!p.drsOpen; Aud.beep(p.drsOpen?990:660,0.12,0.2);
   },
   wantPit(){
