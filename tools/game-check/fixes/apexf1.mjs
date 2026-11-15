@@ -2491,4 +2491,19 @@ export default [
       return r.worst >= r.lim - 0.05 ? true : 'F1 PIT WALL CLIP: the car left the lane line (centre ' + r.worst.toFixed(2) + ' m, wall face limit ' + r.lim.toFixed(2) + ' m) before its body passed the wall end';
     },
   },
+  {
+    id: "play-no-barrier-block-at-pit-entry",
+    ask: "F1: no red/white barrier block stands on the pit side of the pit lane, from 120 m before the pit entry to past the exit, on any circuit - owner Nov 14 2026 (a block in the middle of the Harbour pit entrance)",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 60 && !(r && r.n > 0); i++) { await h.wait(500); r = await h.eval(() => (window.__test && window.__test.barriers) ? window.__test.barriers() : null).catch(() => null); if (tr === 'grandprix' && i > 30) break; } // the Grand Prix kit circuit builds its own barriers (probe stays 0)
+        if (!r) { bad.push(tr + ': no barrier probe'); continue; }
+        if (r.bad > 0) bad.push(tr + ': ' + r.bad + ' barrier block(s) stand in the pit entry / lane zone');
+      }
+      return bad.length ? 'F1 PIT ENTRY BLOCK: ' + bad.join('; ') : true;
+    },
+  },
 ];
