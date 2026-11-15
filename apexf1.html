@@ -3323,7 +3323,7 @@ class Car {
         else this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
       { const L0=Track.length, sM=((this.s%L0)+L0)%L0, toBox=((this.pitBoxS-sM+L0*1.5)%L0)-L0/2; // passing lane 3.5 m nearer the track, the car swings into its own box only to stop (Nov 4 2026: cars no longer drive through a stopped car)
-        const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
+        const lane=Track.gp?0:3.5*(this.pitStopDone&&!this.pitHold?1:clamp(toBox/25,0,1)); // owner Nov 14 2026 'all pit stops enter and exit right': a car being serviced stays IN its box - it used to slide into the passing lane while the crew worked, and the cars behind it were held at 0 for minutes
         let pitTgt=Track.pitDAt(this.s)-lane;
         if(!Track.gp){ const toOut=((pitOutS-sM+L0)%L0); if(toOut<140) pitTgt*=clamp(toOut/140,0,1); } // owner Nov 8 2026: blend back onto the road over the last 140 m before the pit exit - the car used to be let go at the full pit offset (14 m out, on the grass)
         const d0=this.d;
@@ -3655,6 +3655,7 @@ function carContact(cars, dt, graceOnly){
     if(a.finished&&b.finished) continue;
     if(a.retired||b.retired) continue; // a wrecked car is out of the race
     if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
+    if((a.inPits||b.inPits) && (!(a.inPits&&b.inPits) || Math.abs(a.d-b.d)>=2.4)) continue; // the pit lane and the track are separate roads, and a car in its box is not a wall for the one passing it
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
     if(graceOnly){ solidPair(a,b,ds); continue; } // start grace: no shoves, spins or damage - but still no driving through each other (owner Nov 12 2026)
@@ -4785,6 +4786,8 @@ window.__test = {
     if(!fig){ if(!p._chief) return null; p._chief.traverse(o=>{ if(o.userData&&o.userData.isFig) fig=o; }); if(!fig) return null; const ch2=p._chief.userData.chief; drop=ch2?ch2.drop:null; seatTop=ch2?ch2.seatTop:null; vis=p._chief.visible; }
     const v=new THREE.Vector3(); fig.getWorldPosition(v); const q=new THREE.Quaternion(); fig.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,1).applyQuaternion(q); return {fig:[+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2)], fwd:[+f.x.toFixed(2),+f.z.toFixed(2)], vis, drop, seatTop}; }, // owner Nov 8 2026 round 2: look-cost probe (figures / meshes / draw calls)
   boothPos: (i) => { const bs=(Track._pitEnv&&Track._pitEnv.booths)||[]; const b=bs[i||0]; if(!b) return null; const v=new THREE.Vector3(); b.getWorldPosition(v); const q=new THREE.Quaternion(); b.getWorldQuaternion(q); const xa=new THREE.Vector3(1,0,0).applyQuaternion(q), za=new THREE.Vector3(0,0,1).applyQuaternion(q); return {p:[+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2)], x:[+xa.x.toFixed(2),+xa.z.toFixed(2)], z:[+za.x.toFixed(2),+za.z.toFixed(2)]}; }, // BOOTH FIT ROUND: booth anchors (origin + frame axes) for the lane pictures
+  aiPitForce: (n) => { let k=0; for(const c of Race.cars){ if(c.isPlayer||k>=n||c.inPits) continue; c.pitIntent=true; c.pitChoice=Race.baseTire(c,true); c.pitted=true; k++; } return k; }, // robot: send the first n AI cars into the pits now
+  aiPits: () => Race.cars.filter(c=>!c.isPlayer).map(c=>({ n:c.name, inPits:!!c.inPits, done:!!c.pitStopDone, hold:!!c.pitHold, d:+c.d.toFixed(2), s:c.s, v:+c.v.toFixed(1), t:+(c.pitTimer||0).toFixed(2), box:Math.round(c.pitBoxS||0), x:+c.mesh.position.x.toFixed(1), y:+c.mesh.position.y.toFixed(1), z:+c.mesh.position.z.toFixed(1) })),
   pitNow: (t) => { const p=Race.player; if(!p) return false; if(t) p.pitTireChoice=t; p.pitIntent=true; p.s=Track.cfg.pitIn*Track.length-60; p.v=30; return true; },
   tyreTap: () => { $('tirebox').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return !$('pitMenu').classList.contains('hidden'); },
   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
