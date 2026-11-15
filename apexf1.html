@@ -3622,18 +3622,26 @@ function aiDrive(car, dt){
   // pit strategy
   aiPit(car, dt);
 }
+// owner Nov 14 2026 'all pitted at the same time ... it needs to be strategic': a car only calls its stop when the lane has room - at most 2 cars calling / in the lane at once, 9 s between calls, and never a second car of a team whose box is busy
+function aiPitSlot(car,maxBusy){
+  let busy=0; for(const c of Race.cars){ if(c===car||c.finished) continue; if(c.inPits||c.pitIntent){ busy++; if(c.team===car.team) return false; } }
+  if(busy>=(maxBusy||2)) return false;
+  if(Race.raceT-(Race._pitCallT||-99)<9) return false;
+  Race._pitCallT=Race.raceT; return true;
+}
 function aiPit(car, dt){
   if(car.inPits||car.pitIntent||car.finished) return;
   const t=TIRES[car.tire];
   const needWet = Race.weather.wet>0.55 ? 'WET' : (Race.weather.wet>0.25 ? 'INTER' : null);
   const curWet = !!t.wet;
   // wrong tires for conditions -> pit now
-  if(!!needWet!==curWet && Race.lap>=1){ car.pitIntent=true; car.pitChoice=needWet||Race.baseTire(car); return; }
+  if(!!needWet!==curWet && Race.lap>=1){ if(!aiPitSlot(car,3)) return; car.pitIntent=true; car.pitChoice=needWet||Race.baseTire(car); return; }
   if(needWet) return;
   // planned stop: wear cliff or max age, but only after lap 2 and not last 2 laps
   if(Race.lap>2 && Race.lap<Race.laps-1 && !car.pitted){
-    if(car.wear>0.55 || car.damage>0.4 || car.tireAge>=t.maxAge*0.8){
-      // don't stack with a car already pitting right ahead
+    const myIdx=Math.max(0,Race.cars.indexOf(car)), spread=0.6+0.28*((myIdx*7)%10)/9; // each car has its own plan (owner Nov 14 2026: they all pit together) - some stop early, some stretch the tires
+    if(car.wear>0.55*(0.75+0.25*spread) || car.damage>0.4 || car.tireAge>=t.maxAge*spread){
+      if(!aiPitSlot(car)) return; // the pit lane takes one car at a time
       car.pitIntent=true; car.pitChoice=Race.baseTire(car,true); car.pitted=true;
     }
   }
@@ -3813,7 +3821,7 @@ const Race = {
     if(this.stateT>3.0+this._holdT){
       for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
       this._ltT=setTimeout(()=>$('lights').classList.add('hidden'),600);
-      this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
+      this.mode='race'; this.raceT=0; Race._pitCallT=-99; this.contactGrace=5; // no-contact grace at the start
       try{ this.startPace(); }catch(e){ this.pace=null; }
       this._lampN=0; GPSetLights(0); GPPlay('lights_out_go',1);
       banner('LIGHTS OUT!','',900,'#37d67a'); Aud.beep(880,0.25,0.3);

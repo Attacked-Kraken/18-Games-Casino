@@ -152,6 +152,28 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: "play-ai-pit-stops-staggered",
+    ask: "F1: when rain makes every computer car want new tires, they do not all call their stop in the same second and never more than 3 are in the pit lane at once - owner Nov 14 2026 'all pitted at the same time ... it needs to be strategic'",
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let ok = false;
+      for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.rainNow && window.__test.furniture && window.__test.furniture() && document.querySelector('#raceBtn'))).catch(() => false); }
+      if (!ok) return { inconclusive: 'track did not build' };
+      const r = await h.eval(() => {
+        document.querySelector('#raceBtn').click(); window.__reality.go(true);
+        const T = window.__test; for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); T.rainNow();
+        const calls = {}; let maxIn = 0;
+        for (let i = 0; i < 1500; i++) { T.simStep(0.05, { skill: 'good' }); const A = T.allCars(); maxIn = Math.max(maxIn, A.filter((c) => c.in).length); for (const c of A) if (!c.pl && c.int && !(c.n in calls)) calls[c.n] = c.t; }
+        return { calls, maxIn };
+      }).catch((e) => ({ err: String(e) }));
+      if (!r || r.err) return { inconclusive: 'could not read pit calls' };
+      const ts = Object.values(r.calls).sort((a, b) => a - b);
+      if (ts.length < 2) return { inconclusive: 'fewer than 2 computer cars called a stop' };
+      if (ts.length >= 3 && ts[2] - ts[0] < 8) return 'F1 AI PIT: ' + ts.length + ' computer cars called their stop within ' + (ts[2] - ts[0]) + ' s of each other';
+      return r.maxIn <= 3 ? true : 'F1 AI PIT: ' + r.maxIn + ' computer cars in the pit lane at once';
+    },
+  },
+  {
     id: "play-ai-pit-stops-clear",
     ask: "F1: when computer cars pit together, every one leaves the pit lane within 90 s of its stop and none drives inside the pit wall - owner Nov 14 2026 'make sure all pit stops have entry exit correctly'",
     async test(page, h) {
