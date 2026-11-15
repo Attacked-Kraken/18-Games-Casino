@@ -1,0 +1,168 @@
+{
+ "game": "apexbaseball.html",
+ "name": "Apex Baseball",
+ "seconds": 60,
+ "gameSecondsReached": 59.9,
+ "wallSeconds": 61.9,
+ "at": "2026-11-15T14:50:12.596Z",
+ "samples": 311,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": false
+ },
+ "camera": {
+  "distance": {
+   "min": 8.29,
+   "mean": 28.16,
+   "max": 30.61
+  },
+  "height": {
+   "min": 2.7,
+   "mean": 4.57,
+   "max": 5
+  },
+  "aimErrorDeg": {
+   "min": 0.43,
+   "mean": 6.1,
+   "max": 30.49
+  },
+  "followLagMetresPerMps": null
+ },
+ "playerOnScreenPct": 100,
+ "speed": null,
+ "metresMoved": 0,
+ "moments": [
+  {
+   "at": 8.2,
+   "words": "AUTO-PITCH Center-cut fastball LOCK"
+  },
+  {
+   "at": 18.7,
+   "words": "STRIKE Called #-#"
+  },
+  {
+   "at": 19.6,
+   "words": "You are pitching pick pitch FASTBALL"
+  },
+  {
+   "at": 25.8,
+   "words": "AUTO-PITCH Center-cut fastball LOCK"
+  },
+  {
+   "at": 33.9,
+   "words": "STRIKE Swinging #-#"
+  },
+  {
+   "at": 34.9,
+   "words": "You are pitching pick pitch FASTBALL"
+  },
+  {
+   "at": 42.3,
+   "words": "AUTO-PITCH Center-cut fastball LOCK"
+  },
+  {
+   "at": 49.6,
+   "words": "STRIKEOUT!"
+  },
+  {
+   "at": 52.3,
+   "words": "You are pitching pick pitch FASTBALL"
+  },
+  {
+   "at": 57.4,
+   "words": "AUTO-PITCH Center-cut fastball LOCK"
+  }
+ ],
+ "momentCount": 10,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 42,
+   "aspect": 2.164102564102564,
+   "pos": [
+    0,
+    4.3,
+    -26.4
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": false,
+ "fpsAtEnd": 9,
+ "scriptErrors": []
+}
