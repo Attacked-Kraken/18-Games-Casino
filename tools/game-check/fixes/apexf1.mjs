@@ -152,6 +152,29 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: "play-pit-route-never-grass",
+    ask: "F1: the whole way through the pit lane - in, to the box, out and back onto the track - the car drives on paving, never on grass (owner Nov 15 2026 'getting out of pit has no land to get on track', 'why is there grass in that area'). Checked on every circuit.",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'capital', 'mesa', 'pinewood']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let ok = false;
+        for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.pitGround && window.__test.pitNow && document.querySelector('#raceBtn'))).catch(() => false); }
+        if (!ok) return { inconclusive: 'track did not build: ' + tr };
+        const r = await h.eval(() => {
+          document.querySelector('#raceBtn').click(); window.__reality.go(true);
+          const T = window.__test; for (let i = 0; i < 200; i++) T.simStep(0.05, { skill: 'good' }); T.pitNow();
+          let held = false, grass = 0, n = 0, left = 0, first = null;
+          for (let i = 0; i < 2500; i++) { T.simStep(0.05, { skill: 'good' }); const q = T.pitProbe(); if (q.hold) held = true; if (q.inPits || held) { const g = T.pitGround(); n++; if (g.green || /grass/.test(g.name)) { grass++; if (!first) first = g.name + ' at s ' + Math.round(g.s) + ', d ' + g.d.toFixed(1); } } if (held && !q.inPits && ++left > 30) break; }
+          return { n, grass, first, held };
+        }).catch((e) => ({ err: String(e) }));
+        if (!r || r.err || !r.held) return { inconclusive: 'no pit stop on ' + tr };
+        if (r.grass > 2) bad.push(tr + ': ' + r.grass + ' of ' + r.n + ' pit-lane samples on grass (' + r.first + ')');
+      }
+      return bad.length ? 'F1 PIT ROUTE: ' + bad.join('; ') : true;
+    },
+  },
+  {
     id: "play-ai-pit-stops-staggered",
     ask: "F1: when rain makes every computer car want new tires, they do not all call their stop in the same second and never more than 3 are in the pit lane at once - owner Nov 14 2026 'all pitted at the same time ... it needs to be strategic'",
     async test(page, h) {
