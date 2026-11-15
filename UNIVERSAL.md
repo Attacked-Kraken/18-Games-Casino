@@ -202,3 +202,10 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - Test hooks in `window.__test` live in the track part. Put them in their own PART: track PR and merge it first, then the ai PR. Branch the ai PR from the new main, or the hooks show up as removed lines and PART GUARD fails.
 - A race-start line sits inside a track-part function: do not touch it from an ai change. Reset per-race state inside your own function instead.
 - Own-car pit check on Mesa, Pinewood, Grand Prix, Harbour and Capital: enters, is held, is released, back on the road, 0 off-track readings.
+
+## SLIPSTREAM lessons Nov 15 2026 (owner: pilot car, pit route, rename)
+- A model that loads late must be WAITED for at the start (lights hold up to 15 s); a silent skip because the group is not there yet is a bug (PR #2627).
+- A kit pit lane ends before the cars' route: pave and fence the WHOLE route, and test the surface under the player's whole pit route on every circuit.
+- Thin alpha-tested wire turns to dots on phones: use thick wire + alphaToCoverage. Signs must never hang over the pit entry.
+- `__test.surfaceAt` only finds named meshes. PART GUARD counts edits near `trackGroundY` as `track`, so name the part by where the code sits.
+- The game is named SLIPSTREAM in text; file name apexf1.html and friend-code prefix F1APEX- stay as they are on purpose.
