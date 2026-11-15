@@ -322,3 +322,5 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-11-14 help desk (evening)
 - PART GUARD blames the nearest preceding top-level function, so any edit inside an object literal (`__test` probes, `Race.*` methods) is blamed on an unrelated function (#2608 trackGroundY, #2618 GPPlay). Until judge.mjs resolves object-literal names, a Muse that sees this red on a one-part PR files a HELP-VP: robot line instead of moving code.
 
+## 2026-11-15 help desk
+- partGuard blames edits inside object-literal methods (Race.*, __test) on the nearest earlier top-level function (trackGroundY, GPPlay): #2608, #2618, #2627 all red on that alone. Until the robot reads method names, a Muse with only a PART GUARD line naming a part it did not touch files "HELP-VP: robot" with the PR number and waits - it does not undo its own change.
