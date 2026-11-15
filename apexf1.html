@@ -1150,10 +1150,10 @@ const Track = {
     geoP.translate(0,0.5,0); const geoHut=new THREE.BoxGeometry(2.2,2.4,2.0); geoHut.translate(0,1.2,0); const geoFlag=new THREE.PlaneGeometry(1.1,0.75);
     const tyres=mk(geoT,new THREE.MeshLambertMaterial({color:0xffffff}),2600), posts=mk(geoP,new THREE.MeshLambertMaterial({color:0x5a6270}),2400), rails=mk(geoR,new THREE.MeshLambertMaterial({color:0x8d96a3}),4400);
         // owner Nov 14 2026 'the chain-link fence is missing between the poles': the catch fence had posts and two rails but no wire - one alpha-tested chain-link panel per bay (same diamond look as the pit fence)
-    const fcv2=document.createElement('canvas'); fcv2.width=fcv2.height=64; { const x=fcv2.getContext('2d'); x.strokeStyle='rgba(190,196,202,0.95)'; x.lineWidth=2.2; for(let q2=-64;q2<128;q2+=16){ x.beginPath(); x.moveTo(q2,0); x.lineTo(q2+64,64); x.stroke(); x.beginPath(); x.moveTo(q2+64,0); x.lineTo(q2,64); x.stroke(); } }
-    const ftex2=new THREE.CanvasTexture(fcv2); ftex2.colorSpace=THREE.SRGBColorSpace; ftex2.wrapS=ftex2.wrapT=THREE.RepeatWrapping; ftex2.repeat.set(16,9); ftex2.anisotropy=2;
+    const fcv2=document.createElement('canvas'); fcv2.width=fcv2.height=128; { const x=fcv2.getContext('2d'); x.strokeStyle='rgba(205,210,216,1)'; x.lineWidth=7; for(let q2=-128;q2<256;q2+=64){ x.beginPath(); x.moveTo(q2,0); x.lineTo(q2+128,128); x.stroke(); x.beginPath(); x.moveTo(q2+128,0); x.lineTo(q2,128); x.stroke(); } } // owner Nov 15 2026 'why is the fence missing pieces all over the tracks': the old wire was 2 px on a 64 px tile repeated 16 times in 8 m - at a distance the thin wire faded under the alpha cut and the fence turned into dots. Bigger diamonds (0.5 m), a 7 px wire and a gentler cut keep it solid
+    const ftex2=new THREE.CanvasTexture(fcv2); ftex2.colorSpace=THREE.SRGBColorSpace; ftex2.wrapS=ftex2.wrapT=THREE.RepeatWrapping; ftex2.repeat.set(8,4.4); ftex2.anisotropy=8;
     const geoMesh=new THREE.PlaneGeometry(8,4.4); geoMesh.translate(0,2.3,0);
-    const meshes=mk(geoMesh,new THREE.MeshBasicMaterial({map:ftex2,alphaTest:0.4,transparent:false,side:THREE.DoubleSide}),2400); cnt.mesh=0;
+    const meshes=mk(geoMesh,new THREE.MeshBasicMaterial({map:ftex2,alphaTest:0.12,alphaToCoverage:true,transparent:false,side:THREE.DoubleSide}),2400); cnt.mesh=0;
     const huts=mk(geoHut,new THREE.MeshLambertMaterial({color:0xe8761c}),120), flagM=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}), flags=mk(geoFlag,flagM,120), lampH=mk(new THREE.BoxGeometry(1.6,0.3,0.5),new THREE.MeshBasicMaterial({color:0xfff2c0}),260), lampP=mk(geoP,new THREE.MeshLambertMaterial({color:0x3a4250}),260);
     const cDark=new THREE.Color(0x1b1b1e), cWhite=new THREE.Color(0xf0f0f0), cBlue=new THREE.Color(0x1d4fa8), cRed=new THREE.Color(0xc8222a), cYel=new THREE.Color(0xf5d90a), cGrn=new THREE.Color(0x1fa84a);
     let acc=1e9, accF=1e9, accM=1e9, accL=1e9, k=0;
@@ -1348,6 +1348,14 @@ const Track = {
       const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals();
       const pad=new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide})); root.add(pad);
     }
+    // ---- 1a. GRAND PRIX PIT ROAD (owner Nov 15 2026 'getting out of pit has no land to get on track', 'why is there grass in that area', 'hardly any room for the cars to drive'): the kit's own pit lane ends long before the cars do, so the cars drove on grass beside the road. One dark asphalt road, flush with the road edge and as wide as the pit lane, runs from before the entry to 70 m past the wall's end, then narrows to a point on the road so the lane merges into the track on real paving.
+    if(this.gp){ const sIn=this.cfg.pitIn*L, a0=-60, a1=223+70, taperA=223+40, n=Math.ceil((a1-a0)/4), pos=[], idx=[], inD=W/2-0.2; let k=0;
+      for(let i=0;i<=n;i++){ const ds=a0+(a1-a0)*i/n, s=((sIn+ds)%L+L)%L, lane=Math.min(this.pitDAt(s),12.2)+2.4, fade=ds>taperA?1-(ds-taperA)/(a1-taperA):1, outer=inD+(lane-inD)*Math.max(0,fade);
+        const a=this.posAt(s,inD), b=this.posAt(s,Math.max(outer,inD+0.01));
+        pos.push(a.x,a.y+0.05,a.z, b.x,b.y+0.05,b.z);
+        if(i<n){ idx.push(k,k+1,k+2, k+1,k+3,k+2); } k+=2; }
+      const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setIndex(idx); geo.computeVertexNormals();
+      { const pr=new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color:0x2f3136, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2})); pr.name='pit-road'; root.add(pr); } }
     // ---- 1b. THE PIT WALL (owner Nov 9 2026 missing-list item 1): one continuous concrete wall between the pit lane and the race track, running the whole box stretch - 15 m before box 1 to 15 m past box 10. Anchored to this track's own road edge on the pit side (centre pitSide*(W/2-0.42), 0.45 m thick, top at +1.0 m): the only anchor true on both build paths - built-ins pass at pitD-3.5 with the car's track-side edge at W/2-0.02, while the GP kit lane runs at its own offset where a pitD-based anchor would land mid-road. The only openings are the entry and exit blends themselves, which cross this line outside the span (bench-measured entry margin 37 m on all five tracks).
     { const WALL_INSET=0.42, WALL_T=0.45, WALL_H=1.0, wsd=this.pitSide||1, wdC=wsd*(W/2-WALL_INSET), wdLane=wdC+wsd*WALL_T/2, wdRoad=wdC-wsd*WALL_T/2;
       // FINISH (owner Nov 10 2026: 'make the wall read better'): same mesh, same geometry - a painted finish on a canvas tile (8 m x 1.15 m; each 4 m segment maps half a tile so the lettering repeats every 8 m): light warm concrete clearly off the pad's tone, an Apex red band across the top 20% so the top edge reads from down the lane, a dark foot strip so the base separates from the ground, APEX ARCADE lettering on both faces.
@@ -1405,9 +1413,9 @@ const Track = {
       fposts.instanceMatrix.needsUpdate=true; root.add(fposts);
       // the fence itself: ONE see-through chain-link plane the whole run - alpha-tested diamond grid, both faces; what is behind it stays visible
       const fcv=document.createElement('canvas'); fcv.width=fcv.height=128; const fcx=fcv.getContext('2d');
-      fcx.clearRect(0,0,128,128); fcx.strokeStyle='rgba(176,182,188,0.95)'; fcx.lineWidth=3;
-      for(let k=-128;k<256;k+=32){ fcx.beginPath(); fcx.moveTo(k,0); fcx.lineTo(k+128,128); fcx.stroke(); fcx.beginPath(); fcx.moveTo(k+128,0); fcx.lineTo(k,128); fcx.stroke(); }
-      const ftex=new THREE.CanvasTexture(fcv); ftex.colorSpace=THREE.SRGBColorSpace; ftex.wrapS=ftex.wrapT=THREE.RepeatWrapping; ftex.anisotropy=4;
+      fcx.clearRect(0,0,128,128); fcx.strokeStyle='rgba(205,210,216,1)'; fcx.lineWidth=7; // owner Nov 15 2026: bigger diamonds + a thicker wire, same reason as the catch fence
+      for(let k=-128;k<256;k+=64){ fcx.beginPath(); fcx.moveTo(k,0); fcx.lineTo(k+128,128); fcx.stroke(); fcx.beginPath(); fcx.moveTo(k+128,0); fcx.lineTo(k,128); fcx.stroke(); }
+      const ftex=new THREE.CanvasTexture(fcv); ftex.colorSpace=THREE.SRGBColorSpace; ftex.wrapS=ftex.wrapT=THREE.RepeatWrapping; ftex.anisotropy=8;
       const fpos=[], fuv=[];
       for(let i=0;i<fsts.length-1;i++){ const sA=fsts[i], sB=fsts[i+1], u0=i*4, u1=u0+4;
         const bA=fcorner(sA,fdC,fenBase), tA=fcorner(sA,fdC,fenTop), bB=fcorner(sB,fdC,fenBase), tB=fcorner(sB,fdC,fenTop);
@@ -1415,7 +1423,7 @@ const Track = {
         fuv.push(u0,0, u1,0, u1,1.8, u0,0, u1,1.8, u0,1.8);
       }
       const fgeo=new THREE.BufferGeometry(); fgeo.setAttribute('position', new THREE.Float32BufferAttribute(fpos,3)); fgeo.setAttribute('uv', new THREE.Float32BufferAttribute(fuv,2)); fgeo.computeVertexNormals();
-      root.add(new THREE.Mesh(fgeo, new THREE.MeshLambertMaterial({map:ftex, transparent:true, alphaTest:0.4, side:THREE.DoubleSide})));
+      root.add(new THREE.Mesh(fgeo, new THREE.MeshLambertMaterial({map:ftex, transparent:true, alphaTest:0.12, alphaToCoverage:true, side:THREE.DoubleSide})));
     }
     // ---- 2. EVERY SPOT dressed: a tall gantry frame + team panel + number board + tyre stack at all ten boxes (round 2's lane row only dressed the boxes near the player's). Posts/beams/panels/stacks are one InstancedMesh each.
     { const postG=new THREE.BoxGeometry(0.22,4.4,0.22), beamG=new THREE.BoxGeometry(7.6,0.26,0.26), panelG=new THREE.BoxGeometry(7.6,0.62,0.08);
@@ -1647,11 +1655,11 @@ const Track = {
       c.font='900 '+fs+'px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col; c.fillText(txt,w/2,h/2+4);
       const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
     const pin=this.cfg.pitIn*this.length, side=this.pitSide||1;
-    const sp=(tex,sx,sy,s,y)=>{ const f=this.frameAt(s); const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false}));
-      m.scale.set(sx,sy,1); m.position.set(f.x+f.nx*side*this.width*0.3,f.y+y,f.z+f.nz*side*this.width*0.3); g.add(m); return m; };
-    sp(mk('PIT ENTRY','#9fd8ff',640,160,96),22,5.5,pin-30,11);
-    sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),18,4.5,pin-300,9);
-    sp(mk('PIT','#ffd76a',320,160,120),10,5,pin+100,8);
+    const sp=(tex,sx,sy,s,y,dd)=>{ const f=this.frameAt(s); const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false})); // owner Nov 15 2026 'a sign in the middle of pit entrance': the signs hung over the road edge, right where the car drives in and out; they now stand to the garage side of the lane, higher and smaller
+      m.scale.set(sx,sy,1); m.position.set(f.x+f.nx*side*dd,f.y+y,f.z+f.nz*side*dd); g.add(m); return m; };
+    sp(mk('PIT ENTRY','#9fd8ff',640,160,96),16,4,pin-30,11,this.width/2+6);
+    sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),14,3.5,pin-300,9,this.width/2+4);
+    sp(mk('PIT','#ffd76a',320,160,120),7,3.5,pin+100,10,this.width/2+14);
   },
   /* owner Nov 10 2026 9:29 PM 'Yes do all them complete 1-6' (the rest of the missing list, built by Claude - window 6 was out of usage):
      RACE FURNITURE, one build pass on every circuit (built-in, GP kit, owner circuits), everything placed from the track's own frames:
@@ -1735,7 +1743,7 @@ const Track = {
     try{ const sL=s0+10, laneLen=nrm(T.cfg.pitOut*L-s0), sE=s0+laneLen-(gp?25:140), wallD=sd0*(W/2-0.42);
       const limSign=(p,cellName,kind)=>{ box(p.x+p.tx*0.1,p.y+1.65,p.z+p.tz*0.1,p.tx,p.tz,0.14,3.3,0.14,POST); face(p.x,p.y+3.35,p.z,-p.tx,-p.tz,2.0,2.0,cellName,'disc'); if(kind==='start') face(p.x,p.y+1.95,p.z,-p.tx,-p.tz,2.4,0.6,'pitlim'); rec.pitSigns.push(note(p,{kind})); };
       const pO=pitAt(sL, gp?4.2:2.8); if(clear(pO,0.8)) limSign(pO,'lim','start');
-      const pI=gp? pitAt(sL,-4.2) : at(s0+13.6, wallD); if(clear(pI,gp?0.8:-2)) limSign(pI,'lim','start');
+      const pI=gp? pitAt(sL,6.4) : at(s0+13.6, wallD); if(clear(pI,gp?0.8:-2)) limSign(pI,'lim','start');
       const pE=gp? pitAt(sE,4.2) : at(sE, sd0*(W/2+4.7)); if(clear(pE,1.0)) limSign(pE,'limEnd','end');
       if(gp){ ribbon(sL,sL+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); ribbon(sE,sE+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); }
       else { ribbon(sL,sL+0.5, sd0*(W/2-0.1), s=>T.pitDAt(s)+sd0*3.0, 0.07, WHITE); ribbon(sE,sE+0.5, sd0*(W/2+0.1), sd0*(W/2+3.1), 0.07, WHITE);
@@ -4779,6 +4787,7 @@ window.__test = {
   assistRun: (on, d0, h0, secs) => { const p = Race.player; if(!p) return null; const was=Car.assist; Car.assist=!!on; p.d=d0; p.headAngle=h0; p._yawW=undefined; p.v=60; p.inPits=false; p.throttle=1; Input.gas=true; Input.brake=false; Input.steer=0; let maxD=0, hit=0, off=0; const n=Math.round(secs*60); for(let i=0;i<n;i++){ p.steer=0; p.throttle=1; p.update(1/60); p.v=Math.max(p.v,40); maxD=Math.max(maxD,Math.abs(p.d)); if(p.hitWall) hit++; if(Math.abs(p.d)>Track.width/2+1.6) off++; } Input.gas=false; Car.assist=was; return { maxD:+maxD.toFixed(2), half:+(Track.width/2).toFixed(2), hit, off, d:+p.d.toFixed(2), head:+p.headAngle.toFixed(3) }; }, // STEERING ASSIST proof: drop the car near the edge pointing outward, gas only, no stick, run N seconds
   setAssist: (on) => { Car.assist=!!on; },
   paceStep: (n) => { for(let i=0;i<n&&Race.pace;i++) Race.updatePace(1/30); return window.__test.paceProbe(); }, // robot: run the pilot car's own clock ahead (a slow robot browser would take minutes of real time)
+  pitGround: () => { const pl=Race.player, pp=Track.posAt(pl.s,pl.d), g=window.__test.surfaceAt(pp.x,pp.z); return { s:pl.s, d:pl.d, name:(g&&g.name)||'', green:!!(g&&g.green), inPits:!!pl.inPits }; }, // owner Nov 15 2026: what the player's car is driving on, for the pit-road test
   surfaceAt: (x, z) => { const R=new THREE.Raycaster(new THREE.Vector3(x,300,z), new THREE.Vector3(0,-1,0)); const all=[]; scene.traverseVisible(o=>{ if(!o.isMesh) return; try{ o.raycast(R, all); }catch(e){} }); all.sort((p,q)=>p.distance-q.distance); const hits=all.filter(h=>{ if(!h.object.isMesh||h.object.isSprite) return false; let o=h.object; while(o){ if(o.name&&o.name.startsWith('emergency-')) return false; if(o===(Race.player&&Race.player.mesh)) return false; o=o.parent; } for(const c of Race.cars) { let q=h.object; while(q){ if(q===c.mesh) return false; q=q.parent; } } const m=h.object.material; return !(m&&m.transparent&&m.opacity<0.9); }); const h=hits[0]; if(!h) return { none:true }; const m=Array.isArray(h.object.material)?h.object.material[0]:h.object.material, c=m&&m.color?m.color:null; const green=!!(c && !m.map && c.g>c.r*1.15 && c.g>c.b*1.05 && c.g<0.62); /* grass/ground greens; the bright green kerb paint is not grass */ return { name:h.object.name||'', color:c?c.getHexString():'', map:!!(m&&m.map), green }; }, // owner Nov 12 2026: what the ground under a point is (the pilot car's road proof)
   paceProbe: () => { const P=Race.pace, g=Race.pilotGroup(), L=Track.length; if(!g) return { noCar:true }; let vmax=0; for(const c of Race.cars) if(c.v>vmax) vmax=c.v; const h=Race._pilotHome; return { active:!!P, released:P?P.released:null, pv:P?+P.v.toFixed(1):0, done:P?+P.done.toFixed(0):0, run:P?+P.run.toFixed(0):0, vmax:+vmax.toFixed(1), home:h?Math.hypot(g.position.x-h.pos.x,g.position.z-h.pos.z):null, pos:[g.position.x,g.position.z] }; }, // Nov 11 2026: pilot car state for the robot
   barriers: () => { const L=Track.length, c=Track.cfg||{}, sd=Track.pitSide||1; if(c.pitIn==null) return { bad:0, n:0 }; const a0=c.pitIn*L-120, a1=(c.pitOut!=null?c.pitOut*L:a0+600)+40; const inZ=si=>a1>=a0?(si>=a0&&si<=a1):(si>=a0||si<=a1); const list=(Track._barPos||[]); return { n:list.length, bad:list.filter(b=>b.sd===sd&&inZ(b.s)).length }; }, // owner Nov 14 2026: barriers standing on the pit side of the pit lane
