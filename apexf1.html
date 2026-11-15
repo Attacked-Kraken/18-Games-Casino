@@ -3814,7 +3814,7 @@ const Race = {
     this.mode='lights'; this.stateT=0; this.lightsOn=0; this._lampN=0; clearTimeout(this._ltT); // G-77: a restart within 600 ms of the last lights-out must not let the old hide timer kill the new lights
     $('lights').classList.remove('hidden'); $('lights').innerHTML='';
     for(let i=0;i<5;i++){ const d=document.createElement('div'); d.className='light'; $('lights').appendChild(d); }
-    this.jumpStart=false;
+    this.jumpStart=false; this._paceWait=0;
   },
   updateLights(dt){
     this.stateT+=dt;
@@ -3826,6 +3826,9 @@ const Race = {
     if(this.player.throttle>0.25 && !this.jumpStart){ // G-312: the whole lights phase counts - the old stateT<4.2 gate let throttle through the hold window (4.2 to lights-out) with no penalty
       this.jumpStart=true; this.player.penalty+=5;
       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
+    }
+    if(this.stateT>3.0+this._holdT && this.pilotOn() && Track.furniture && Track.furniture.emergency && !this.pilotGroup() && this._paceWait<15){ // owner Nov 15 2026 'pilot car needs to always show up every track, he never showed': the pace car's model loads after the track; a start before it arrived silently skipped the pace lap - the lights now wait (max 15 s) for it
+      this._paceWait+=dt; if(this._paceWait<dt*1.5) banner('PACE CAR COMING','Lights out in a moment',2500,'#ffd54a'); return;
     }
     if(this.stateT>3.0+this._holdT){
       for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
