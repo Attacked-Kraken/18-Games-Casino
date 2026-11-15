@@ -152,6 +152,30 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: "play-ai-pit-stops-clear",
+    ask: "F1: when computer cars pit together, every one leaves the pit lane within 90 s of its stop and none drives inside the pit wall - owner Nov 14 2026 'make sure all pit stops have entry exit correctly'",
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let ok = false;
+      for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.aiPitForce && window.__test.furniture && window.__test.furniture() && document.querySelector('#raceBtn'))).catch(() => false); }
+      if (!ok) return { inconclusive: 'track did not build' };
+      const r = await h.eval(() => {
+        document.querySelector('#raceBtn').click(); window.__reality.go(true);
+        const T = window.__test; for (let i = 0; i < 200; i++) T.simStep(0.05, { skill: 'good' });
+        const F = T.furniture(), L = F.L, lim = F.W / 2 + 0.9, k = T.aiPitForce(5), t = {}; let clip = 0;
+        for (let i = 0; i < 6000; i++) {
+          T.simStep(0.05, { skill: 'good' });
+          for (const c of T.aiPits()) { const e = t[c.n] || (t[c.n] = { in: false, out: false, t: 0 }); if (c.inPits) { e.in = true; e.t += 0.05; const sN = (((c.s - F.pitIn) % L) + L) % L; if (sN > 20 && sN < 215 && c.done && !c.hold && c.d < lim) clip++; } else if (e.in) e.out = true; }
+          if (Object.values(t).length >= k && Object.values(t).every((e) => e.out)) break;
+        }
+        return { k, clip, stuck: Object.entries(t).filter(([, e]) => e.in && !e.out).map(([n]) => n), long: Object.entries(t).filter(([, e]) => e.t > 90).map(([n]) => n) };
+      }).catch((e) => ({ err: String(e) }));
+      if (!r || r.err || !r.k) return { inconclusive: 'no computer car pitted' };
+      if (r.stuck.length || r.long.length) return 'F1 AI PIT: ' + (r.stuck.concat(r.long)).join(', ') + ' stayed in the pit lane over 90 s';
+      return r.clip === 0 ? true : 'F1 AI PIT: a released computer car drove inside the pit wall (' + r.clip + ' readings)';
+    },
+  },
+  {
     id: "play-pit-exit-hands-off",
     ask: "F1: after a stop, with NO steering, the car rolls back onto the road by itself soon after the pit wall ends (not 690 m down the lane on the grass side) - owner Nov 14 2026 'on lap 3 it never showed exit, I had to get off the grass'",
     async test(page, h) {
