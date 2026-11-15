@@ -318,3 +318,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-11-14 help desk
 - A HELP line followed directly by another HELP line (an UPDATE) must get its own FIXED/WON'T FIX line, or the Mac counts it open forever (T3-66 sat 'open' 19 h with the answers below it).
+
+## 2026-11-14 help desk (evening)
+- PART GUARD blames the nearest preceding top-level function, so any edit inside an object literal (`__test` probes, `Race.*` methods) is blamed on an unrelated function (#2608 trackGroundY, #2618 GPPlay). Until judge.mjs resolves object-literal names, a Muse that sees this red on a one-part PR files a HELP-VP: robot line instead of moving code.
+
