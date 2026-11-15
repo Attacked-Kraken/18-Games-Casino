@@ -152,6 +152,25 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: "play-pit-exit-hands-off",
+    ask: "F1: after a stop, with NO steering, the car rolls back onto the road by itself soon after the pit wall ends (not 690 m down the lane on the grass side) - owner Nov 14 2026 'on lap 3 it never showed exit, I had to get off the grass'",
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=harbour'; }).catch(() => {});
+      let ok = false;
+      for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.pitProbe && window.__test.furniture && window.__test.furniture() && document.querySelector('#raceBtn'))).catch(() => false); }
+      if (!ok) return { inconclusive: 'track did not build' };
+      const r = await h.eval(() => {
+        document.querySelector('#raceBtn').click(); window.__reality.go(true);
+        const T = window.__test; for (let i = 0; i < 260; i++) T.simStep(0.05, { skill: 'good' });
+        const F = T.furniture(), L = F.L; T.pitNow(); let saw = false, rel = false, end = -1;
+        for (let i = 0; i < 4000; i++) { T.simStep(0.05, rel ? null : { skill: 'good' }); const q = T.pitProbe(); if (q.hold) saw = true; if (saw && !q.hold) rel = true; if (rel && !q.inPits) { end = (((q.s - F.pitIn) % L) + L) % L; break; } }
+        return { saw, end };
+      }).catch((e) => ({ err: String(e) }));
+      if (!r || r.err || !r.saw) return { inconclusive: 'the stop did not run' };
+      return r.end >= 0 && r.end < 320 ? true : 'F1 PIT EXIT: with no steering the car was still in the pit lane ' + (r.end < 0 ? 'after the whole run' : r.end.toFixed(0) + ' m after the entry') + ' (must be back on the road within 320 m)';
+    },
+  },
+  {
     id: 'game-starts-not-black',
     ask: 'Game does not start',
     async test(page, h) {
