@@ -194,3 +194,11 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - A car is ~5 m long and turns as it goes: free it from a wall or lane clamp only when its REAR is past the end, not its centre (pit wall end: 215 m -> 223 m, #2614). Measure by logging the car's lateral position every step through the stop before touching code.
 - The pit lane must add to `raceDist` or every stop costs places (#2607). Test rigs: start a race with `__reality.go(true)` after the track builds, never by waiting on the button.
 - Read the real clock before writing any time to the owner.
+
+## F1 LESSONS Nov 14 2026 evening (computer-car pit stops)
+- A serviced car stays in its box while the crew works, and cars in the pit lane only touch other cars in the same line (lane or box row). Otherwise a stopped car blocks the lane and the others pile up behind it (#2618: 0 stuck, 0 wall readings on Harbour and Capital; before, 2 stuck for 385 s).
+- A car handed back to the road after the pit wall ends must be hands-off steered back onto the asphalt, never left on the grass (#2617).
+- Computer cars pit by plan, never all at once: each car has its own planned stop point, one call every 9 s, at most 2 cars in the lane (3 in rain), never two from one team (#2623). Rain test on all 5 circuits: first calls at 20, 29, 38 s, then 47 to 149 s, never more than 3 in the lane, 0 stuck cars.
+- Test hooks in `window.__test` live in the track part. Put them in their own PART: track PR and merge it first, then the ai PR. Branch the ai PR from the new main, or the hooks show up as removed lines and PART GUARD fails.
+- A race-start line sits inside a track-part function: do not touch it from an ai change. Reset per-race state inside your own function instead.
+- Own-car pit check on Mesa, Pinewood, Grand Prix, Harbour and Capital: enters, is held, is released, back on the road, 0 off-track readings.
