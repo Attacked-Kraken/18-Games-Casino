@@ -152,6 +152,21 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'play-pilot-car-shows-even-if-late',
+    ask: 'The pilot car must lead the start on every track even when its model is still loading when the start button is pressed: the lights wait for it instead of skipping it.',
+    mode: 'race',
+    async test(page, h) {
+      const ok = await h.eval(() => !!(window.__test && window.__test.paceProbe)).catch(() => false);
+      if (!ok) return 'no test hook';
+      await h.eval(() => { window.__pilotForce = true; });
+      for (let p = 0; p < 3; p++) { await h.press('#raceBtn').catch(() => {}); await h.wait(300); const md = await h.eval(() => window.__test.race().mode).catch(() => '?'); if (md === 'lights' || md === 'race') break; }
+      let was = false, last = null;
+      for (let i = 0; i < 200 && !was; i++) { await h.eval(() => window.__test.simStep(0.05)).catch(() => {}); await h.wait(60); last = await h.eval(() => window.__test.paceProbe()).catch(() => null); if (last && last.active) was = true; }
+      if (!was) return 'the pilot car never led the start when the race began before its model loaded (' + JSON.stringify(last) + ')';
+      return true;
+    },
+  },
+  {
     id: "play-pit-route-never-grass",
     ask: "F1: the whole way through the pit lane - in, to the box, out and back onto the track - the car drives on paving, never on grass (owner Nov 15 2026 'getting out of pit has no land to get on track', 'why is there grass in that area'). Checked on every circuit.",
     async test(page, h) {
