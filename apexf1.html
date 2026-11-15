@@ -22,7 +22,7 @@ function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.l
 try{new MutationObserver(all).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}document.addEventListener('DOMContentLoaded',all);})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Apex F1 Racing</title>
+<title>SLIPSTREAM</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏁</text></svg>"> <!-- G-95: declare an icon so the browser never 404s on /favicon.ico (the Grok audit's one console error) -->
 <link rel="icon" href="data:,"> <!-- G-224: the Grok recheck still saw the favicon 404 - an empty icon link stops the request outright -->
 <style>
@@ -282,7 +282,7 @@ setTimeout(function(){
   if(!window.__apexBoot && !document.querySelector('#menu .bigbtn')){
     document.body.insertAdjacentHTML('beforeend',
       '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:#04070d;color:#eaf2ff;font-family:sans-serif;text-align:center;padding:24px">'+
-      '<div><div style="font-size:22px;font-weight:800;margin-bottom:10px">⚠️ Apex F1 could not start</div>'+
+      '<div><div style="font-size:22px;font-weight:800;margin-bottom:10px">⚠️ SLIPSTREAM could not start</div>'+
       '<div style="color:#8fa8c8">The 3D engine failed to load. Check your connection and reload.<br>If it persists, try Chrome or Safari directly (not an in-app browser).</div></div></div>');
   }
 }, 8000);
@@ -327,7 +327,7 @@ setTimeout(function(){
 
 <!-- MENU -->
 <div class="overlay" id="menu">
-  <h1 class="title">APEX F1<small>CHAMPIONSHIP RACING</small></h1>
+  <h1 class="title">SLIPSTREAM<small>CHAMPIONSHIP RACING</small></h1>
   <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather — and rivals who will do anything to win.<br><span style="color:#ffd76a;letter-spacing:3px;font-size:12px">★ PRESENTED BY APEX ARCADE ★</span></div>
   <button class="bigbtn" id="quickBtn">⚡ QUICK RACE</button>
   <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
@@ -4458,7 +4458,7 @@ function initMenus(){
   $('codeClose').onclick=()=>show('menu');
   $('codeCopy').onclick=()=>{ const fc=friendCode(); if(!fc) return; const b=$('codeCopy'); const done=()=>{ b.textContent='COPIED ✓'; setTimeout(()=>{ b.textContent='COPY CODE'; },1500); };
     try{ navigator.clipboard.writeText(fc).then(done,()=>{ const r=document.createRange(); r.selectNodeContents($('myCode')); const se=getSelection(); se.removeAllRanges(); se.addRange(r); b.textContent='HOLD THE CODE → COPY'; }); }catch(e){ b.textContent='HOLD THE CODE → COPY'; } };
-  $('codeShare').onclick=()=>{ const fc=friendCode(); if(!fc) return; try{ if(navigator.share) navigator.share({ title:'Race my driver in Apex F1', text:fc }).catch(()=>{}); else $('codeCopy').click(); }catch(e){} };
+  $('codeShare').onclick=()=>{ const fc=friendCode(); if(!fc) return; try{ if(navigator.share) navigator.share({ title:'Race my driver in SLIPSTREAM', text:fc }).catch(()=>{}); else $('codeCopy').click(); }catch(e){} };
   $('friendGo').onclick=()=>{
     const f=parseFriend($('friendIn').value);
     if(!f){ $('friendErr').textContent='That code does not check out — paste the whole thing, starting with F1APEX-'; return; }
