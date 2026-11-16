@@ -209,3 +209,4 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - Thin alpha-tested wire turns to dots on phones: use thick wire + alphaToCoverage. Signs must never hang over the pit entry.
 - `__test.surfaceAt` only finds named meshes. PART GUARD counts edits near `trackGroundY` as `track`, so name the part by where the code sits.
 - The game is named SLIPSTREAM in text; file name apexf1.html and friend-code prefix F1APEX- stay as they are on purpose.
+- **Laps count on every circuit - LOCKED (Nov 15 2026, PR #2631):** the Grand Prix checkpoint lap counter was given to every track once its kit loaded, so on the other circuits laps never counted and fuel, tire wear and computer pit stops (which run off Race.lap) all stood still. It belongs to the Grand Prix only; test play-laps-count-every-track checks Harbour + Pinewood.
