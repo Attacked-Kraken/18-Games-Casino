@@ -182,6 +182,8 @@ export default [
         if (!r.length) continue; // a circuit whose kit draws its own boxes
         const side = r.filter((x) => x.along < 0.95);
         if (side.length) bad.push(tr + ': ' + side.length + ' of ' + r.length + ' spots turned (worst lines up ' + Math.round(Math.min(...side.map((x) => x.along)) * 100) + '% with the lane)');
+        const short = r.filter((x) => !(x.len >= 7.6 && x.len >= 1.8 * x.wid)); // owner Nov 15 2026 8:51 PM: car length (the car is 7.43) and clearly the long way
+        if (short.length) bad.push(tr + ': ' + short.length + ' spots are not car-shaped (' + short[0].len + ' long x ' + short[0].wid + ' wide)');
       }
       return bad.length ? 'F1 PIT SPOTS SIDEWAYS: ' + bad.join('; ') : true;
     },
