@@ -1320,9 +1320,9 @@ const Track = {
     const boxMat=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.7});
     for(let i=0;i<10;i++){
       const bs=lerp(s0+30, s0+200, i/9), bp=this.frameAt(bs);
-      const bx=bp.x+bp.nx*this.pitD, bz=bp.z+bp.nz*this.pitD;
+      const pd=this.pitDAt?this.pitDAt(bs):this.pitD, bx=bp.x+bp.nx*pd, bz=bp.z+bp.nz*pd;
       const box=new THREE.Mesh(new THREE.PlaneGeometry(4.5,7), boxMat);
-      box.rotation.x=-Math.PI/2; box.rotation.z=-Math.atan2(bp.tx,bp.tz);
+      box.rotation.x=-Math.PI/2; box.rotation.z=Math.atan2(-bp.tx,-bp.tz); box.name='pit-spot'; box.userData.s=bs; // owner Nov 15 2026 7:34 PM 'all pit parking spot need to be facing the right way, they are side ways': the 7 m side runs along the lane like the car parked in it (the old angle -atan2(tx,tz) only lined up when the lane ran north-south), and the spot sits on the lane's own line at that box
       box.position.set(bx,bp.y+0.04,bz); g.add(box);
     }
     try{ this.buildPitComplex(g); }catch(e){ console.warn('pitenv',e); } try{ this.buildRaceFurniture(g); }catch(e){ console.warn('furniture',e); } // owner Nov 8 2026 round 3: the whole pit complex (pad, stands, spots, working crews, trailers)
@@ -4808,6 +4808,7 @@ GPBoot();
 window.__test = {
   towers: () => { const e=Track._pitEnv; let m=0; if(Track._pitEnvRoot) Track._pitEnvRoot.traverse(o=>{ if(o.name==='chief-tower') m++; }); const L=Track.length, s0=Track.cfg.pitIn*L; const bg=(e&&e.booths)||[]; return { n:(e&&e.towers)||0, meshes:m, booths:bg.length, lift:bg.map((b,k)=>{ const bs=s0+30+k*170/9, p=Track.posAt(bs, Track.pitDAt(bs)); return +(b.position.y-p.y).toFixed(2); }) }; }, // owner Nov 15 2026: each team's chief tower + how high its booth stands
   boxFrame: (i) => { const L=Track.length, s0=Track.cfg.pitIn*L, bs=s0+30+(i||0)*170/9, p=Track.posAt(bs, Track.pitDAt(bs)), f=p.f; return { x:p.x, y:p.y, z:p.z, fx:f.tx, fz:f.tz, nx:-f.tz, nz:f.tx }; }, // owner Nov 15 2026: box i's frame (x = along the lane, z = toward the garages) for the tower pictures
+  pitSpots: () => { const out=[]; scene.traverse(o=>{ if(o.name==='pit-spot' && o.visible){ o.updateMatrixWorld(); const v=new THREE.Vector3(0,1,0).transformDirection(o.matrixWorld), f=Track.frameAt(o.userData.s); out.push({ along:+Math.abs(v.x*f.tx+v.z*f.tz).toFixed(3) }); } }); return out; }, // owner Nov 15 2026: 1 = the spot's long side runs along the lane
   spareCars: () => (Track._spares||[]).filter(g=>g.parent&&g.parent.parent).map(g=>({ real:g.userData.realCar||null, kids:g.children.length })),
   crewProbe: () => { const p=Race.player; if(!p) return null; const g=p.crew; if(!g) return { crew:false, inPits:!!p.inPits, hold:!!p.pitHold, done:!!p.pitStopDone }; const w=new THREE.Vector3(); g.getWorldPosition(w); const c=p.mesh.position; return { crew:true, onCar:g.parent===p.mesh, visible:g.visible, gap:Math.hypot(w.x-c.x,w.z-c.z), inPits:!!p.inPits, hold:!!p.pitHold, done:!!p.pitStopDone, v:p.v }; }, // owner Nov 15 2026: the crew lets go of the car at the release
   pitClutter: (r) => { r=r||4; const P=Track._pitPts||[], m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0, near=[]; const g=Track.group; if(!g||!P.length) return {pts:P.length,n:-1}; // owner Nov 7 2026: fence posts / lamp poles standing on the pit lane
