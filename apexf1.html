@@ -1443,13 +1443,30 @@ const Track = {
     }
     // ---- 2b. BOOTHS (BOOTH FIT ROUND, owner Nov 9 2026: 'Need a booth with there equipment. An all crews on each race team needs the same setup a booth and stuff'): every box gets the same pit-wall booth from the fetched models - the timing desk in the team's colours with our timing tower on its screen, the tool cart beside it, and the team's chief seated at it in a headset. mkBooth builds them (never hand-built geometry); if the models failed to load the lane simply stays booth-less and the chief keeps his perch. The player's chief is animation-driven by PitCrew.chiefPose while his car is in the pits; the other nine hold the seated base pose.
     const boothMan=(i,v)=>{ const m=mechMan(MECH.scale, i, v); if(m) return m; const f=pitFigure(new THREE.MeshLambertMaterial({color:(TEAMS[i%TEAMS.length]||{}).color||0x888888}),[-1.15,-1.15]); f.scale.setScalar(2.19); return f; }; // PEGFIX ROUND: a booth crewman is the mechanic in his box's own kit (the scaled articulated figure is only the load-failure fallback)
-    env.booths = []; env.boothChiefs = [];
+    env.booths = []; env.boothChiefs = []; const towerAt=[];
     if(BOOTH.ready){ spotBase.forEach((sp, i)=>{ const b = mkBooth(i); if(!b) return;
-      const bg = new THREE.Group(); bg.position.set(sp.p.x, sp.p.y, sp.p.z); bg.rotation.y = -Math.atan2(sp.p.f.tz, sp.p.f.tx); bg.add(b.grp); root.add(bg);
+      const bg = new THREE.Group(); bg.position.set(sp.p.x, sp.p.y+TOWER.H, sp.p.z); towerAt.push(sp); bg.rotation.y = -Math.atan2(sp.p.f.tz, sp.p.f.tx); bg.add(b.grp); root.add(bg); // owner Nov 15 2026 7:34 PM 'the crew chiefs with head sets need a tower for each crew that can over see track ... on the left side of each garage door entrance': the booth (desk, chief, two crewmen) stands on its team's tower deck
       env.booths.push(bg); if(b.chief) env.boothChiefs[i] = b.chief;
       const bdm=boothMan(i, MECH_VARSEQ[(i+1)%6]); if(bdm){ bdm.position.set(5.05,0,3.66); bdm.rotation.y=0.15; bg.add(bdm); env.anims.push({k:'booth', fig:bdm, ph:i*1.31, role:0}); } // PEGFIX ROUND (owner: the other crews should 'be out there in there booth also'): a crewman stands at the desk of EVERY booth, watching the screen and the lane - not just the seated chief (posed in updatePitEnv)
       const bcm=boothMan(i, MECH_VARSEQ[(i+4)%6]); if(bcm){ bcm.position.set(7.52,0,3.58); bcm.rotation.y=0; bg.add(bcm); env.anims.push({k:'booth', fig:bcm, ph:i*1.31+0.7, role:1}); } // and a second crewman works the tool cart at every booth
       }); }
+    if(towerAt.length){ // owner Nov 15 2026 7:34 PM: ONE tower per team, left of its garage door seen from the lane - a raised deck on four legs, a rail on the open sides, a team-colour roof, stairs down the far side. Instanced: a handful of draw calls for all ten.
+      const T=TOWER, n=towerAt.length, cx=(T.x0+T.x1)/2, cz=(T.z0+T.z1)/2, w=T.x1-T.x0, d=T.z1-T.z0;
+      const steel=new THREE.MeshLambertMaterial({color:0x2b3038}), deckM=new THREE.MeshLambertMaterial({color:0x8a9099}), roofM=new THREE.MeshLambertMaterial({color:0xffffff});
+      const mk=(geo,mat,per)=>{ const m=new THREE.InstancedMesh(geo,mat,n*per); m.name='chief-tower'; root.add(m); return m; };
+      const legs=mk(new THREE.BoxGeometry(0.22,T.H,0.22),steel,4), deck=mk(new THREE.BoxGeometry(w,0.2,d),deckM,1), roof=mk(new THREE.BoxGeometry(w+0.6,0.16,d+0.6),roofM,1), posts=mk(new THREE.BoxGeometry(0.14,T.roof,0.14),steel,4);
+      const railX=mk(new THREE.BoxGeometry(w,0.08,0.08),steel,2), railZ=mk(new THREE.BoxGeometry(0.08,0.08,d),steel,1), steps=mk(new THREE.BoxGeometry(0.42,0.12,1.1),deckM,8), stringer=mk(new THREE.BoxGeometry(Math.hypot(T.stairRun,T.H),0.14,0.1),steel,2);
+      const col=new THREE.Color(); let li=0, pi=0, rx=0, si=0, gi=0;
+      towerAt.forEach((sp,k)=>{ const B=m=>sp.base.clone().multiply(m), M=(x,y,z,ry)=>{ const m=new THREE.Matrix4().makeRotationY(ry||0); m.setPosition(x,y,z); return m; }, team=TEAMS[(spotBase.indexOf(sp))%TEAMS.length];
+        [[T.x0,T.z0],[T.x1,T.z0],[T.x0,T.z1],[T.x1,T.z1]].forEach(([x,z])=>{ legs.setMatrixAt(li++, B(M(x,T.H/2,z))); posts.setMatrixAt(pi++, B(M(x,T.H+T.roof/2,z))); });
+        deck.setMatrixAt(k, B(M(cx,T.H-0.1,cz))); roof.setMatrixAt(k, B(M(cx,T.H+T.roof,cz))); roof.setColorAt(k, col.setHex(team?team.color:0x888888));
+        railX.setMatrixAt(rx++, B(M(cx,T.H+1.0,T.z0))); railX.setMatrixAt(rx++, B(M(cx,T.H+0.55,T.z0))); railZ.setMatrixAt(k, B(M(T.x0,T.H+1.0,cz))); // lane side + near side railed; the far side is the stairs
+        for(let q=0;q<8;q++){ const u=(q+0.5)/8; steps.setMatrixAt(si++, B(M(T.x1+u*T.stairRun, T.H*(1-u), T.z0+0.7))); }
+        const ang=Math.atan2(T.H,T.stairRun); [0.12,1.28].forEach(dz=>{ const m=M(T.x1+T.stairRun/2, T.H/2, T.z0+dz); m.multiply(new THREE.Matrix4().makeRotationZ(-ang)); stringer.setMatrixAt(gi++, B(m)); });
+      });
+      [legs,deck,roof,posts,railX,railZ,steps,stringer].forEach(m=>{ m.instanceMatrix.needsUpdate=true; if(m.instanceColor) m.instanceColor.needsUpdate=true; });
+      env.towers=towerAt.length;
+    }
     // ---- 2c. THE GARAGES (owner Nov 10 2026 missing-list item 3: garage doors + detail on the pit building): measured first - the only pit building in the game (buildPits' one blank 120x10x14 dark slab) stands ~160 m before the box row beside the pit entry (capital: centre s 5196.7 vs boxes s 5388-5558), so no door painted on it could ever line up with a box, and behind the boxes themselves there was nothing but the booths. So the garages are a face at the back of the pad in the complex's own frame, built like the pad and the wall: ONE ribbon mesh, stations every 4 m from 15 m before box 1 to 15 m past box 10, standing at pitDAt+6.4 - about a metre behind the deepest booth fixture (the seat at z 5.02), clear of the working spots (z <= 3.6) and the clutter (z <= 3.35) on both build paths - carrying ONE canvas texture across the whole 200 m: ten roller-shutter doors centred exactly on the ten box centres, each framed in its team's colour with a team-colour header band carrying the box number and the team name, an office window band above the doors, and an APEX ARCADE sign band along the top. +1 mesh, +1 draw call. The old slab is untouched, as are the booths, crews, wall, box markings and pad.
     { const FACE_OFF=6.4, FACE_H=8.0;
       const cv=document.createElement('canvas'); cv.width=4096; cv.height=512; const c=cv.getContext('2d');
@@ -2379,6 +2396,7 @@ MechBoot();
 // curve, screen facing +z) - and the cart is 40.01 x 40.53 x 27.05 in its own units, fitted 1.05 m tall.
 // If either model fails to load, BOOTH.ready stays false: the lane keeps no booths and the chief keeps
 // his QUICK-round perch - the stop itself never depends on the booths.
+const TOWER = { H:3.0, roof:2.9, x0:3.9, x1:8.7, z0:2.9, z1:6.1, stairRun:3.2 }; // owner Nov 15 2026: the chief's tower in box-frame metres (x along the lane, z toward the garage face at 6.4); the booth sits on its deck at H
 const BOOTH = { ready:false, _boot:null, deskSrc:null, cartSrc:null, deskScale:1, cartScale:1, screenGeo:null,
   _palBase:null, _palEmis:null, _cartImg:null, cartMat0:null, _dm:{}, _cm:{}, _tt:{}, _teamM:{},
   X:5.9, deskZ:4.35, seatZ:5.02, cartX:7.55, cartZ:4.35, seatTop:0.64, chiefDrop:0.494 };
@@ -4787,6 +4805,8 @@ function GPPlay(name, vol){ if(GP.ev && GP.ev.play) GP.ev.play(name, vol); }
 GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
+  towers: () => { const e=Track._pitEnv; let m=0; if(Track._pitEnvRoot) Track._pitEnvRoot.traverse(o=>{ if(o.name==='chief-tower') m++; }); const L=Track.length, s0=Track.cfg.pitIn*L; const bg=(e&&e.booths)||[]; return { n:(e&&e.towers)||0, meshes:m, booths:bg.length, lift:bg.map((b,k)=>{ const bs=s0+30+k*170/9, p=Track.posAt(bs, Track.pitDAt(bs)); return +(b.position.y-p.y).toFixed(2); }) }; }, // owner Nov 15 2026: each team's chief tower + how high its booth stands
+  boxFrame: (i) => { const L=Track.length, s0=Track.cfg.pitIn*L, bs=s0+30+(i||0)*170/9, p=Track.posAt(bs, Track.pitDAt(bs)), f=p.f; return { x:p.x, y:p.y, z:p.z, fx:f.tx, fz:f.tz, nx:-f.tz, nz:f.tx }; }, // owner Nov 15 2026: box i's frame (x = along the lane, z = toward the garages) for the tower pictures
   spareCars: () => (Track._spares||[]).filter(g=>g.parent&&g.parent.parent).map(g=>({ real:g.userData.realCar||null, kids:g.children.length })),
   crewProbe: () => { const p=Race.player; if(!p) return null; const g=p.crew; if(!g) return { crew:false, inPits:!!p.inPits, hold:!!p.pitHold, done:!!p.pitStopDone }; const w=new THREE.Vector3(); g.getWorldPosition(w); const c=p.mesh.position; return { crew:true, onCar:g.parent===p.mesh, visible:g.visible, gap:Math.hypot(w.x-c.x,w.z-c.z), inPits:!!p.inPits, hold:!!p.pitHold, done:!!p.pitStopDone, v:p.v }; }, // owner Nov 15 2026: the crew lets go of the car at the release
   pitClutter: (r) => { r=r||4; const P=Track._pitPts||[], m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0, near=[]; const g=Track.group; if(!g||!P.length) return {pts:P.length,n:-1}; // owner Nov 7 2026: fence posts / lamp poles standing on the pit lane

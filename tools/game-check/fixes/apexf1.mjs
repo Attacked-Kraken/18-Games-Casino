@@ -152,6 +152,24 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'fix-f1-chief-towers',
+    ask: "F1: every team's crew chief and his headset men work from a raised tower on the left side of their garage door, looking over the lane and the track - on the built-in circuits and the Grand Prix (owner Nov 15 2026 'the crew chiefs with head sets need a tower for each crew that can over see track').",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['harbour', 'grandprix']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 90; i++) { await h.wait(500); r = await h.eval(() => window.__test && window.__test.towers ? window.__test.towers() : null).catch(() => null); if (r && r.booths) break; }
+        if (!r) return { inconclusive: 'no towers hook on ' + tr };
+        if (!r.booths) return { inconclusive: 'the booth models did not load on ' + tr };
+        if (r.n !== r.booths) bad.push(tr + ': ' + r.n + ' towers for ' + r.booths + ' booths');
+        const low = r.lift.filter((y) => y < 2.5);
+        if (low.length) bad.push(tr + ': ' + low.length + ' booths still on the ground (' + low.join(', ') + ' m up)');
+      }
+      return bad.length ? 'F1 CHIEF TOWERS: ' + bad.join('; ') : true;
+    },
+  },
+  {
     id: 'fix-f1-crew-lets-go-at-release', mode: 'race',
     ask: "F1: when the stop ends the pit crew stays at the box and the car drives away from it - the crew never rides along on the car (owner Nov 15 2026 'make sure the crew don't hang to car when it's taking off ... crew sticks for a few seconds').",
     async test(page, h) {
