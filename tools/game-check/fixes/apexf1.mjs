@@ -152,6 +152,40 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'fix-f1-crew-lets-go-at-release', mode: 'race',
+    ask: "F1: when the stop ends the pit crew stays at the box and the car drives away from it - the crew never rides along on the car (owner Nov 15 2026 'make sure the crew don't hang to car when it's taking off ... crew sticks for a few seconds').",
+    async test(page, h) {
+      const r = await h.eval(() => {
+        const T = window.__test; if (!T || !T.crewProbe || !T.pitNow) return { err: 'no crewProbe/pitNow hook' };
+        for (let i = 0; i < 600 && T.race().mode !== 'race'; i++) T.simStep(0.05);
+        if (T.race().mode !== 'race') return { inconclusive: 'race did not start (' + T.race().mode + ')' };
+        for (let i = 0; i < 100; i++) T.simStep(0.05, { skill: 'good' });
+        T.pitNow(); let rel = -1, far = null, stopped = false;
+        for (let i = 0; i < 1200; i++) { T.simStep(0.05, { skill: 'good' }); const c = T.crewProbe(); if (!c || !c.crew) continue; if (c.hold) stopped = true; if (stopped && !c.hold && rel < 0) rel = i; if (rel >= 0 && i - rel >= 30) { far = c; break; } }
+        if (!stopped) return { inconclusive: 'the car never held in its box' };
+        if (!far) return { inconclusive: 'the car was not released' };
+        return { far };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return 'F1 CREW: ' + r.err;
+      if (r.inconclusive) return r;
+      if (r.far.onCar) return 'F1 CREW: 1.5 s after the release the crew is still fixed to the car (gap ' + r.far.gap.toFixed(1) + ' m)';
+      if (r.far.gap < 2) return 'F1 CREW: the car has not moved away from the crew (gap ' + r.far.gap.toFixed(1) + ' m)';
+      return true;
+    },
+  },
+  {
+    id: 'fix-f1-garage-spare-is-race-car', mode: 'race',
+    ask: "F1: the spare car parked in each working pit box is the same race car model the field drives, not a box-built toy (owner Nov 15 2026 'Change the ugly models, the two stationary cars. Make them our same models that race').",
+    async test(page, h) {
+      let r = null;
+      for (let i = 0; i < 20; i++) { r = await h.eval(() => window.__test && window.__test.spareCars ? window.__test.spareCars() : null).catch(() => null); if (r && r.length && r.every((c) => c.real)) break; await h.wait(500); }
+      if (!r) return 'F1 SPARE CARS: no spareCars hook';
+      if (!r.length) return { inconclusive: 'this circuit has no working boxes' };
+      const toy = r.filter((c) => !c.real).length;
+      return toy ? 'F1 SPARE CARS: ' + toy + ' of ' + r.length + ' pit-box spare cars are still the box-built toy' : true;
+    },
+  },
+  {
     id: 'play-laps-count-every-track',
     ask: "F1: laps count on EVERY circuit, so fuel burns, tires wear and pit stops happen - the Grand Prix checkpoint counter belongs to the Grand Prix only (owner Nov 15 2026 'now no laps work, or fuel going down or wear on tire ... and nobody pit stopped').",
     async test(page, h) {
