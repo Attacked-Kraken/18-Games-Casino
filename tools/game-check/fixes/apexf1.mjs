@@ -152,6 +152,23 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'fix-f1-pit-spots-face-the-lane',
+    ask: "F1: every painted pit parking spot lies along the pit lane like the car that stops in it, on every circuit - none turned sideways (owner Nov 15 2026 'all pit parking spot need to be facing the right way, they are side ways').",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['harbour', 'capital', 'mesa', 'pinewood']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80; i++) { await h.wait(500); r = await h.eval(() => window.__test && window.__test.pitSpots ? window.__test.pitSpots() : null).catch(() => null); if (r && r.length) break; }
+        if (!r) return { inconclusive: 'no pitSpots hook on ' + tr };
+        if (!r.length) continue; // a circuit whose kit draws its own boxes
+        const side = r.filter((x) => x.along < 0.95);
+        if (side.length) bad.push(tr + ': ' + side.length + ' of ' + r.length + ' spots turned (worst lines up ' + Math.round(Math.min(...side.map((x) => x.along)) * 100) + '% with the lane)');
+      }
+      return bad.length ? 'F1 PIT SPOTS SIDEWAYS: ' + bad.join('; ') : true;
+    },
+  },
+  {
     id: 'fix-f1-crew-lets-go-at-release', mode: 'race',
     ask: "F1: when the stop ends the pit crew stays at the box and the car drives away from it - the crew never rides along on the car (owner Nov 15 2026 'make sure the crew don't hang to car when it's taking off ... crew sticks for a few seconds').",
     async test(page, h) {
