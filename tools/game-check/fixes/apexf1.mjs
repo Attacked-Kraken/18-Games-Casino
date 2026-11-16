@@ -152,6 +152,35 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'play-laps-count-every-track',
+    ask: "F1: laps count on EVERY circuit, so fuel burns, tires wear and pit stops happen - the Grand Prix checkpoint counter belongs to the Grand Prix only (owner Nov 15 2026 'now no laps work, or fuel going down or wear on tire ... and nobody pit stopped').",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['harbour', 'pinewood']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let ok = false;
+        for (let i = 0; i < 80 && !ok; i++) { await h.wait(500); ok = await h.eval(() => !!(window.__test && window.__test.lapCounters && window.__test.lapCounters().kit && document.querySelector('#raceBtn'))).catch(() => false); }
+        if (!ok) return { inconclusive: 'track or Grand Prix kit did not load: ' + tr };
+        let md = '';
+        for (let tries = 0; tries < 3 && md !== 'lights' && md !== 'race'; tries++) {
+          await h.eval(() => { window.__reality.go(true); document.querySelector('#raceBtn').click(); }).catch(() => {});
+          for (let i = 0; i < 20 && md !== 'lights' && md !== 'race'; i++) { await h.wait(500); md = await h.eval(() => window.__test.race().mode).catch(() => ''); }
+        }
+        if (md !== 'lights' && md !== 'race') return { inconclusive: 'race did not start on ' + tr + ' (' + md + ')' };
+        const r = await h.eval(() => {
+          const T = window.__test; for (let i = 0; i < 600 && T.race().mode !== 'race'; i++) T.simStep(0.05);
+          const first = T.lapCounters();
+          for (let i = 0; i < 2600 && T.lapCounters().maxLap < 2; i++) T.simStep(0.05, { skill: 'good' });
+          return { first, last: T.lapCounters(), mode: T.race().mode };
+        }).catch((e) => ({ err: String(e) }));
+        if (!r || r.err) return { inconclusive: 'could not run ' + tr + ': ' + (r && r.err) };
+        if (r.first.lc > 0) bad.push(tr + ': ' + r.first.lc + ' of ' + r.first.n + ' cars use the Grand Prix checkpoint counter');
+        if (r.last.maxLap < 2) bad.push(tr + ': no car finished lap 1 in 130 s of racing (max lap ' + r.last.maxLap + ')');
+      }
+      return bad.length ? 'F1 LAPS: ' + bad.join('; ') : true;
+    },
+  },
+  {
     id: 'play-pilot-car-shows-even-if-late',
     ask: 'The pilot car must lead the start on every track even when its model is still loading when the start button is pressed: the lights wait for it instead of skipping it.',
     mode: 'race',
