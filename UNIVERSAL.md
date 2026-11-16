@@ -210,3 +210,12 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - `__test.surfaceAt` only finds named meshes. PART GUARD counts edits near `trackGroundY` as `track`, so name the part by where the code sits.
 - The game is named SLIPSTREAM in text; file name apexf1.html and friend-code prefix F1APEX- stay as they are on purpose.
 - **Laps count on every circuit - LOCKED (Nov 15 2026, PR #2631):** the Grand Prix checkpoint lap counter was given to every track once its kit loaded, so on the other circuits laps never counted and fuel, tire wear and computer pit stops (which run off Race.lap) all stood still. It belongs to the Grand Prix only; test play-laps-count-every-track checks Harbour + Pinewood.
+
+## SLIPSTREAM pit lessons Nov 15 2026 evening (owner, LOCKED)
+- Parked/stationary cars in the pit use the race car model (cmBody + model wheels, shared livery), never box-built toys (PR #2633).
+- The pit crew is let go of the car at the release (moved into the world at the box); it must never ride along as the car drives off (PR #2633).
+- Pit parking spots are car-length (8.4 x 3.8, car 7.43) and lie the long way down the lane; a plane's angle on the ground is atan2(-tx,-tz) - the old -atan2(tx,tz) only lined up on north-south / east-west lanes (PRs #2635, #2637).
+- Every team's chief + headset crew work from a raised tower left of their garage door (PR #2636).
+- Built-in pit lanes are wide (PIT_WIDE): anything placed by distance to the pit line must also skip the concrete between the pit wall and the lane (PR #2637).
+- A long code comment pasted into the middle of a line can swallow the code after it - put comments at the END of the line (the tower booths vanished once from this).
+- A PR that merges while you push a second commit leaves that commit off main - check main for it, and open it as its own PR.
