@@ -1160,7 +1160,7 @@ const Track = {
     for(let i=1;i<=N;i++){ const p=S[i%N], pp=S[i-1], dd=Math.hypot(p.x-pp.x,p.z-pp.z); acc+=dd; accF+=dd; accM+=dd; accL+=dd;
       const rot=Math.atan2(p.tx,p.tz), corner=Math.abs(p.curv)>0.003, out=p.curv>0?-1:1;
       const at=(off,sd)=>({x:p.x+p.nx*off*sd, z:p.z+p.nz*off*sd});
-      const clear=(x,z,extra)=>this.distToLoop(x,z)>=W/2+extra && this.distToPit(x,z)>=PIT_CLEAR_M; // PIT_CLEAR_M: how far fences / lamp poles / marshal posts stay from the pit lane's centre line
+      const clear=(x,z,extra)=>this.distToLoop(x,z)>=W/2+extra && this.distToPit(x,z)>=PIT_CLEAR_M+(this.gp?0:PIT_WIDE); // owner Nov 15 2026: + PIT_WIDE - the wide pit lane's whole concrete (wall to lane) stays clear on the built-in circuits. PIT_CLEAR_M: how far fences / lamp poles / marshal posts stay from the pit lane's centre line
       if(acc>=1.15){ acc=0; // tyre wall: 3 layers, outside of every corner
         if(corner){ const o=at(W/2+5.2,out); if(clear(o.x,o.z,3.6)) for(let L=0;L<3;L++){ const c=(k++%5===0)?(L===1?cBlue:cWhite):((k%7===0)?cRed:cDark); if(put(tyres,o.x,p.y+0.25+L*0.5,o.z,0,1,1,1,c)) cnt.tyres++; } } }
       if(accF>=8){ accF=0; // catch fence on both sides: post + two rails to the next post
@@ -1314,7 +1314,7 @@ const Track = {
     }
     bld.position.set(px,p.y+5,pz); bld.rotation.y=Math.atan2(p.tx,p.tz)+Math.PI/2;
     bld.castShadow=!isTouch; g.add(bld);
-    this.pitSide = 1; this.pitD = this.width/2+8; // owner Nov 12 2026 'push the pit back more, 5 cars should fit side by side, my guys are changing tires in the fence': the lane (and the boxes, garages, lines built from it) sits 3 m further back - 8.6 m of room between the wall and the stopped car's crew side
+    this.pitSide = 1; this.pitD = this.width/2+8+PIT_WIDE; // owner Nov 15 2026 'the pit lane 15 cars wide. The space is small': PIT_WIDE more room between the pit wall and the lane, on the scale of his Nov 12 '5 cars side by side' (= 8.6 m) - // owner Nov 12 2026 'push the pit back more, 5 cars should fit side by side, my guys are changing tires in the fence': the lane (and the boxes, garages, lines built from it) sits 3 m further back - 8.6 m of room between the wall and the stopped car's crew side
     { const L=this.length, pts=[]; for(let ds=-80; ds<=300; ds+=4){ const bp=this.frameAt(((s0+ds)%L+L)%L); pts.push([bp.x+bp.nx*this.pitD, bp.z+bp.nz*this.pitD]); } this.setPitPts(pts); }
     // pit boxes: white outlines on pit lane
     const boxMat=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.7});
@@ -1342,7 +1342,7 @@ const Track = {
       c.strokeStyle='rgba(74,76,80,0.6)'; c.lineWidth=7; c.strokeRect(0,0,256,256);
       const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=4;
       const seg=9.43, ds0=-250, ds1=320, n=Math.ceil((ds1-ds0)/4.7), pos=[], uv=[], idx=[];
-      for(let i=0;i<=n;i++){ const ds=ds0+(ds1-ds0)*i/n, s=((s0+ds)%L+L)%L, dC=this.pitDAt(s), dIn=dC-5.6-(this.gp?0:3), dOut=dC+24+(this.gp?0:0);
+      for(let i=0;i<=n;i++){ const ds=ds0+(ds1-ds0)*i/n, s=((s0+ds)%L+L)%L, dC=this.pitDAt(s), dIn=this.gp?dC-5.6:Math.min(dC-5.6-3, (this.pitSide||1)*(W/2-0.2)), dOut=dC+24+(this.gp?0:0);
         const a=this.posAt(s,dIn), b=this.posAt(s,dOut);
         pos.push(a.x,a.y+0.02,a.z, b.x,b.y+0.02,b.z); uv.push((ds-ds0)/seg,0, (ds-ds0)/seg,(dOut-dIn)/seg);
         if(i<n){ const k=i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); } }
@@ -1954,7 +1954,7 @@ const Track = {
   clearPaddock(){ // owner Nov 10 2026: nothing from the random scenery (street trees, spectators, barricades, poles) may stand on the pit pad, the podium / parc ferme strip or the motorhome paddock - an instanced piece that landed there is sunk out of sight (the same trick as the street poles on the pit lane). Only the scenery meshes added straight to the track group are looked at: the pit complex, the furniture and the grandstands' own crowds are never touched.
     const F=this.furniture, g=this.group; if(!F||!g) return; const L=this.length, s0=this.cfg.pitIn*L, sd=this.pitSide||1, fr=[];
     for(let ds=10; ds<=290; ds+=3){ const s=((s0+ds)%L+L)%L, f=this.frameAt(s); fr.push({ds, x:f.x, z:f.z, tx:f.tx, tz:f.tz, nx:f.nx, nz:f.nz, pd:this.pitDAt(s)*sd}); }
-    const inside=(x,z)=>{ let best=null, bd=1e18; for(const f of fr){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if(d<bd){ bd=d; best=f; } } if(!best||bd>75*75) return false; const dx=x-best.x, dz=z-best.z; if(Math.abs(dx*best.tx+dz*best.tz)>6) return false; const lat=(dx*best.nx+dz*best.nz)*sd-best.pd; return lat<=41 && lat>=(best.ds>=218?2.8:7); };
+    const inside=(x,z)=>{ let best=null, bd=1e18; for(const f of fr){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if(d<bd){ bd=d; best=f; } } if(!best||bd>75*75) return false; const dx=x-best.x, dz=z-best.z; if(Math.abs(dx*best.tx+dz*best.tz)>6) return false; const lat=(dx*best.nx+dz*best.nz)*sd-best.pd; return lat<=41 && lat>=(best.ds>=218?2.8:(this.gp?7:-(best.pd-this.width/2-0.5))); }; // owner Nov 15 2026: on the wide built-in lane the concrete between the pit wall and the lane is kept clear too
     const m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0; g.updateMatrixWorld(true);
     for(const o of g.children){ if(!o.isInstancedMesh) continue; let ch=false; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y<-100) continue; v.applyMatrix4(o.matrixWorld); if(inside(v.x,v.z)){ m.elements[13]-=500; o.setMatrixAt(i,m); ch=true; n++; } } if(ch) o.instanceMatrix.needsUpdate=true; }
     F.cleared=n; },
@@ -2397,6 +2397,7 @@ MechBoot();
 // If either model fails to load, BOOTH.ready stays false: the lane keeps no booths and the chief keeps
 // his QUICK-round perch - the stop itself never depends on the booths.
 const TOWER = { H:3.0, roof:2.9, x0:3.9, x1:8.7, z0:2.9, z1:6.1, stairRun:3.2 }; // owner Nov 15 2026: the chief's tower in box-frame metres (x along the lane, z toward the garage face at 6.4); the booth sits on its deck at H
+const PIT_WIDE = 17.4; // owner Nov 15 2026: the extra width of the built-in pit lane (15 cars of room against the old 5)
 const BOOTH = { ready:false, _boot:null, deskSrc:null, cartSrc:null, deskScale:1, cartScale:1, screenGeo:null,
   _palBase:null, _palEmis:null, _cartImg:null, cartMat0:null, _dm:{}, _cm:{}, _tt:{}, _teamM:{},
   X:5.9, deskZ:4.35, seatZ:5.02, cartX:7.55, cartZ:4.35, seatTop:0.64, chiefDrop:0.494 };
