@@ -1503,4 +1503,20 @@ export default [
     return true;
   },
 },
+{
+  id: 'fix-hockey-no-old-models',
+  ask: 'Owner Nov 17 2026 "old models should never show": from the first frame to the faceoff no code-built stand-in player and no old stands are ever drawn - the real players step out together',
+  async test(page, h) {
+    let r = null;
+    for (let i = 0; i < 60; i++) { r = await h.eval(() => { const H = window.__hk; return H ? { seen: window.__standInSeen, inn: !!H.modelsIn, ok: !!H.standInOk, body: H.skaters.filter(s => s.body.visible).length, ath: H.skaters.filter(s => s.athWrap && s.athWrap.visible).length, n: H.skaters.length } : null; }); if (r && (r.inn || r.ok)) break; await h.wait(500); }
+    if (!r) return 'the game did not expose __hk';
+    if (r.seen === undefined) return 'the game does not count old-model frames (window.__standInSeen missing)';
+    if (r.ok) return 'the real player models never loaded, the stand-ins were let out';
+    if (!r.inn) return 'the real players were not in after 30 s';
+    if (r.seen > 0) return r.seen + ' frame(s) showed an old stand-in model or the old stands before the real ones were in';
+    if (r.body) return r.body + ' stand-in figure(s) still visible next to the real players';
+    if (r.ath !== r.n) return 'only ' + r.ath + ' of ' + r.n + ' real players are showing';
+    return true;
+  },
+},
 ];
