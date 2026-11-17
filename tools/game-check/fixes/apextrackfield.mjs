@@ -4245,4 +4245,20 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'fix-tf-no-old-models',
+    ask: 'Owner Nov 17 2026 "old models should never show": an event never starts with the code-built stand-in bodies - the start waits for the real athletes',
+    async test(page, h) {
+      const poll = () => h.eval(() => { const on = document.querySelector('.screen.on'); const playing = document.body.classList.contains('playing'); if (!playing && on) { const click = (id) => { const b = document.getElementById(id); if (b) b.click(); }; if (on.id === 'results') click('bResMenu'); else if (on.id === 'menu') click('bFree'); else if (on.id === 'grid') { const b = document.querySelector('#gridEvents button'); if (b) b.click(); } else if (on.id === 'card') click('bCardStart'); } return { playing, seen: window.__standInSeen, ok: !!window.__nomOk }; });
+      let r = null;
+      for (let i = 0; i < 90; i++) { r = await poll(); if (r && r.playing) break; await h.wait(500); }
+      if (!r || !r.playing) return { inconclusive: 'no event started in 45 s' };
+      await h.wait(4000);
+      r = await poll();
+      if (r.seen === undefined) return 'the game does not count old-model frames (window.__standInSeen missing)';
+      if (r.ok) return 'the real athletes never loaded - the 30 s safety net let the stand-ins race';
+      if (r.seen > 0) return r.seen + ' frame(s) showed a code-built stand-in body in the event';
+      return true;
+    },
+  },
 ];
