@@ -219,3 +219,13 @@ A Claude that says "I'll report back" MUST first write a WAKE line, or the owner
 - Built-in pit lanes are wide (PIT_WIDE): anything placed by distance to the pit line must also skip the concrete between the pit wall and the lane (PR #2637).
 - A long code comment pasted into the middle of a line can swallow the code after it - put comments at the END of the line (the tower booths vanished once from this).
 - A PR that merges while you push a second commit leaves that commit off main - check main for it, and open it as its own PR.
+
+## OLD MODELS NEVER SHOW (owner Nov 17 2026, LOCKED, every game 2D or 3D)
+Owner: "all games never show old models - like hockey going from ugly player to the new ones. Old models should never show."
+- A code-built stand-in figure, car or old venue is HIDDEN from the first frame. It comes out only when the real model truly cannot load (a 20-30 s dead-connection safety net) - never as a cover while the real one loads.
+- The start (faceoff, first pitch, event, kickoff, race) WAITS for the real models. Show a short line ("TEAMS TAKING THE ICE", "LOADING ATHLETES") or keep the loading screen up.
+- The whole team steps out together - never players popping in two at a time.
+- Every game counts any drawn frame that showed a stand-in in `window.__standInSeen`. The robot makes more than 0 a RED line (OLD MODEL SHOWN); a people game with no counter is yellow.
+- Each game has a test `fix-<game>-no-old-models`. Done: Hockey #2639, Baseball #2640, Track & Field #2642, Soccer #2643. Racer and SLIPSTREAM already waited for their models.
+- PART GUARD tip: top-level code counts as the function above it - put new top-level code right after a function of the same part.
+- Still to do (same owner message): no glitches in movement or sound - a robot hitch meter and Hockey's sounds moved to memory buffers (approver MASTER-LIST, Found later Nov 17).
