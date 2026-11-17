@@ -1607,4 +1607,21 @@ export default [
       return true;
     },
   },
+  {
+    id: 'fix-baseball-no-old-models',
+    ask: 'Owner Nov 17 2026 "old models should never show": no code-built stand-in player and no old park is ever drawn - the menu opens only when the real park and players are in, and the fielders step out together',
+    async test(page, h) {
+      const read = () => h.eval(() => { const N = window.__nom; return N ? { seen: window.__standInSeen, ok: N.ok, inn: N.playersIn, park: true, menu: getComputedStyle(document.getElementById('startOv')).display !== 'none' || getComputedStyle(document.getElementById('loadOv')).display === 'none' } : null; });
+      let r = null;
+      for (let i = 0; i < 80; i++) { r = await read(); if (r && r.inn && r.park) break; await h.wait(500); }
+      if (!r) return 'the game does not count old-model frames (window.__nom missing)';
+      if (r.ok) return 'the real player models never loaded, the stand-ins were let out';
+      if (!r.inn || !r.park) return 'the real players / park were not in after 40 s';
+      try { await h.press('#startBtn'); } catch (e) {}
+      await h.wait(4000);
+      r = await read();
+      if (r.seen > 0) return r.seen + ' frame(s) showed an old stand-in player or the old park';
+      return true;
+    },
+  },
 ];
