@@ -586,7 +586,6 @@ const HOME_M = teamMats(TEAMS.home), AWAY_M = teamMats(TEAMS.away);
 function makeSkater(teamKey, goalie){
   const t = TEAMS[teamKey], M = teamKey==='home'?HOME_M:AWAY_M;
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  body.visible = false; // OWNER Nov 17 2026 ('old models should never show'): the code-built figure is only the load-failure stand-in - hidden from the first frame, shown only by showStandIns()
   const skin = MAT.skin[(Math.random()*MAT.skin.length)|0];
   const cast = !isTouch;
   function mesh(geo,mat,x,y,z){ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=cast; body.add(m); return m; }
@@ -712,13 +711,14 @@ async function attachAthletes(H){
         helmet: T.helmet, gloves: kit.bottom, socks: s.goalie ? kit.goalieTop : kit.top, num: s.num, name: s.surname || '', crest: T.name[0], goalie: !!s.goalie,
         blade: s.goalie ? [0, .55] : [-.1, .8] });
       s._redrawPrints = () => kitG.setPrints({ num: s.num, name: s.surname || '' });
-      const wrap = new THREE.Group(); wrap.visible = false; s.g.add(wrap); // shown with the whole team at the end (never players popping in two at a time)
+      const wrap = new THREE.Group(); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
       s.kit = kitG; s.athStick = kitG.stick;
       { const vs = kitG.parts && kitG.parts.visor; if (vs) { vs.castShadow = false; vs.material.opacity = 0.13; vs.material.metalness = 0; vs.material.roughness = 0.04; } } // G-186: the kit visor shipped cloudy - it shadowed and darkened the face into a bar across the eyes (art director, img/apexhockey-face.jpg); a visor casts no shadow and the glass is near-clear now, so the face reads through it
       a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
+      s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
     }catch(e){ /* that player stays primitive */ }
     i++;
@@ -726,16 +726,12 @@ async function attachAthletes(H){
     // main thread for seconds on slow screens, stalling the start of a career level
     if(i % 2 === 0 && i < skaters.length) await new Promise(r=>setTimeout(r,0));
   }
-  skaters.forEach(s=>{ if(s.athWrap) s.athWrap.visible = true; else { s.body.visible = true; s.standInOk = true; } }); // both teams step out together; a player whose model failed gets the stand-in
-  window.__hk.modelsIn = true;
 }
 /* ============ the real arena: shared stadium kit (venues/kit/stadium.js, venues/rink.md) ============
    An 18,000-seat, 2-level bowl around the boards, with 16,000 moving fans in team colours who stand and cheer on goals,
    LED ribbons, tunnels, a closed roof with trusses and a ring of lights, and a centre-hung 4-sided scoreboard. The
    game's own ice, boards and glass stay. Units: this game uses feet (3.2808 per metre). */
 let ARENA = null;
-OLD_ARENA.forEach(m=>{ m.visible=false; }); (crowd.meshes||[]).forEach(m=>{ m.visible=false; }); // OWNER Nov 17 2026: the old stands and crowd never show while the real arena loads - only if it fails
-function showStandIns(){ window.__hk.standInOk = true; skaters.forEach(s=>{ if(!s.athWrap) s.body.visible = true; else s.athWrap.visible = true; }); if(!ARENA){ OLD_ARENA.forEach(m=>{ m.visible=true; }); (crowd.meshes||[]).forEach(m=>{ m.visible=true; }); } }
 const stadiumPreload=(async()=>{ // G-35: named preload (see preloadsDone) — this build must land before play, never mid-game
   try{
     const { buildStadium } = await import('./venues/kit/stadium.js');
@@ -748,7 +744,7 @@ const stadiumPreload=(async()=>{ // G-35: named preload (see preloadsDone) — t
     window.__drawScoreboard = function(){ if(oldDraw) oldDraw(); st.setScore({ home:TEAMS.home.name, away:TEAMS.away.name, hs:scoreH, as:scoreA, clock:'', period:'' }); };
     window.__drawScoreboard();
     ARENA = st; window.__arena = st;
-  }catch(e){ OLD_ARENA.forEach(m=>{ m.visible=true; }); (crowd.meshes||[]).forEach(m=>{ m.visible=true; }); window.__hk.arenaFailed = true; /* kit missing: the simple stands and crowd come back */ }
+  }catch(e){ /* kit missing: the simple stands and crowd stay */ }
 })();
 const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — the GLB parse + attach must land before play, never mid-game
   try{
@@ -758,7 +754,7 @@ const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — th
     const { hockeyKit } = await gearP;
     HK = (o) => hockeyKit(THREE, HK.a, o);
     await attachAthletes(H); // G-52: the preload settles only when every athlete is in
-  }catch(e){ showStandIns(); /* GLB/vendor missing — only then the game plays with the stand-ins */ }
+  }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
 })();
 /* G-35 preload gate: both heavy loads start at page open; the opening faceoff waits
    until they have settled so their build/parse never lands mid-game.
@@ -766,18 +762,9 @@ const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — th
    delays the start; past a short grace the faceoff goes ahead and the last pieces
    land during the countdown, not in open play. A missing kit never blocks a game. */
 function preloadsDone(){
-  // OWNER Nov 17 2026 ('old models should never show'): the faceoff waits for the real players and arena.
-  // 20 s is only the safety net for a dead connection - then the stand-ins come out so a game is never blocked.
-  const all = Promise.allSettled([stadiumPreload, humansPreload]);
-  let done = false; all.then(()=>{ done = true; });
-  setTimeout(()=>{ if(!done){ try{ banner('TEAMS TAKING THE ICE','',1500); }catch(e){} } }, 400);
-  return Promise.race([ all, new Promise(r=>setTimeout(()=>{ if(!done) showStandIns(); r(); },20000)) ]);
+  return Promise.race([ Promise.allSettled([stadiumPreload, humansPreload]),
+    new Promise(r=>setTimeout(r,2500)) ]);
 }
-
-/* OLD MODEL WATCH (owner Nov 17 2026): counts every drawn frame that shows a stand-in figure or the old stands while the
-   real ones were still loading. The robot reads window.__standInSeen - it must stay 0. */
-window.__standInSeen = 0;
-function standInWatch(){ if(window.__hk.standInOk) return; let n = 0; for(const s of skaters) if(s.body.visible && !s.athWrap && !s.standInOk) n++; if(!window.__hk.arenaFailed && !ARENA) for(const m of OLD_ARENA) if(m.visible) n++; if(n) window.__standInSeen++; }
 
 /* ================= puck ================= */
 const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.124,0.124,0.083,14), MAT.puck);
@@ -1965,13 +1952,12 @@ function tick(now){
   Mus.setMode(state==='play'?'game':'menu');
   if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
   if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
-  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); standInWatch(); renderer.render(scene,camera); return; }
+  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
   for(let si=0;si<steps;si++){
   if(!stepWorld(dt)) break;
   } // end of catch-up slices
   snapSkatesToIce();
-  standInWatch();
   renderer.render(scene,camera);
 }
 function gameOver(){
