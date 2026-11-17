@@ -2690,4 +2690,20 @@ export default [
       return bad.length ? 'F1 PIT ENTRY BLOCK: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'fix-f1-ambulance-always-on-pad',
+    ask: 'Owner Nov 17 2026 "make the ambulance always show sitting on pad": on the circuit the ambulance is in the scene, visible and on its own pad spot - before the start, through the pilot-car lap and in the race (only the orange pilot car drives off)',
+    test: async (page, h) => {
+      let s = null;
+      for (let i = 0; i < 120; i++) { s = await h.eval(() => { const T = window.__test; try { return T && T.emState ? T.emState() : undefined; } catch (e) { return null; } }).catch(() => null); if (s && s.loaded >= 2) break; await h.wait(500); }
+      if (s === undefined) return 'the game has no emState probe';
+      if (!s) return { inconclusive: 'no circuit with an emergency pad was built in 60 s' };
+      const bad = (q, when) => !q ? 'the ambulance is not on the circuit ' + when : !q.inScene ? 'the ambulance is not in the scene ' + when : !q.visible ? 'the ambulance is hidden ' + when : q.off > 0.5 ? 'the ambulance is ' + q.off + ' m off its pad spot ' + when : q.meshes < 1 ? 'the ambulance has no body ' + when : '';
+      if (s.loaded < 2) return 'only ' + s.loaded + ' of the 2 emergency cars are on the pad after 60 s';
+      if (s.groups !== 2) return s.groups + ' emergency cars are listed for this circuit (2 expected - an old circuit\'s cars were kept)';
+      let e = bad(s.medical, 'before the start'); if (e) return e;
+      for (let k = 0; k < 6; k++) { await h.eval(() => { const T = window.__test; for (let i = 0; i < 100; i++) T.simStep(0.05, { skill: 'good' }); return true; }).catch(() => {}); s = await h.eval(() => window.__test.emState()).catch(() => null); if (!s) continue; e = bad(s.medical, 'after ' + ((k + 1) * 5) + ' s of running'); if (e) return e; }
+      return true;
+    },
+  },
 ];
