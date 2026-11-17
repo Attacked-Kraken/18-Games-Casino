@@ -3,10 +3,10 @@
  "faults": [
   {
    "game": "apexhockey.html",
-   "match": "no defender took the puck|play-defender-takes-puck",
-   "why": "play-defender-takes-puck: the test now stages the rush from fixed spots (no random faceoff), but it still fails on main e49fcdc (Oct 26: 'no defender took the puck within 20 game-seconds') and 1 of 3 local runs (Oct 27: 'the away rush scored'). Left: the poke-check is Math.random (apexhockey.html 'Math.random()<chance'), so the robot cannot yet tell a weak defence (game, window 2) from bad luck - next step: seed Math.random in the test and replay 5x. Note: play- tests print a YELLOW 'Play test failing' line, so this entry never hides a red line. Renewed Oct 27 2026 (VP).",
+   "match": "no defender took the puck|play-defender-takes-puck|a defender takes the puck off an away rush",
+   "why": "play-defender-takes-puck: the test now stages the rush from fixed spots (no random faceoff), but it still fails on main e49fcdc (Oct 26: 'no defender took the puck within 20 game-seconds') and 1 of 3 local runs (Oct 27: 'the away rush scored'). Left: the poke-check is Math.random (apexhockey.html 'Math.random()<chance'), so the robot cannot yet tell a weak defence (game, window 2) from bad luck - next step: seed Math.random in the test and replay 5x. Note: play- tests print a YELLOW 'Play test failing' line, so this entry never hides a red line. Renewed Oct 27 2026 (VP). Renewed Nov 17 2026 (VP): the entry had expired Oct 31 and main's check then AUTO-UNDID the Hockey old-models fix (#2639 -> #2641) on this chance test. Local replay Nov 17 on main: passes 2 of 2 when run 5 s after load, fails 2 of 2 when run 30 s after load (real players attached, ~3 frames a second here) - the result follows the robot's speed and the random poke-check, not the merge. Still to do (approver MASTER-LIST): seed Math.random in the test and replay 5x.",
    "since": "2026-10-21",
-   "until": "2026-10-31"
+   "until": "2026-12-01"
   },
   {
    "game": "apextrackfield.html",
