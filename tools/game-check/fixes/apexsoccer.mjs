@@ -350,4 +350,21 @@ export default [
       });
     },
   },
+  {
+    id: 'fix-soccer-no-old-models',
+    ask: 'Owner Nov 17 2026 "old models should never show": no code-built stand-in player is ever drawn - kickoff waits for the real athletes',
+    async test(page, h) {
+      try { await h.press('#btnStart'); } catch (e) {}
+      let r = null;
+      for (let i = 0; i < 70; i++) { r = await h.eval(() => ({ seen: window.__standInSeen, ok: window.__nomOk, st: window.__test && window.__test.state, ath: (window.__sc.players || []).filter(p => p.ath).length, n: (window.__sc.players || []).length })); if (r.st && r.st !== 'start') break; await h.wait(500); }
+      if (r.seen === undefined) return 'the game does not count old-model frames (window.__standInSeen missing)';
+      if (r.st === 'start') return 'the match did not kick off within 35 s';
+      await h.wait(2500);
+      r = await h.eval(() => ({ seen: window.__standInSeen, ok: window.__nomOk, ath: (window.__sc.players || []).filter(p => p.ath).length, n: (window.__sc.players || []).length }));
+      if (r.ok) return 'the real athletes never loaded, the stand-ins were let out';
+      if (r.seen > 0) return r.seen + ' frame(s) showed an old stand-in player';
+      if (r.ath !== r.n) return 'only ' + r.ath + ' of ' + r.n + ' players are real athletes at kickoff';
+      return true;
+    },
+  },
 ];
