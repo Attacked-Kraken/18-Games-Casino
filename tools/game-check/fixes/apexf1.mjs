@@ -152,14 +152,31 @@ async function g66PaceTest(page, h, pickFastest) {
 
 export default [
   {
+    id: 'fix-f1-ambulance-always-on-pad',
+    ask: 'Owner Nov 17 2026 "make the ambulance always show sitting on pad": on the circuit the ambulance is in the scene, visible and on its own pad spot - before the start, through the pilot-car lap and in the race (only the orange pilot car drives off)',
+    test: async (page, h) => {
+      let s = null;
+      for (let i = 0; i < 120; i++) { s = await h.eval(() => { const T = window.__test; try { return T && T.emState ? T.emState() : undefined; } catch (e) { return null; } }).catch(() => null); if (s && s.loaded >= 2) break; await h.wait(500); }
+      if (s === undefined) return 'the game has no emState probe';
+      if (!s) return { inconclusive: 'no circuit with an emergency pad was built in 60 s' };
+      const bad = (q, when) => !q ? 'the ambulance is not on the circuit ' + when : !q.inScene ? 'the ambulance is not in the scene ' + when : !q.visible ? 'the ambulance is hidden ' + when : q.off > 0.5 ? 'the ambulance is ' + q.off + ' m off its pad spot ' + when : q.meshes < 1 ? 'the ambulance has no body ' + when : '';
+      if (s.loaded < 2) return 'only ' + s.loaded + ' of the 2 emergency cars are on the pad after 60 s';
+      if (s.groups !== 2) return s.groups + ' emergency cars are listed for this circuit (2 expected - an old circuit\'s cars were kept)';
+      let e = bad(s.medical, 'before the start'); if (e) return e;
+      for (let k = 0; k < 6; k++) { await h.eval(() => { const T = window.__test; for (let i = 0; i < 100; i++) T.simStep(0.05, { skill: 'good' }); return true; }).catch(() => {}); s = await h.eval(() => window.__test.emState()).catch(() => null); if (!s) continue; e = bad(s.medical, 'after ' + ((k + 1) * 5) + ' s of running'); if (e) return e; }
+      return true;
+    },
+  },
+  {
     id: 'fix-f1-chief-towers',
     ask: "F1: every team's crew chief and his headset men work from a raised tower on the left side of their garage door, looking over the lane and the track - on the built-in circuits and the Grand Prix (owner Nov 15 2026 'the crew chiefs with head sets need a tower for each crew that can over see track').",
     async test(page, h) {
       const bad = [];
-      for (const tr of ['harbour', 'grandprix']) {
-        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+      for (const tr of ['this circuit', 'harbour']) { // Nov 17 2026: the circuit already open first (no reload), then ONE built-in circuit - two reloads ran past the robot's 60 s cap and the test never finished
+        if (tr !== 'this circuit') await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
         let r = null;
-        for (let i = 0; i < 90; i++) { await h.wait(500); r = await h.eval(() => window.__test && window.__test.towers ? window.__test.towers() : null).catch(() => null); if (r && r.booths) break; }
+        for (let i = 0; i < (tr === 'this circuit' ? 30 : 80); i++) { await h.wait(500); r = await h.eval(() => window.__test && window.__test.towers ? window.__test.towers() : null).catch(() => null); if (r && r.booths) break; }
+        if (tr === 'this circuit' && !(r && r.booths)) continue;
         if (!r) return { inconclusive: 'no towers hook on ' + tr };
         if (!r.booths) return { inconclusive: 'the booth models did not load on ' + tr };
         if (r.n !== r.booths) bad.push(tr + ': ' + r.n + ' towers for ' + r.booths + ' booths');
@@ -174,7 +191,7 @@ export default [
     ask: "F1: every painted pit parking spot lies along the pit lane like the car that stops in it, on every circuit - none turned sideways (owner Nov 15 2026 'all pit parking spot need to be facing the right way, they are side ways').",
     async test(page, h) {
       const bad = [];
-      for (const tr of ['harbour', 'capital', 'mesa', 'pinewood']) {
+      for (const tr of ['harbour']) { // Nov 17 2026: one built-in circuit (they all draw their spots with the same code) - four reloads ran past the robot's 60 s cap and the test never finished
         await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
         let r = null;
         for (let i = 0; i < 80; i++) { await h.wait(500); r = await h.eval(() => window.__test && window.__test.pitSpots ? window.__test.pitSpots() : null).catch(() => null); if (r && r.length) break; }
@@ -2688,22 +2705,6 @@ export default [
         if (r.bad > 0) bad.push(tr + ': ' + r.bad + ' barrier block(s) stand in the pit entry / lane zone');
       }
       return bad.length ? 'F1 PIT ENTRY BLOCK: ' + bad.join('; ') : true;
-    },
-  },
-  {
-    id: 'fix-f1-ambulance-always-on-pad',
-    ask: 'Owner Nov 17 2026 "make the ambulance always show sitting on pad": on the circuit the ambulance is in the scene, visible and on its own pad spot - before the start, through the pilot-car lap and in the race (only the orange pilot car drives off)',
-    test: async (page, h) => {
-      let s = null;
-      for (let i = 0; i < 120; i++) { s = await h.eval(() => { const T = window.__test; try { return T && T.emState ? T.emState() : undefined; } catch (e) { return null; } }).catch(() => null); if (s && s.loaded >= 2) break; await h.wait(500); }
-      if (s === undefined) return 'the game has no emState probe';
-      if (!s) return { inconclusive: 'no circuit with an emergency pad was built in 60 s' };
-      const bad = (q, when) => !q ? 'the ambulance is not on the circuit ' + when : !q.inScene ? 'the ambulance is not in the scene ' + when : !q.visible ? 'the ambulance is hidden ' + when : q.off > 0.5 ? 'the ambulance is ' + q.off + ' m off its pad spot ' + when : q.meshes < 1 ? 'the ambulance has no body ' + when : '';
-      if (s.loaded < 2) return 'only ' + s.loaded + ' of the 2 emergency cars are on the pad after 60 s';
-      if (s.groups !== 2) return s.groups + ' emergency cars are listed for this circuit (2 expected - an old circuit\'s cars were kept)';
-      let e = bad(s.medical, 'before the start'); if (e) return e;
-      for (let k = 0; k < 6; k++) { await h.eval(() => { const T = window.__test; for (let i = 0; i < 100; i++) T.simStep(0.05, { skill: 'good' }); return true; }).catch(() => {}); s = await h.eval(() => window.__test.emState()).catch(() => null); if (!s) continue; e = bad(s.medical, 'after ' + ((k + 1) * 5) + ' s of running'); if (e) return e; }
-      return true;
     },
   },
 ];

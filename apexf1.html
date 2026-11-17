@@ -4005,6 +4005,7 @@ const Race = {
     return order;
   },
   update(dt){
+    if(this.mode==='lights' && !this.player) return; // Nov 17 2026: lights asked for before the cars are on the grid (a start pressed while the circuit still builds) threw 'reading throttle' every frame - the red Game error bar; the lights now wait for the cars
     if(this.mode==='lights'){ this.updateLights(dt); this.updateCars(dt,true); this.updateCamera(dt); return; } // owner Nov 3 2026: a camera picked during the lights (COCKPIT) takes effect at once
     if(this.mode!=='race') return;
     this.raceT+=dt; this.time+=dt;
