@@ -466,6 +466,13 @@ for (const g of games) {
     if (g.people && !st.skinned) r.fail.push('Players are not real 3D bodies (no rigged/skinned model was drawn) - blob or box people break STUDIO-STANDARD.md; use characters/base-human-v2 + the athlete kit (gear.js)');
     const dpf = r.studio.drawsPerFrame;
     if (dpf > (g.maxDraws || 450)) r.check.push(`Heavy for phones: about ${dpf} draw calls per frame (aim under ${g.maxDraws || 450}; merge meshes - see STUDIO-STANDARD.md "Phone budget")`); }
+  // OLD MODEL WATCH (owner Nov 17 2026 'all games never show old models ... old models should never show'): a game that loads
+  // its real models after the page opens counts every drawn frame that showed a code-built stand-in (or an old venue) in
+  // window.__standInSeen. Any such frame = RED. A people game that does not count at all = yellow (add the counter).
+  try { const seen = await page.evaluate(() => window.__standInSeen).catch(() => undefined);
+    if (typeof seen === 'number') { r.standInSeen = seen; if (seen > 0) r.fail.push(`OLD MODEL SHOWN: ${seen} drawn frame(s) showed a code-built stand-in model before the real one was in - hide the stand-in from the first frame and make the start wait for the real models (UNIVERSAL.md "OLD MODELS NEVER SHOW")`); }
+    else if (g.people) r.check.push('No old-model counter: this game does not set window.__standInSeen - add it so the robot can prove no stand-in model is ever drawn (UNIVERSAL.md "OLD MODELS NEVER SHOW")');
+  } catch (e) {}
   // owner Nov 10 2026 6:38 PM 'the heaviness will be your job ... the right setup for multiplayer games': picture memory budget for phones (Nov 8 F1 that played fine = ~263 MB; 547 MB crashed iPhone Safari)
   try { const tm = await page.evaluate(() => { const by = {}; let mb = 0, n = 0; for (const t of (window.__texs || [])) { const im = t.image; const w = im && (im.width || im.videoWidth), h = im && im.height; if (!w || !h) continue; n++; const m = w * h * 4 * 1.33 / 1e6; mb += m; const k = w + 'x' + h; by[k] = (by[k] || 0) + m; } return { mb: Math.round(mb), n, top: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + ' ' + Math.round(v) + ' MB') }; }).catch(() => null);
     if (tm) { r.texMB = tm.mb; const cap = g.maxTexMB || 300; if (tm.mb > cap) r.check.push(`Heavy for phones: about ${tm.mb} MB of pictures (textures, ${tm.n} made; aim under ${cap} MB - iPhone Safari closes the page past ~500 MB) - biggest: ${tm.top.join(', ')}; shrink per-team / per-object copies (texCap) or share one picture`); } } catch (e) {}

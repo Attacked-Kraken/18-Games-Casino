@@ -429,7 +429,7 @@
   {
    "file": "kit/studio.js",
    "needle": "ui.tab === 'blocks'",
-   "rule": "Studio ⚡ Blocks tab: behaviour without code (owner Nov 8 2026, #163)"
+   "rule": "Studio \u26a1 Blocks tab: behaviour without code (owner Nov 8 2026, #163)"
   },
   {
    "file": "tools/game-check/check.mjs",
@@ -445,6 +445,11 @@
    "file": "apexf1.html",
    "needle": "function texCap(",
    "rule": "F1 per-team repaints stay capped (iPhone crash Nov 10 2026)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "OLD MODEL SHOWN",
+   "rule": "owner Nov 17 2026: a drawn frame that shows a stand-in model is red on every game"
   }
  ]
 }
