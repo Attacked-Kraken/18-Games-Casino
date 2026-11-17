@@ -26,3 +26,6 @@ the robot lints it (tools/game-check/checklist-lint.mjs). The tester does one it
 
 ## PART GUARD for every game, 2D or 3D (LOCKED, owner Oct 27 2026 9:38 PM)
 Every game in tools/game-check/games.json carries a `parts` list (name + function-name regions: menu, rules, hud, camera, sound, players/car/skaters, track/park/ice, career...) and a `partGuardFrom` time. The robot FAILS a pull request that changes a part its title does not name (`PART: <part>`), so a fix cannot break another part. A NEW game (2D or 3D) gets its `parts` list in the same PR that first adds it to games.json - a game without one is not finished. Rule lives in tools/game-check/judge.mjs (partGuard) and is locked in tools/robot-keep.json.
+
+## Old models never show (owner Nov 17 2026, LOCKED)
+A new game hides any stand-in model from the first frame, makes its start wait for the real models, and counts stand-in frames in `window.__standInSeen` (the robot fails over 0). See UNIVERSAL.md "OLD MODELS NEVER SHOW".
