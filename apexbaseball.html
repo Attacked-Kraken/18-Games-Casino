@@ -515,6 +515,9 @@ function makePlayer(team, opts={}){
   // group scale would hide the shrink from its ruler while the eye still sees it
   const PS = 2.02/2.6;
   for (const c of [...g.children]){ c.position.multiplyScalar(PS); c.scale.multiplyScalar(PS); }
+  // OWNER Nov 17 2026 ('old models should never show'): the code-built figure is only the load-failure stand-in -
+  // hidden from the first frame; showStandIns() brings it out only when the real players cannot load
+  if (!(window.__nom && window.__nom.ok)){ for (const m of [legL, legR, torso, head, cap, brim, armL, armR, bat]) if (m) m.visible = false; }
   return { g, legL, legR, torso, head, cap, brim, armL, armR, bat, team,
     home:[0,0,0], animT:Math.random()*10 };
 }
@@ -685,6 +688,7 @@ function attachAthlete(p, slotIdx){
     }, 1.82);
     a.object.rotation.y = 0;                    // rig bind pose faces +z, same as primitives
     a.object.traverse(o => { if (o.isMesh || o.isSkinnedMesh) o.castShadow = !isTouch; });
+    a.object.visible = false;   // comes out with the whole group once every waiting player is fitted (fitAthletesPump)
     p.g.add(a.object);
     for (const k of ['legL','legR','torso','head','cap','brim','armL','armR']) if (p[k]) p[k].visible = false;
     const bones = {}; a.object.traverse(o => { if (o.isBone) bones[o.name] = o; });
@@ -772,7 +776,7 @@ function attachAthlete(p, slotIdx){
     p.athleteBaseY = a.object.position.y;
     p.trimPar = slotIdx % 2;
     p.soleSets = buildSoleSets(a.object, bones);
-  } catch (e) { p.athlete = null; }
+  } catch (e) { p.athlete = null; for (const k of NOM_PARTS) if (p[k]) p[k].visible = true; p.standInOk = true; }
 }
 /* G-08: attach athletes a few per frame. Creating every rigged human in one
    synchronous block froze the play picture ~1.5s on slow phones right after
@@ -786,8 +790,24 @@ function fitAthletes(){
 }
 function fitAthletesPump(){
   for (let n = 0; n < 2 && athleteQueue.length; n++){ const q = athleteQueue.shift(); attachAthlete(q.p, q.i); }
-  if (athleteQueue.length) requestAnimationFrame(fitAthletesPump); else athletePumpOn = false;
+  if (athleteQueue.length) requestAnimationFrame(fitAthletesPump);
+  else { athletePumpOn = false; for (const p of nomSlots()) if (p && p.athlete) p.athlete.object.visible = true; NOM.playersIn = true; }   // everybody steps out together
 }
+/* OLD MODEL WATCH (owner Nov 17 2026 'old models should never show'): the code-built figures are only the load-failure
+   stand-ins. They are hidden from the first frame, the loading screen stays up until the real players are fitted (the park
+   already waited behind it), and every drawn frame that shows a stand-in is counted in window.__standInSeen (robot: must be 0). */
+const NOM = window.__nom = { ok:false, playersIn:false, held:false }; window.__standInSeen = 0;
+const NOM_PARTS = ['legL','legR','torso','head','cap','brim','armL','armR','bat'];
+function nomSlots(){ return [...lineup, pitcherMesh, catcherMesh, umpireMesh, ...runnerMeshes, ...Object.values(fielders)]; }
+function showStandIns(){ if (NOM.playersIn) return; NOM.ok = true; for (const p of nomSlots()){ if (!p) continue; if (p.athlete){ p.athlete.object.visible = true; continue; } for (const k of NOM_PARTS) if (p[k]) p[k].visible = true; } NOM.playersIn = true; }
+function standInWatch(){
+  const lo = document.getElementById('loadOv'), so = document.getElementById('startOv');
+  if (menuGateDone && !NOM.playersIn && !NOM.held && so && so.style.display === 'flex'){ NOM.held = true; so.style.display = 'none'; if (lo) lo.style.display = 'flex'; }   // the park is in but the players are not: the loading screen stays
+  else if (NOM.held && NOM.playersIn){ NOM.held = false; if (lo) lo.style.display = 'none'; if (so) so.style.display = 'flex'; }
+  if (NOM.ok) return; let n = 0; for (const p of nomSlots()) if (p && p.g.visible && !p.athlete && !p.standInOk && p.torso.visible) n++; if (n) window.__standInSeen++;
+}
+try { fetch('./characters/base-human-v2/male.glb', { method:'HEAD' }).then(r => { if (!r.ok) showStandIns(); }).catch(() => showStandIns()); } catch (e) {}
+setTimeout(showStandIns, 29000);   // safety net for a dead connection: a game is never blocked
 function athleteTick(f, dt){
   const a = f.athlete;
   const gx = f.g.position.x, gz = f.g.position.z;
@@ -1664,6 +1684,7 @@ function loop(){
     if (Math.abs(camera.fov - fov) > 0.01){ camera.fov = fov; camera.updateProjectionMatrix(); }
     if (myCam){ camera.position.set(myCam.side || 0, Math.max(0.5, myCam.up), myCam.back); camLook.set(0, 1.5, -(myCam.ahead || 0)); } }   // his own view: from home plate (behind = +), looking out toward the mound
   camera.lookAt(camLook);
+  standInWatch();
   fx.render(renderer, scene, camera);
 }
 
