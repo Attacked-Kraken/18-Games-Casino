@@ -3132,7 +3132,7 @@ if(hmState==='pending' && !startPlay._waited){
 startPlay._waited=true;
 const b=$('bCardStart'); let old='START';
 if(b){ old=b.textContent; b.textContent='LOADING ATHLETES\u2026'; b.disabled=true; }
-Promise.race([humansReady, new Promise(r=>setTimeout(r,6000))])
+Promise.race([humansReady, new Promise(r=>setTimeout(()=>{ if(hmState==='pending') window.__nomOk=true; r(); },30000))]) // OWNER Nov 17 2026 ('old models should never show'): the start waits for the real athletes - the old 6 s cap let the code-built bodies race and swap mid-event. 30 s is only the dead-connection safety net
 .then(()=>new Promise(r=>setTimeout(r,80)))
 .then(()=>{ if(b){ b.textContent=old; b.disabled=false; } startPlay._waited=false; startPlay(ev, rivals); });
 return;
@@ -3766,6 +3766,9 @@ let simDt=rdt>0.5?0.5:rdt;
 W3D._simDt=simDt; // JOB G-22: the elapsed SIMULATION time this frame (the follow camera tracks it)
 Perf.frame(dt);
 W3D._dt=dt;
+if(!window.__nomOk && hmState!=='failed' && W3D.rigs){ let old=0; for(const r of W3D.rigs) if(r.group.visible && !r.human) old++; if(old) window.__standInSeen=(window.__standInSeen||0)+1; } // OLD MODEL WATCH: every drawn frame that shows a code-built stand-in body (robot: must stay 0)
+if(window.__standInSeen===undefined) window.__standInSeen=0;
+if(!W3D._nomPatched && W3D.rigPlace){ W3D._nomPatched=true; const rp=W3D.rigPlace; W3D.rigPlace=function(rig){ rp.apply(this,arguments); if(!rig.human && !window.__nomOk && hmState!=='failed') rig.group.visible=false; }; } // a code-built stand-in body is never placed on show while the real athletes are still loading (menu fly-by included)
 if(W3D.stadium) W3D.stadium.update(dt);
 clearOverlay();
 const playing=document.body.classList.contains('playing');
