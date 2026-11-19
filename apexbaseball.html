@@ -105,6 +105,11 @@ try{ Studio.declare([
   /* G-79: the loading gate - an opaque screen with a moving bar covers the game
      until the owner's ballpark has loaded, so the old park is never on show. */
   #loadOv { z-index:9600; background:#060a18; }
+  /* owner Nov 18 2026 "pull the start page right away": the menu shows at once on a solid backdrop (so the old park is never seen);
+     only PLAY BALL waits until the ballpark and the players are in. */
+  #startOv.waitpark { display:flex; background:#060a18; }
+  #parkWait { display:none; margin:8px auto 0; text-align:center; font-size:13px; color:#ffcc33; font-weight:700; }
+  #startOv.waitpark #parkWait { display:block; }
   #loadBarWrap { width:min(420px,72vw); height:14px; border:2px solid #ffcc33; border-radius:8px; overflow:hidden; background:rgba(255,255,255,.08); margin:16px auto 6px; }
   #loadBar { height:100%; width:8%; background:linear-gradient(180deg,#ffc21c,#e09b00); animation:loadSlide 4.5s ease-out forwards; }
   @keyframes loadSlide { 0%{width:6%} 55%{width:57%} 100%{width:93%} }
@@ -216,7 +221,7 @@ try{ Studio.declare([
   </div>
 </div>
 
-<div class="overlay" id="loadOv">
+<div class="overlay" id="loadOv" style="display:none">
   <div class="card" style="text-align:center">
     <h1>APEX BASEBALL</h1>
     <h2>APEX ARCADE PARK</h2>
@@ -225,11 +230,12 @@ try{ Studio.declare([
   </div>
 </div>
 
-<div class="overlay" id="startOv" style="display:none">
+<div class="overlay waitpark" id="startOv">
   <div class="card">
     <h1>APEX BASEBALL</h1>
     <h2>APEX ARCADE · 3 INNINGS</h2>
     <p>You are the home <b>Comets</b> (blue) hosting the <b>Sharks</b> (teal).</p>
+    <div id="parkWait">Getting the ballpark ready&hellip; tap PLAY BALL and it starts the moment it is in</div>
     <div class="big"><button class="btn" id="startBtn" type="button" style="font-size:18px;padding:16px 40px">PLAY BALL</button>
     <button class="btn" id="helpBtn" type="button" style="font-size:16px;padding:12px 20px;margin-left:10px">?</button></div>
     <div class="big" style="margin-top:10px"><button class="btn" id="friendBtn" type="button" style="font-size:15px;padding:12px 26px">&#x1F465; PLAY A FRIEND</button></div>
@@ -2172,8 +2178,21 @@ let menuGateDone = false;
 function revealMenu(){
   if (menuGateDone) return; menuGateDone = true;
   const lo = $('loadOv'); if (lo) lo.style.display = 'none';
-  const so = $('startOv'); if (so) so.style.display = 'flex';
+  const t = setInterval(() => {                       // the park is in: the menu opens onto it once the players are in too
+    if (!NOM.playersIn) return; clearInterval(t);
+    const so = $('startOv'); if (so){ so.classList.remove('waitpark'); if (so.style.display !== 'none') so.style.display = 'flex'; }
+    if (window.__parkPlayPending){ window.__parkPlayPending = false; const b = $('startBtn'); if (b) b.click(); }
+  }, 100);
 }
+/* owner Nov 18 2026: a PLAY BALL tap while the park is still loading is kept, not lost - the game starts the moment it is in */
+document.addEventListener('click', e => {
+  if (!e.isTrusted) return;   // only a real finger tap is held; the robot's own button presses start the game the way they always did
+  const so = $('startOv'); if (!so || !so.classList.contains('waitpark')) return;
+  const b = e.target && e.target.closest && e.target.closest('#startBtn, #friendGo'); if (!b) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  try { Mus.init(); Mus.resume(); } catch (_) {}   // sound needs the tap itself on a phone
+  if (b.id === 'startBtn') window.__parkPlayPending = true;
+}, true);
 setTimeout(revealMenu, 30000);
 try {
   new GLTFLoader().load('kit/stadiums/Night-Ballpark/stadium.glb', g => {
