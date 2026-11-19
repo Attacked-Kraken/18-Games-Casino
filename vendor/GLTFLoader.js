@@ -66,7 +66,6 @@ import {
 	InstancedBufferAttribute
 } from '../three.module.min.js';
 import { toTrianglesDrawMode } from './BufferGeometryUtils.js';
-import { MeshoptDecoder } from './meshopt_decoder.module.js';   // owner Nov 19 2026: every game can open shape-packed (meshopt) models - files without it load exactly as before
 
 class GLTFLoader extends Loader {
 
@@ -76,7 +75,7 @@ class GLTFLoader extends Loader {
 
 		this.dracoLoader = null;
 		this.ktx2Loader = null;
-		this.meshoptDecoder = MeshoptDecoder;
+		this.meshoptDecoder = null;
 
 		this.pluginCallbacks = [];
 
