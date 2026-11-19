@@ -68,30 +68,42 @@ export default [
   // ever appear if the model really cannot load.
   {
     id: 'play-menu-over-new-ballpark',
-    ask: "The first menu picture already shows the new ballpark: a loading screen covers the game until Apex Arcade Park has loaded, and only then does the menu open (G-79)",
+    ask: "The old stadium is never seen behind the menu: until Apex Arcade Park has loaded, the menu sits on a solid backdrop (G-79; since Nov 18 the menu itself shows at once)",
     async test(page, h) {
       await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
       const t0 = Date.now();
-      let sawLoading = false;
       while (Date.now() - t0 < 28000) {
         const s = await h.eval(() => {
-          const vis = e => !!e && getComputedStyle(e).display !== 'none';
-          return {
-            menu: vis(document.getElementById('startOv')),
-            loading: vis(document.getElementById('loadOv')),
-            bar: !!document.getElementById('loadBar'),
-            loaded: !!(window.__test && window.__test.stadium && window.__test.stadium.loaded),
-          };
+          const so = document.getElementById('startOv'), cs = so && getComputedStyle(so);
+          const solid = !!cs && /rgb\(6, 10, 24\)|rgba\(6, 10, 24, 1\)/.test(cs.backgroundColor);
+          return { menu: !!cs && cs.display !== 'none', solid, loaded: !!(window.__test && window.__test.stadium && window.__test.stadium.loaded) };
         });
-        if (s.loading && s.bar) sawLoading = true;
-        if (s.menu) {
-          if (!s.loaded) return 'the menu opened before the ballpark loaded - the first menu picture shows the old stadium';
-          if (!sawLoading) return 'the menu opened without the loading screen ever showing';
-          return true;
-        }
+        if (s.menu && !s.loaded && !s.solid) return 'the menu shows the 3D scene before the ballpark loaded - the old stadium is on show';
+        if (s.menu && s.loaded) return true;
         await h.wait(200);
       }
-      return 'the menu never opened (the ballpark gate stayed shut for 28 s)';
+      return 'the ballpark never loaded behind the menu in 28 s';
+    },
+  },
+  {
+    id: 'fix-baseball-menu-right-away',
+    ask: "Owner Nov 18 2026 'pull the start page right away': the menu with PLAY BALL shows within 3 s of opening, while the ballpark still loads behind it, and a PLAY BALL tap made while it loads starts the game once the park is in",
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'domcontentloaded' });
+      const t0 = Date.now(); let at = null;
+      while (Date.now() - t0 < 6000 && at === null) {
+        const up = await h.eval(() => { const b = document.getElementById('startBtn'); const r = b && b.getBoundingClientRect(); return !!r && r.width > 40 && !!b.offsetParent; }).catch(() => false);
+        if (up) at = Date.now() - t0; else await h.wait(100);
+      }
+      if (at === null || at > 3000) return 'the PLAY BALL menu took ' + (at === null ? 'over 6' : (at / 1000).toFixed(1)) + ' s to show (must be under 3 s)';
+      await h.eval(() => document.getElementById('startBtn').click());
+      const t1 = Date.now();
+      while (Date.now() - t1 < 40000) {
+        const ph = await h.eval(() => window.__test ? window.__test.phase : null);
+        if (ph && ph !== 'start') return true;
+        await h.wait(250);
+      }
+      return 'PLAY BALL was tapped while the park loaded, but the game never started once it was in (phase still start)';
     },
   },
   // G-85 (owner, Grok check 10:05): the stick fix proven on a real touch, one test
