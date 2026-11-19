@@ -28,7 +28,8 @@
    "why": "ROBOT SIDE (Oct 31 2026): the Racer wrap/garage tests each build the garage car several times and the robot's 60 s cap now cuts them off on main too (main results show the same 'took over 60 s'); it is a time cap, not a game result. Real fix = split the tests or raise the cap (queued for the robot), until then yellow. Also: on the slow robot the wrap bounding-box test showed \"box differs on axis 0\" once (#2156, 1:25 PM CT) but passed 5 of 5 local runs (24-32 s) - timing flake, yellow until it is understood.",
    "since": "2026-10-31",
    "until": "2026-11-04"
-  }
+  },
+  { "game": "apexbaseball.html", "match": "play-contact-big-at-plate|the contact moment is big at the plate", "why": "ROBOT SIDE (Nov 19 2026): a 70-second play test that waits for a pitch to reach the plate; on the busy robot it sometimes never gets there in time (0 px / speck readings) and it auto-undid #2654 (a loader change Baseball does not use). Local re-runs on 27fcfaed and 13e1f43b passed 4 of 4 (42-67 s). Real fix = drive the pitch from the test hook instead of waiting on robot speed; until then yellow.", "since": "2026-11-19", "until": "2026-12-03" }
  ],
  "_fixed_robot_side": [
   "aborted downloads (ERR_ABORTED / page reload) - retried once, only a real 4xx is a missing file - PR #929",
