@@ -13,6 +13,11 @@ let prev = {}, now = {};
 try { prev = JSON.parse(fs.readFileSync(prevFile, 'utf8')); } catch (e) {}
 try { now = JSON.parse(fs.readFileSync(nowFile, 'utf8')); } catch (e) {}
 const P = Object.fromEntries((prev.results || []).map(r => [r.file, r]));
+// VP Nov 19 2026: a live KNOWN ROBOT FAULT never undoes a merge - check.mjs already turned its red line yellow, but the owner-test
+// compare below read r.fixes directly, so a known chance test (Baseball's 29-second real-play tests) still undid merges (#2655, #2658).
+let KF = [];
+try { const t = new Date().toISOString().slice(0, 10); KF = (JSON.parse(fs.readFileSync(new URL('./known-faults.json', import.meta.url), 'utf8')).faults || []).filter(k => k.match && (!k.until || k.until >= t)); } catch (e) {}
+const knownFault = (file, x) => KF.some(k => { if (k.game && k.game !== file) return false; try { return new RegExp(k.match, 'i').test(String(x.id || '') + ' ' + String(x.ask || '')); } catch (e) { return false; } });
 const games = [], why = [], tests = [], skipped = [];
 const ROBOT_CRASH = /could not finish checking|has been closed|Target page, context or browser|browser\.newContext|Navigation timeout of|net::ERR_|runner lost/i;
 let other = 0;   // VP Oct 27 2026: new problems that are NOT play tests (load, script error, reality...) - those need the whole game re-played
@@ -40,7 +45,7 @@ for (const r of now.results || []) {
     if (/^Owner's fix NOT done yet/.test(f)) continue;    // judged by id below
     bad.push(f); other++;
   }
-  for (const x of r.fixes || []) if (!x.ok && okBefore.has(x.id)) { bad.push(`Owner's fix broke again: "${x.ask}"`); tests.push(x.id); }
+  for (const x of r.fixes || []) if (!x.ok && okBefore.has(x.id) && !knownFault(r.file, x)) { bad.push(`Owner's fix broke again: "${x.ask}"`); tests.push(x.id); }
   if (bad.length) { games.push(r.file); why.push(`${r.name}: ${bad.slice(0, 3).join('; ')}`); }
 }
 console.log(JSON.stringify({ games, why, tests, other, skipped }));
