@@ -31,11 +31,11 @@ jobs:
           JS
           cd "$GITHUB_WORKSPACE"
           : > pack-report.txt
-          for f in kit/stadiums/Night-Ballpark/stadium.glb kit/cockpit/cockpit.glb models/bikes/street-bike.glb models/bikes/race-bike.glb; do
+          for f in models/fetched/tuner-car-wheel-free-02c9dc.glb models/fetched/free-wheels-sdc-pure-performance-eebae2.glb models/fetched/free-wheels-rst-carbon-sdc-72d881.glb models/bikes/phantom-bike.glb models/fetched/patriot-p10-xr-d87ddc.glb models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb models/fetched/shc-mc-free-promotion-car-cfaabd.glb models/fetched/fictional-supercar-v12-goblin-0a20e4.glb models/fetched/phoenix-455-71-955edc.glb models/fetched/le-mans-race-car.glb models/fetched/rb16-pia-2022-s13-ea3789.glb models/fetched/williams-fw16-ayrton-senna-ba86f9.glb models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb models/fetched/duke-69-46fed7.glb models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb models/bikes/apex-superbike.glb models/fetched/tokii-abyss-gt-7-v12-c39956.glb; do
             b=$(stat -c %s "$f")
             (cd /tmp/pk && node pack.mjs "$GITHUB_WORKSPACE/$f" /tmp/out.glb)
             mv /tmp/out.glb "$f"
             echo "$f $b -> $(stat -c %s "$f")" | tee -a pack-report.txt
           done
           git config user.name "vp scratch"; git config user.email "actions@users.noreply.github.com"
-          git add -A -- '*.glb'; git commit -m "scratch lossless v2 (no reorder, no filters): $(paste -sd ' ' pack-report.txt | cut -c1-300)"; git push
+          git add -A -- '*.glb'; git commit -m "scratch lossless v3 cars: $(paste -sd ' ' pack-report.txt | cut -c1-300)"; git push
