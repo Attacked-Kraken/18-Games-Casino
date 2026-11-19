@@ -1,6 +1,6 @@
 name: VP compress scratch
-# Scratch only (never merged): packs the 3D SHAPES of a few big models with meshopt, pictures untouched,
-# and commits the packed copies to this branch so a Claude can compare pictures before any PR.
+# Scratch only (never merged): packs the 3D SHAPES of a few big models losslessly with meshopt
+# (no merging of materials, no rounding of points, pictures untouched) and commits the packed copies here.
 on:
   push:
     branches: [vp-compress-scratch]
@@ -17,14 +17,27 @@ jobs:
         with: { node-version: 20 }
       - run: |
           set -e
-          npm i -g @gltf-transform/cli@4 >/dev/null
+          mkdir -p /tmp/pk && cd /tmp/pk && npm init -y >/dev/null && npm i @gltf-transform/core@4 @gltf-transform/extensions@4 @gltf-transform/functions@4 meshoptimizer >/dev/null
+          cat > /tmp/pk/pack.mjs <<'JS'
+          import { NodeIO } from '@gltf-transform/core';
+          import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
+          import { reorder } from '@gltf-transform/functions';
+          import { MeshoptEncoder, MeshoptDecoder } from 'meshoptimizer';
+          await MeshoptEncoder.ready; await MeshoptDecoder.ready;
+          const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
+          const [src, out] = process.argv.slice(2);
+          const doc = await io.read(src);
+          await doc.transform(reorder({ encoder: MeshoptEncoder, target: 'size' }));
+          doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.FILTER });
+          await io.write(out, doc);
+          JS
+          cd "$GITHUB_WORKSPACE"
           : > pack-report.txt
           for f in kit/stadiums/Night-Ballpark/stadium.glb kit/cockpit/cockpit.glb models/bikes/street-bike.glb models/bikes/race-bike.glb; do
             b=$(stat -c %s "$f")
-            gltf-transform meshopt "$f" /tmp/out.glb --level medium --quantize-position 16 --quantize-normal 10 --quantize-texcoord 14
-            gltf-transform inspect /tmp/out.glb --format md > "$f.inspect.md" 2>&1 || true
+            (cd /tmp/pk && node pack.mjs "$GITHUB_WORKSPACE/$f" /tmp/out.glb)
             mv /tmp/out.glb "$f"
             echo "$f $b -> $(stat -c %s "$f")" | tee -a pack-report.txt
           done
           git config user.name "vp scratch"; git config user.email "actions@users.noreply.github.com"
-          git add -A; git commit -m "scratch: meshopt-packed copies $(paste -sd ' ' pack-report.txt | cut -c1-300)"; git push
+          git add -A -- '*.glb'; git commit -m "scratch lossless: $(paste -sd ' ' pack-report.txt | cut -c1-300)"; git push
