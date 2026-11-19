@@ -1,0 +1,30 @@
+name: VP compress scratch
+# Scratch only (never merged): packs the 3D SHAPES of a few big models with meshopt, pictures untouched,
+# and commits the packed copies to this branch so a Claude can compare pictures before any PR.
+on:
+  push:
+    branches: [vp-compress-scratch]
+    paths: ['.github/workflows/vp-compress-scratch.yml']
+permissions:
+  contents: write
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          set -e
+          npm i -g @gltf-transform/cli@4 >/dev/null
+          : > pack-report.txt
+          for f in kit/stadiums/Night-Ballpark/stadium.glb kit/cockpit/cockpit.glb models/bikes/street-bike.glb models/bikes/race-bike.glb; do
+            b=$(stat -c %s "$f")
+            gltf-transform meshopt "$f" /tmp/out.glb --level medium --quantize-position 16 --quantize-normal 10 --quantize-texcoord 14
+            gltf-transform inspect /tmp/out.glb --format md > "$f.inspect.md" 2>&1 || true
+            mv /tmp/out.glb "$f"
+            echo "$f $b -> $(stat -c %s "$f")" | tee -a pack-report.txt
+          done
+          git config user.name "vp scratch"; git config user.email "actions@users.noreply.github.com"
+          git add -A; git commit -m "scratch: meshopt-packed copies $(paste -sd ' ' pack-report.txt | cut -c1-300)"; git push
