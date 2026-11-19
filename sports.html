@@ -549,5 +549,24 @@ the site for a never-cached copy; if that copy's code is not the code running no
     x.send();
   } catch (e) {}
 })();</script>
+<script>/* owner Nov 18 2026 "games should pull the start page and model right away, like a true mobile game": the phone keeps every
+game file it loads (sw.js). After the hub sits open 8 s it also fetches each game's first files (preload.json) in the background,
+one at a time, the game played last first - so the next open is instant and works with no signal. */
+(function () {
+  if (!('serviceWorker' in navigator) || /[?&]nosw=1/.test(location.search)) return;
+  navigator.serviceWorker.register('sw.js', { scope: './' }).then(function (reg) {
+    setTimeout(function () {
+      if (document.hidden) return;
+      var c = navigator.connection; if (c && (c.saveData || /2g/.test(c.effectiveType || ''))) return;
+      fetch('preload.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) {
+        var g = j.games || {}, last = '', list = [];
+        try { last = (sessionStorage.getItem('apexDevLastGame') || '').split('/').pop().split('?')[0]; } catch (e) {}
+        Object.keys(g).sort(function (a, b) { return (b === last) - (a === last); }).forEach(function (k) { list = list.concat(g[k]); });
+        var w = reg.active || navigator.serviceWorker.controller;
+        if (w) w.postMessage({ warm: list.filter(function (x, i) { return list.indexOf(x) === i; }) });
+      }).catch(function () {});
+    }, 8000);
+  }).catch(function () {});
+})();</script>
 </body>
 </html>
