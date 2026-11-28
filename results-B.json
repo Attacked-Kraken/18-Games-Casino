@@ -1,0 +1,79 @@
+[
+ {
+  "file": "apexbaseball.html",
+  "name": "Apex Baseball",
+  "start": [
+   "#startBtn"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 60,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexbaseball-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexflight.html",
+  "name": "Apex Flight",
+  "start": [
+   "text=FREE FLIGHT",
+   "#thrUp",
+   "#thrUp",
+   "#thrUp",
+   "#thrUp"
+  ],
+  "problems": [
+   {
+    "what": "gas: playing it changed the screen only 5% of the time (controls may not respond)",
+    "img": "img/apexflight-gas-dull.jpg"
+   },
+   {
+    "what": "gas: slow - under 15 fps several times"
+   },
+   {
+    "what": "swiper: slow - under 15 fps several times"
+   }
+  ],
+  "styles": {
+   "gas": {
+    "motion": 5,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 3
+   },
+   "masher": {
+    "motion": 88,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "swiper": {
+    "motion": 73,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 3
+   }
+  },
+  "errors": [],
+  "end": "img/apexflight-gas-end.jpg",
+  "status": "ISSUES"
+ }
+]
